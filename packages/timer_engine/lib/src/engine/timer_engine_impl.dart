@@ -60,6 +60,16 @@ class TimerEngineImpl implements TimerEngine {
 
   @override
   Future<TimerCommandResult> start(String routineId) => _queue.run(() async {
+    if (_activeRun != null &&
+        (_activeRun!.status == RunStatus.running ||
+            _activeRun!.status == RunStatus.paused)) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.invalidTransition,
+        stateVersion: _activeRun!.stateVersion,
+      );
+    }
+
     final routine = await routineRepository.getRoutine(routineId);
     if (routine == null) {
       return const TimerCommandResult(
@@ -82,6 +92,13 @@ class TimerEngineImpl implements TimerEngine {
     final nowMono = monotonicClock.nowMs;
     final runId = 'run-${nowUtc.millisecondsSinceEpoch}';
 
+    final event = TimerEvent(
+      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+      runId: runId,
+      type: TimerEventType.runStarted,
+      occurredAtUtc: nowUtc,
+    );
+
     final run = TimerRun(
       runId: runId,
       routineSnapshot: snapshot,
@@ -93,13 +110,7 @@ class TimerEngineImpl implements TimerEngine {
       phaseStartedAtUtc: nowUtc,
       phaseStartedMonotonicMs: nowMono,
       stateVersion: 1,
-    );
-
-    final event = TimerEvent(
-      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
-      runId: runId,
-      type: TimerEventType.runStarted,
-      occurredAtUtc: nowUtc,
+      lastEventId: event.eventId,
     );
 
     try {
@@ -150,14 +161,6 @@ class TimerEngineImpl implements TimerEngine {
         math.max(0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono));
     final newAccumulated = _activeRun!.accumulatedMs + segmentElapsed;
 
-    final updatedRun = _activeRun!.copyWith(
-      status: RunStatus.paused,
-      accumulatedMs: newAccumulated,
-      phaseStartedMonotonicMs: () => null,
-      pausedAtUtc: () => nowUtc,
-      stateVersion: _activeRun!.stateVersion + 1,
-    );
-
     final event = TimerEvent(
       eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
       runId: runId,
@@ -166,8 +169,18 @@ class TimerEngineImpl implements TimerEngine {
       durationMs: segmentElapsed,
     );
 
+    final updatedRun = _activeRun!.copyWith(
+      status: RunStatus.paused,
+      accumulatedMs: newAccumulated,
+      phaseStartedMonotonicMs: () => null,
+      pausedAtUtc: () => nowUtc,
+      stateVersion: _activeRun!.stateVersion + 1,
+      lastEventId: () => event.eventId,
+    );
+
     try {
       await persistencePort.persistRunAndEvents(updatedRun, [event]);
+      await notificationPort.cancelBoundaries(runId);
     } catch (_) {
       return TimerCommandResult(
         success: false,
@@ -204,18 +217,19 @@ class TimerEngineImpl implements TimerEngine {
     final nowMono = monotonicClock.nowMs;
     final nowUtc = wallClock.utcNow;
 
-    final updatedRun = _activeRun!.copyWith(
-      status: RunStatus.running,
-      phaseStartedMonotonicMs: () => nowMono,
-      pausedAtUtc: () => null,
-      stateVersion: _activeRun!.stateVersion + 1,
-    );
-
     final event = TimerEvent(
       eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
       runId: runId,
       type: TimerEventType.runResumed,
       occurredAtUtc: nowUtc,
+    );
+
+    final updatedRun = _activeRun!.copyWith(
+      status: RunStatus.running,
+      phaseStartedMonotonicMs: () => nowMono,
+      pausedAtUtc: () => null,
+      stateVersion: _activeRun!.stateVersion + 1,
+      lastEventId: () => event.eventId,
     );
 
     try {
@@ -267,18 +281,19 @@ class TimerEngineImpl implements TimerEngine {
         : 0;
     final newAccumulated = _activeRun!.accumulatedMs + segmentElapsed;
 
-    final updatedRun = _activeRun!.copyWith(
-      status: RunStatus.cancelled,
-      accumulatedMs: newAccumulated,
-      phaseStartedMonotonicMs: () => null,
-      stateVersion: _activeRun!.stateVersion + 1,
-    );
-
     final event = TimerEvent(
       eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
       runId: runId,
       type: TimerEventType.runCancelled,
       occurredAtUtc: nowUtc,
+    );
+
+    final updatedRun = _activeRun!.copyWith(
+      status: RunStatus.cancelled,
+      accumulatedMs: newAccumulated,
+      phaseStartedMonotonicMs: () => null,
+      stateVersion: _activeRun!.stateVersion + 1,
+      lastEventId: () => event.eventId,
     );
 
     try {

@@ -202,5 +202,60 @@ void main() {
       expect(pauseResult.success, isFalse);
       expect(pauseResult.error, equals(TimerError.invalidTransition));
     });
+
+    test('Calling start() while run is running returns invalidTransition', () async {
+      final start1 = await engine.start('study-routine');
+      expect(start1.success, isTrue);
+
+      final start2 = await engine.start('study-routine');
+      expect(start2.success, isFalse);
+      expect(start2.error, equals(TimerError.invalidTransition));
+    });
+
+    test('Calling start() while run is paused returns invalidTransition', () async {
+      await engine.start('study-routine');
+      final runId = engine.activeRunId!;
+      await engine.pause(runId);
+
+      final start2 = await engine.start('study-routine');
+      expect(start2.success, isFalse);
+      expect(start2.error, equals(TimerError.invalidTransition));
+    });
+
+    test('pause() cancels boundary notifications', () async {
+      await engine.start('study-routine');
+      final runId = engine.activeRunId!;
+      expect(notifications.scheduledBoundaries, hasLength(1));
+
+      final pauseResult = await engine.pause(runId);
+      expect(pauseResult.success, isTrue);
+      expect(notifications.scheduledBoundaries, isEmpty);
+
+      // And resume reschedules it
+      final resumeResult = await engine.resume(runId);
+      expect(resumeResult.success, isTrue);
+      expect(notifications.scheduledBoundaries, hasLength(1));
+    });
+
+    test('lastEventId is updated on TimerRun after start, pause, resume, and stop', () async {
+      final events = <TimerEvent>[];
+      final eventSub = engine.eventStream.listen(events.add);
+
+      await engine.start('study-routine');
+      final runId = engine.activeRunId!;
+      expect(persistence.activeRun?.lastEventId, isNotNull);
+      expect(persistence.activeRun?.lastEventId, equals(events.last.eventId));
+
+      await engine.pause(runId);
+      expect(persistence.activeRun?.lastEventId, equals(events.last.eventId));
+
+      await engine.resume(runId);
+      expect(persistence.activeRun?.lastEventId, equals(events.last.eventId));
+
+      await engine.stop(runId);
+      expect(persistence.activeRun?.lastEventId, equals(events.last.eventId));
+
+      await eventSub.cancel();
+    });
   });
 }
