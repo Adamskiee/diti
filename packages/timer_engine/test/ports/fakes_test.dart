@@ -10,7 +10,29 @@ import '../fakes/in_memory_notification_port.dart';
 import '../fakes/in_memory_persistence_port.dart';
 import '../fakes/in_memory_routine_repository.dart';
 
-TimerRun anyRun([String id = 'run-1']) => TimerRun(runId: id);
+TimerRun anyRun([String id = 'run-1']) => TimerRun(
+      runId: id,
+      routineSnapshot: const Routine(
+        id: 'r1',
+        name: 'Routine 1',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'P1',
+            durationMs: 1000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      ),
+      status: RunStatus.idle,
+      phaseStatus: PhaseStatus.active,
+      currentPhaseIndex: 0,
+      repeatIndex: 0,
+      accumulatedMs: 0,
+      phaseStartedAtUtc: DateTime.utc(2026, 10, 13, 10, 0, 0),
+      stateVersion: 1,
+    );
 
 TimerEvent anyEvent({String eventId = 'e-1', String runId = 'run-1'}) =>
     TimerEvent(
