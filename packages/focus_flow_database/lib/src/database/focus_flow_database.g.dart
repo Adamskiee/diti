@@ -3123,6 +3123,7 @@ abstract class _$FocusFlowDatabase extends GeneratedDatabase {
   late final RoutinesDao routinesDao = RoutinesDao(this as FocusFlowDatabase);
   late final TimerRunsDao timerRunsDao =
       TimerRunsDao(this as FocusFlowDatabase);
+  late final SessionsDao sessionsDao = SessionsDao(this as FocusFlowDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
