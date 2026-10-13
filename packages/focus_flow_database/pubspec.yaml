@@ -7,7 +7,7 @@ environment:
 
 dependencies:
   drift: ^2.20.0
-  sqlite3: ^2.4.0
+  sqlite3: '>=2.4.0 <4.0.0'
   meta: ^1.10.0
   timer_engine:
     path: ../timer_engine
