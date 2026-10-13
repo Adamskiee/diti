@@ -13,42 +13,12 @@ class DriftPlanBlockRepository implements PlanBlockRepository {
 
   @override
   Future<void> createPlanBlock(PlanBlock block) async {
-    final companion = PlanBlocksCompanion(
-      id: Value(block.id),
-      planDate: Value(block.planDate),
-      scheduledStartUtc: Value(
-        block.scheduledStartUtc.isUtc
-            ? block.scheduledStartUtc
-            : block.scheduledStartUtc.toUtc(),
-      ),
-      timezoneId: Value(block.timezoneId),
-      plannedDurationMs: Value(block.plannedDurationMs),
-      routineId: Value(block.routineId),
-      actualDurationMs: Value(block.actualDurationMs),
-      sessionId: Value(block.sessionId),
-      status: Value(block.status.name),
-    );
-    await dao.insertPlanBlock(companion);
+    await dao.insertPlanBlock(_toCompanion(block));
   }
 
   @override
   Future<void> updatePlanBlock(PlanBlock block) async {
-    final companion = PlanBlocksCompanion(
-      id: Value(block.id),
-      planDate: Value(block.planDate),
-      scheduledStartUtc: Value(
-        block.scheduledStartUtc.isUtc
-            ? block.scheduledStartUtc
-            : block.scheduledStartUtc.toUtc(),
-      ),
-      timezoneId: Value(block.timezoneId),
-      plannedDurationMs: Value(block.plannedDurationMs),
-      routineId: Value(block.routineId),
-      actualDurationMs: Value(block.actualDurationMs),
-      sessionId: Value(block.sessionId),
-      status: Value(block.status.name),
-    );
-    await dao.updatePlanBlock(companion);
+    await dao.updatePlanBlock(_toCompanion(block));
   }
 
   @override
@@ -99,6 +69,24 @@ class DriftPlanBlockRepository implements PlanBlockRepository {
       actualDurationMs: row.actualDurationMs,
       sessionId: row.sessionId,
       status: status,
+    );
+  }
+
+  PlanBlocksCompanion _toCompanion(PlanBlock block) {
+    return PlanBlocksCompanion(
+      id: Value(block.id),
+      planDate: Value(block.planDate),
+      scheduledStartUtc: Value(
+        block.scheduledStartUtc.isUtc
+            ? block.scheduledStartUtc
+            : block.scheduledStartUtc.toUtc(),
+      ),
+      timezoneId: Value(block.timezoneId),
+      plannedDurationMs: Value(block.plannedDurationMs),
+      routineId: Value(block.routineId),
+      actualDurationMs: Value(block.actualDurationMs),
+      sessionId: Value(block.sessionId),
+      status: Value(block.status.name),
     );
   }
 }

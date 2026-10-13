@@ -42,6 +42,9 @@ void main() {
       final dateList = await repository.getBlocksForDate('2026-10-13');
       expect(dateList.length, equals(1));
       expect(dateList.first.id, equals('block-001'));
+
+      final adjacentDateList = await repository.getBlocksForDate('2026-10-14');
+      expect(adjacentDateList, isEmpty);
     });
 
     test('links session and marks block completed', () async {

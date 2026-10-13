@@ -46,6 +46,9 @@ void main() {
       expect(blocks.length, equals(2));
       expect(blocks[0].id, equals('b-1'));
       expect(blocks[1].id, equals('b-2'));
+
+      final adjacentBlocks = await dao.getPlanBlocksForDate('2026-10-14');
+      expect(adjacentBlocks, isEmpty);
     });
 
     test('links session and updates actual duration', () async {
