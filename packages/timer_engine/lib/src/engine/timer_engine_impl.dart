@@ -342,28 +342,30 @@ class TimerEngineImpl implements TimerEngine {
   }
 
   void _onBoundaryReached(String runId, int expectedVersion) {
-    if (_activeRun == null || _activeRun!.runId != runId) return;
-    if (_activeRun!.status != RunStatus.running) return;
-    if (_activeRun!.stateVersion != expectedVersion) return;
+    _queue.run(() async {
+      if (_activeRun == null || _activeRun!.runId != runId) return;
+      if (_activeRun!.status != RunStatus.running) return;
+      if (_activeRun!.stateVersion != expectedVersion) return;
 
-    final currentPhase = _activeRun!.currentPhase;
-    if (currentPhase.transition == TransitionPolicy.manual) {
-      // Transition phase status to awaitingAction without advancing phase
-      final updatedRun = _activeRun!.copyWith(
-        phaseStatus: PhaseStatus.awaitingAction,
-        stateVersion: _activeRun!.stateVersion + 1,
-      );
-      _activeRun = updatedRun;
-      _emitState(updatedRun);
-      _queue.run(() async {
+      final currentPhase = _activeRun!.currentPhase;
+      if (currentPhase.transition == TransitionPolicy.manual) {
+        // Transition phase status to awaitingAction without advancing phase
+        final updatedRun = _activeRun!.copyWith(
+          phaseStatus: PhaseStatus.awaitingAction,
+          stateVersion: _activeRun!.stateVersion + 1,
+        );
         try {
           await persistencePort.persistRunAndEvents(updatedRun, []);
-        } catch (_) {}
-      });
-      return;
-    }
+        } catch (_) {
+          return;
+        }
+        _activeRun = updatedRun;
+        _emitState(updatedRun);
+        return;
+      }
 
-    _advancePhase(runId, phaseOutcome: TimerEventType.phaseFinished);
+      await _advancePhase(runId, phaseOutcome: TimerEventType.phaseFinished);
+    });
   }
 
   Future<bool> _advancePhase(String runId, {required TimerEventType phaseOutcome}) async {
@@ -390,25 +392,73 @@ class TimerEngineImpl implements TimerEngine {
       }
     }
 
-    final event = TimerEvent(
-      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
-      runId: runId,
-      type: newStatus == RunStatus.completed ? TimerEventType.runCompleted : phaseOutcome,
-      occurredAtUtc: nowUtc,
-    );
+    final isCompleted = newStatus == RunStatus.completed;
+    final newPhaseStatus = isCompleted
+        ? (phaseOutcome == TimerEventType.phaseSkipped
+            ? PhaseStatus.skipped
+            : PhaseStatus.finished)
+        : PhaseStatus.active;
+
+    final newAccumulatedMs = isCompleted
+        ? (run.currentPhase.durationMs ??
+            (run.accumulatedMs +
+                math.max(
+                    0,
+                    nowMono -
+                        (run.phaseStartedMonotonicMs ?? nowMono))))
+        : 0;
+
+    final List<TimerEvent> events;
+    final String lastEventId;
+
+    if (isCompleted) {
+      final phaseEvent = TimerEvent(
+        eventId: 'evt-phase-${nowUtc.millisecondsSinceEpoch}',
+        runId: runId,
+        type: phaseOutcome,
+        occurredAtUtc: nowUtc,
+        durationMs: newAccumulatedMs,
+      );
+      final runCompletedEvent = TimerEvent(
+        eventId: 'evt-run-${nowUtc.millisecondsSinceEpoch}',
+        runId: runId,
+        type: TimerEventType.runCompleted,
+        occurredAtUtc: nowUtc,
+      );
+      events = [phaseEvent, runCompletedEvent];
+      lastEventId = runCompletedEvent.eventId;
+    } else {
+      final phaseEvent = TimerEvent(
+        eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+        runId: runId,
+        type: phaseOutcome,
+        occurredAtUtc: nowUtc,
+      );
+      events = [phaseEvent];
+      lastEventId = phaseEvent.eventId;
+    }
 
     final updatedRun = run.copyWith(
       status: newStatus,
-      phaseStatus: PhaseStatus.active,
+      phaseStatus: newPhaseStatus,
       currentPhaseIndex: newPhaseIndex,
       repeatIndex: newRepeatIndex,
-      accumulatedMs: 0,
+      accumulatedMs: newAccumulatedMs,
       phaseStartedAtUtc: nowUtc,
       phaseStartedMonotonicMs: () => newStatus == RunStatus.running ? nowMono : null,
       pausedAtUtc: () => null,
       stateVersion: run.stateVersion + 1,
-      lastEventId: () => event.eventId,
+      lastEventId: () => lastEventId,
     );
+
+    try {
+      await persistencePort.persistRunAndEvents(updatedRun, events);
+      if (isCompleted) {
+        await notificationPort.cancelBoundaries(runId);
+      }
+    } catch (_) {
+      return false;
+    }
 
     _activeRun = updatedRun;
     if (newStatus == RunStatus.running) {
@@ -418,18 +468,10 @@ class TimerEngineImpl implements TimerEngine {
     }
 
     _emitState(updatedRun);
-    _eventController.add(event);
-
-    try {
-      await persistencePort.persistRunAndEvents(updatedRun, [event]);
-      if (newStatus == RunStatus.completed) {
-        await notificationPort.cancelBoundaries(runId);
-      }
-      return true;
-    } catch (_) {
-      _activeRun = run;
-      return false;
+    for (final event in events) {
+      _eventController.add(event);
     }
+    return true;
   }
 
   @override
@@ -521,10 +563,12 @@ class TimerEngineImpl implements TimerEngine {
       runId: runId,
       type: TimerEventType.runCompleted,
       occurredAtUtc: nowUtc,
+      durationMs: newAccumulated,
     );
 
     final updatedRun = _activeRun!.copyWith(
       status: RunStatus.completed,
+      phaseStatus: PhaseStatus.finished,
       accumulatedMs: newAccumulated,
       phaseStartedMonotonicMs: () => null,
       stateVersion: _activeRun!.stateVersion + 1,

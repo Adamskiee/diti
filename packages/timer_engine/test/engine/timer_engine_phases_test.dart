@@ -4,6 +4,7 @@ import 'package:timer_engine/src/domain/repeat_rule.dart';
 import 'package:timer_engine/src/domain/routine.dart';
 import 'package:timer_engine/src/domain/routine_phase.dart';
 import 'package:timer_engine/src/domain/timer_event.dart';
+import 'package:timer_engine/src/domain/timer_run_state.dart';
 import 'package:timer_engine/src/engine/timer_engine_impl.dart';
 import '../fakes/fake_clock.dart';
 import '../fakes/in_memory_notification_port.dart';
@@ -48,6 +49,7 @@ void main() {
     final runId = engine.activeRunId!;
 
     clock.advance(const Duration(seconds: 60));
+    await pumpEventQueue();
 
     final state = engine.getState(runId);
     expect(state!.currentPhase.id, equals('p2'));
@@ -71,6 +73,7 @@ void main() {
     final runId = engine.activeRunId!;
 
     clock.advance(const Duration(seconds: 70)); // 10s past configured duration
+    await pumpEventQueue();
 
     final state = engine.getState(runId);
     expect(state!.currentPhase.id, equals('p1')); // Still on p1!
@@ -95,6 +98,7 @@ void main() {
     final runId = engine.activeRunId!;
 
     clock.advance(const Duration(minutes: 45));
+    await pumpEventQueue();
 
     final state = engine.getState(runId);
     expect(state!.activeElapsedMs, equals(2700000));
@@ -103,6 +107,9 @@ void main() {
   });
 
   test('T-009 & T-010: Skip final phase and repeat count is reached completes routine', () async {
+    final events = <TimerEvent>[];
+    final eventSub = engine.eventStream.listen(events.add);
+
     final routine = Routine(
       id: 'repeat-count',
       name: 'Count Routine',
@@ -121,11 +128,21 @@ void main() {
     var state = engine.getState(runId);
     expect(state!.repeatIndex, equals(1));
     expect(state.status, equals(RunStatus.running));
+    expect(state.phaseStatus, equals(PhaseStatus.active));
 
     // Pass second (final) repeat
     await engine.skipPhase(runId);
+    await pumpEventQueue();
     state = engine.getState(runId);
     expect(state!.status, equals(RunStatus.completed));
+    expect(state.phaseStatus, equals(PhaseStatus.skipped));
+    expect(state.activeElapsedMs, equals(60000));
+
+    // Verifies both phaseSkipped and runCompleted events are emitted
+    expect(events.any((e) => e.type == TimerEventType.phaseSkipped), isTrue);
+    expect(events.any((e) => e.type == TimerEventType.runCompleted), isTrue);
+
+    await eventSub.cancel();
   });
 
   test('T-011: Forever repeat continues loop until explicitly stopped or finished', () async {
@@ -145,6 +162,7 @@ void main() {
     // Advance 5 cycles
     for (int i = 0; i < 5; i++) {
       clock.advance(const Duration(seconds: 10));
+      await pumpEventQueue();
     }
 
     final state = engine.getState(runId);
@@ -154,6 +172,7 @@ void main() {
     await engine.finishRun(runId);
     final finalState = engine.getState(runId);
     expect(finalState!.status, equals(RunStatus.completed));
+    expect(finalState.phaseStatus, equals(PhaseStatus.finished));
   });
 
   test('T-012: Duplicate transition callback does not produce duplicate phase transitions', () async {
@@ -173,10 +192,12 @@ void main() {
 
     // Manually trigger boundary reach with stale version
     clock.advance(const Duration(seconds: 10));
+    await pumpEventQueue();
     final initialVersion = engine.getState(runId)!.stateVersion;
 
     // Advance again without reaching next boundary
     clock.advance(const Duration(seconds: 1));
+    await pumpEventQueue();
     expect(engine.getState(runId)!.stateVersion, equals(initialVersion));
   });
 
@@ -225,6 +246,7 @@ void main() {
     final runId = engine.activeRunId!;
 
     clock.advance(const Duration(seconds: 10));
+    await pumpEventQueue();
     expect(engine.getState(runId)!.phaseStatus, equals(PhaseStatus.awaitingAction));
 
     final res = await engine.finishPhase(runId);
@@ -284,6 +306,7 @@ void main() {
 
     final state = engine.getState(runId);
     expect(state!.status, equals(RunStatus.completed));
+    expect(state.phaseStatus, equals(PhaseStatus.finished));
     expect(state.activeElapsedMs, equals(25000));
     expect(notifications.scheduledBoundaries, isEmpty);
 
@@ -348,30 +371,71 @@ void main() {
 
     // Cycle 0, P1 -> P2
     clock.advance(const Duration(seconds: 10));
+    await pumpEventQueue();
     var state = engine.getState(runId);
     expect(state!.currentPhase.id, equals('p2'));
     expect(state.repeatIndex, equals(0));
 
     // Cycle 0, P2 -> Cycle 1, P1
     clock.advance(const Duration(seconds: 10));
+    await pumpEventQueue();
     state = engine.getState(runId);
     expect(state!.currentPhase.id, equals('p1'));
     expect(state.repeatIndex, equals(1));
 
     // Cycle 1, P1 -> P2
     clock.advance(const Duration(seconds: 10));
+    await pumpEventQueue();
     state = engine.getState(runId);
     expect(state!.currentPhase.id, equals('p2'));
     expect(state.repeatIndex, equals(1));
 
     // Cycle 1, P2 completes routine
     clock.advance(const Duration(seconds: 10));
+    await pumpEventQueue();
     state = engine.getState(runId);
     expect(state!.status, equals(RunStatus.completed));
     expect(state.currentPhase.id, equals('p2'));
+    expect(state.phaseStatus, equals(PhaseStatus.finished));
+    expect(state.activeElapsedMs, equals(10000));
   });
 
-  test('Persistence failure on skipPhase, finishPhase, or finishRun surfaces error and rolls back', () async {
+  test('Completing final phase emits both phaseFinished and runCompleted events', () async {
+    final events = <TimerEvent>[];
+    final eventSub = engine.eventStream.listen(events.add);
+
+    final routine = Routine(
+      id: 'events-complete-test',
+      name: 'Events Complete Routine',
+      repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+      phases: const [
+        RoutinePhase(id: 'p1', name: 'P1', durationMs: 10000, transition: TransitionPolicy.auto),
+      ],
+    );
+    await routineRepo.saveRoutine(routine);
+
+    await engine.start('events-complete-test');
+    final runId = engine.activeRunId!;
+
+    clock.advance(const Duration(seconds: 10));
+    await pumpEventQueue();
+
+    final state = engine.getState(runId);
+    expect(state!.status, equals(RunStatus.completed));
+    expect(state.phaseStatus, equals(PhaseStatus.finished));
+
+    expect(events.length, equals(3)); // runStarted, phaseFinished, runCompleted
+    expect(events[0].type, equals(TimerEventType.runStarted));
+    expect(events[1].type, equals(TimerEventType.phaseFinished));
+    expect(events[2].type, equals(TimerEventType.runCompleted));
+
+    await eventSub.cancel();
+  });
+
+  test('Persistence failure on skipPhase, finishPhase, or finishRun surfaces error and rolls back without dirty emission', () async {
+    final emittedStates = <TimerRunState>[];
+    final stateSub = engine.stateStream.listen(emittedStates.add);
+
     final routine = Routine(
       id: 'persist-fail-test',
       name: 'Persist Fail',
@@ -385,6 +449,7 @@ void main() {
 
     await engine.start('persist-fail-test');
     final runId = engine.activeRunId!;
+    final statesAfterStart = emittedStates.length;
 
     persistence.shouldFail = true;
 
@@ -392,15 +457,54 @@ void main() {
     expect(skipRes.success, isFalse);
     expect(skipRes.error, equals(TimerError.persistenceFailure));
     expect(engine.getState(runId)!.currentPhase.id, equals('p1'));
+    // No new state emitted on failure
+    expect(emittedStates.length, equals(statesAfterStart));
 
     final finishPhaseRes = await engine.finishPhase(runId);
     expect(finishPhaseRes.success, isFalse);
     expect(finishPhaseRes.error, equals(TimerError.persistenceFailure));
     expect(engine.getState(runId)!.currentPhase.id, equals('p1'));
+    expect(emittedStates.length, equals(statesAfterStart));
 
     final finishRunRes = await engine.finishRun(runId);
     expect(finishRunRes.success, isFalse);
     expect(finishRunRes.error, equals(TimerError.persistenceFailure));
     expect(engine.getState(runId)!.status, equals(RunStatus.running));
+    expect(emittedStates.length, equals(statesAfterStart));
+
+    await stateSub.cancel();
+  });
+
+  test('Persistence failure during auto boundary callback preserves active run without dirty mutation', () async {
+    final emittedStates = <TimerRunState>[];
+    final stateSub = engine.stateStream.listen(emittedStates.add);
+
+    final routine = Routine(
+      id: 'persist-fail-boundary',
+      name: 'Persist Fail Boundary',
+      repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+      phases: const [
+        RoutinePhase(id: 'p1', name: 'P1', durationMs: 10000, transition: TransitionPolicy.auto),
+        RoutinePhase(id: 'p2', name: 'P2', durationMs: 10000, transition: TransitionPolicy.auto),
+      ],
+    );
+    await routineRepo.saveRoutine(routine);
+
+    await engine.start('persist-fail-boundary');
+    final runId = engine.activeRunId!;
+    final statesAfterStart = emittedStates.length;
+
+    persistence.shouldFail = true;
+
+    clock.advance(const Duration(seconds: 10));
+    await pumpEventQueue();
+
+    // In-memory state remains on p1 and version is unchanged because write failed
+    final state = engine.getState(runId);
+    expect(state!.currentPhase.id, equals('p1'));
+    expect(state.stateVersion, equals(1));
+    expect(emittedStates.length, equals(statesAfterStart));
+
+    await stateSub.cancel();
   });
 }
