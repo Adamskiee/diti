@@ -317,8 +317,11 @@ class TimerEngineImpl implements TimerEngine {
 
   void _scheduleBoundaryIfNeeded(TimerRun run) {
     _boundaryTimerToken?.cancel();
+    if (run.status != RunStatus.running) return;
+    if (run.phaseStatus == PhaseStatus.awaitingAction) return;
+
     final phase = run.currentPhase;
-    if (phase.durationMs == null || phase.transition != TransitionPolicy.auto) {
+    if (phase.durationMs == null) {
       return;
     }
 
@@ -339,26 +342,218 @@ class TimerEngineImpl implements TimerEngine {
   }
 
   void _onBoundaryReached(String runId, int expectedVersion) {
-    // Overridden/expanded in Task 8
+    if (_activeRun == null || _activeRun!.runId != runId) return;
+    if (_activeRun!.status != RunStatus.running) return;
+    if (_activeRun!.stateVersion != expectedVersion) return;
+
+    final currentPhase = _activeRun!.currentPhase;
+    if (currentPhase.transition == TransitionPolicy.manual) {
+      // Transition phase status to awaitingAction without advancing phase
+      final updatedRun = _activeRun!.copyWith(
+        phaseStatus: PhaseStatus.awaitingAction,
+        stateVersion: _activeRun!.stateVersion + 1,
+      );
+      _activeRun = updatedRun;
+      _emitState(updatedRun);
+      _queue.run(() async {
+        try {
+          await persistencePort.persistRunAndEvents(updatedRun, []);
+        } catch (_) {}
+      });
+      return;
+    }
+
+    _advancePhase(runId, phaseOutcome: TimerEventType.phaseFinished);
   }
+
+  Future<bool> _advancePhase(String runId, {required TimerEventType phaseOutcome}) async {
+    final run = _activeRun;
+    if (run == null || run.runId != runId) return false;
+    final nowUtc = wallClock.utcNow;
+    final nowMono = monotonicClock.nowMs;
+
+    final numPhases = run.routineSnapshot.phases.length;
+    final nextPhaseIndex = run.currentPhaseIndex + 1;
+
+    int newPhaseIndex = nextPhaseIndex;
+    int newRepeatIndex = run.repeatIndex;
+    RunStatus newStatus = RunStatus.running;
+
+    if (nextPhaseIndex >= numPhases) {
+      final repeatRule = run.routineSnapshot.repeatRule;
+      if (repeatRule.mode == RepeatMode.forever || newRepeatIndex < repeatRule.count - 1) {
+        newPhaseIndex = 0;
+        newRepeatIndex += 1;
+      } else {
+        newPhaseIndex = run.currentPhaseIndex;
+        newStatus = RunStatus.completed;
+      }
+    }
+
+    final event = TimerEvent(
+      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+      runId: runId,
+      type: newStatus == RunStatus.completed ? TimerEventType.runCompleted : phaseOutcome,
+      occurredAtUtc: nowUtc,
+    );
+
+    final updatedRun = run.copyWith(
+      status: newStatus,
+      phaseStatus: PhaseStatus.active,
+      currentPhaseIndex: newPhaseIndex,
+      repeatIndex: newRepeatIndex,
+      accumulatedMs: 0,
+      phaseStartedAtUtc: nowUtc,
+      phaseStartedMonotonicMs: () => newStatus == RunStatus.running ? nowMono : null,
+      pausedAtUtc: () => null,
+      stateVersion: run.stateVersion + 1,
+      lastEventId: () => event.eventId,
+    );
+
+    _activeRun = updatedRun;
+    if (newStatus == RunStatus.running) {
+      _scheduleBoundaryIfNeeded(updatedRun);
+    } else {
+      _boundaryTimerToken?.cancel();
+    }
+
+    _emitState(updatedRun);
+    _eventController.add(event);
+
+    try {
+      await persistencePort.persistRunAndEvents(updatedRun, [event]);
+      if (newStatus == RunStatus.completed) {
+        await notificationPort.cancelBoundaries(runId);
+      }
+      return true;
+    } catch (_) {
+      _activeRun = run;
+      return false;
+    }
+  }
+
+  @override
+  Future<TimerCommandResult> skipPhase(String runId) => _queue.run(() async {
+    if (_activeRun == null || _activeRun!.runId != runId) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.runNotFound,
+        stateVersion: _activeRun?.stateVersion ?? 0,
+      );
+    }
+    if (_activeRun!.status != RunStatus.running && _activeRun!.status != RunStatus.paused) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.invalidTransition,
+        stateVersion: _activeRun!.stateVersion,
+      );
+    }
+    final success = await _advancePhase(runId, phaseOutcome: TimerEventType.phaseSkipped);
+    if (!success) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.persistenceFailure,
+        stateVersion: _activeRun!.stateVersion,
+      );
+    }
+    return TimerCommandResult(success: true, stateVersion: _activeRun!.stateVersion);
+  });
+
+  @override
+  Future<TimerCommandResult> finishPhase(String runId) => _queue.run(() async {
+    if (_activeRun == null || _activeRun!.runId != runId) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.runNotFound,
+        stateVersion: _activeRun?.stateVersion ?? 0,
+      );
+    }
+    if (_activeRun!.status != RunStatus.running && _activeRun!.status != RunStatus.paused) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.invalidTransition,
+        stateVersion: _activeRun!.stateVersion,
+      );
+    }
+    final success = await _advancePhase(runId, phaseOutcome: TimerEventType.phaseFinished);
+    if (!success) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.persistenceFailure,
+        stateVersion: _activeRun!.stateVersion,
+      );
+    }
+    return TimerCommandResult(success: true, stateVersion: _activeRun!.stateVersion);
+  });
+
+  @override
+  Future<TimerCommandResult> finishRun(String runId) => _queue.run(() async {
+    if (_activeRun == null || _activeRun!.runId != runId) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.runNotFound,
+        stateVersion: _activeRun?.stateVersion ?? 0,
+      );
+    }
+    if (_activeRun!.status == RunStatus.completed) {
+      return TimerCommandResult(
+        success: true,
+        stateVersion: _activeRun!.stateVersion,
+      );
+    }
+    if (_activeRun!.status != RunStatus.running && _activeRun!.status != RunStatus.paused) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.invalidTransition,
+        stateVersion: _activeRun!.stateVersion,
+      );
+    }
+
+    final nowMono = monotonicClock.nowMs;
+    final nowUtc = wallClock.utcNow;
+    final segmentElapsed = _activeRun!.status == RunStatus.running
+        ? math.max(0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono))
+        : 0;
+    final newAccumulated = _activeRun!.accumulatedMs + segmentElapsed;
+
+    final event = TimerEvent(
+      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+      runId: runId,
+      type: TimerEventType.runCompleted,
+      occurredAtUtc: nowUtc,
+    );
+
+    final updatedRun = _activeRun!.copyWith(
+      status: RunStatus.completed,
+      accumulatedMs: newAccumulated,
+      phaseStartedMonotonicMs: () => null,
+      stateVersion: _activeRun!.stateVersion + 1,
+      lastEventId: () => event.eventId,
+    );
+
+    try {
+      await persistencePort.persistRunAndEvents(updatedRun, [event]);
+      await notificationPort.cancelBoundaries(runId);
+    } catch (_) {
+      return TimerCommandResult(
+        success: false,
+        error: TimerError.persistenceFailure,
+        stateVersion: _activeRun!.stateVersion,
+      );
+    }
+
+    _boundaryTimerToken?.cancel();
+    _activeRun = updatedRun;
+    _emitState(updatedRun);
+    _eventController.add(event);
+
+    return TimerCommandResult(success: true, stateVersion: updatedRun.stateVersion);
+  });
 
   void _emitState(TimerRun run) {
     _stateController
         .add(run.calculateState(currentMonotonicMs: monotonicClock.nowMs));
   }
-
-  // Placeholder methods completed in Task 8 & 9
-  @override
-  Future<TimerCommandResult> skipPhase(String runId) async =>
-      const TimerCommandResult(success: true, stateVersion: 1);
-
-  @override
-  Future<TimerCommandResult> finishPhase(String runId) async =>
-      const TimerCommandResult(success: true, stateVersion: 1);
-
-  @override
-  Future<TimerCommandResult> finishRun(String runId) async =>
-      const TimerCommandResult(success: true, stateVersion: 1);
 
   @override
   Future<void> recover() async {}
