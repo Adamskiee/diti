@@ -4,6 +4,7 @@ import 'package:timer_engine/src/domain/enums.dart';
 import 'package:timer_engine/src/domain/repeat_rule.dart';
 import 'package:timer_engine/src/domain/routine.dart';
 import 'package:timer_engine/src/domain/routine_phase.dart';
+import 'package:timer_engine/src/engine/recovery_manager.dart';
 import 'package:timer_engine/src/engine/timer_engine_impl.dart';
 import '../fakes/fake_clock.dart';
 import '../fakes/in_memory_notification_port.dart';
@@ -313,5 +314,95 @@ void main() {
     await freshEngine.recover();
     final secondState = freshEngine.getState(openRunId);
     expect(secondState!.activeElapsedMs, equals(900000));
+  });
+
+  test('Recovery after Pause -> Resume excludes paused duration and computes exact active elapsed time', () async {
+    final longRoutine = Routine(
+      id: 'long-routine',
+      name: 'Long Routine',
+      repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+      phases: const [
+        RoutinePhase(id: 'work-long', name: 'Work Long', durationMs: 1800000, transition: TransitionPolicy.auto), // 30 min
+      ],
+    );
+    await routineRepo.saveRoutine(longRoutine);
+
+    final testEngine = TimerEngineImpl(
+      monotonicClock: clock,
+      wallClock: clock,
+      routineRepository: routineRepo,
+      persistencePort: persistence,
+      notificationPort: notifications,
+    );
+
+    // Start routine (10m active)
+    await testEngine.start('long-routine');
+    final runId = testEngine.activeRunId!;
+    clock.advance(const Duration(minutes: 10));
+
+    // Pause for 15m
+    await testEngine.pause(runId);
+    clock.advance(const Duration(minutes: 15));
+
+    // Resume and run for 5m
+    await testEngine.resume(runId);
+    clock.advance(const Duration(minutes: 5));
+
+    // Simulate app suspension / crash for 10m
+    testEngine.dispose();
+    clock.advance(const Duration(minutes: 10));
+
+    // Create fresh engine and recover
+    final freshEngine = TimerEngineImpl(
+      monotonicClock: clock,
+      wallClock: clock,
+      routineRepository: routineRepo,
+      persistencePort: persistence,
+      notificationPort: notifications,
+    );
+
+    await freshEngine.recover();
+    final state = freshEngine.getState(runId);
+
+    // Active elapsed time must be exactly 25m (10m + 5m + 10m), excluding 15m paused duration!
+    expect(state!.activeElapsedMs, equals(1500000)); // 25 min = 1,500,000 ms
+    expect(state.remainingMs, equals(300000)); // 30m - 25m = 5 min = 300,000 ms
+    expect(state.status, equals(RunStatus.running));
+  });
+
+  test('Intra-phase recovery increments stateVersion when time elapses and preserves version on second call', () async {
+    await engine.start('multi-routine');
+    final runId = engine.activeRunId!;
+    final initialVersion = engine.getState(runId)!.stateVersion;
+
+    engine.dispose();
+    clock.advance(const Duration(minutes: 5));
+
+    final freshEngine = TimerEngineImpl(
+      monotonicClock: clock,
+      wallClock: clock,
+      routineRepository: routineRepo,
+      persistencePort: persistence,
+      notificationPort: notifications,
+    );
+
+    await freshEngine.recover();
+    final recoveredState = freshEngine.getState(runId);
+    expect(recoveredState!.stateVersion, equals(initialVersion + 1));
+    expect(recoveredState.activeElapsedMs, equals(300000));
+
+    // Second immediate recover with zero delta preserves stateVersion (idempotent)
+    await freshEngine.recover();
+    final secondRecoveredState = freshEngine.getState(runId);
+    expect(secondRecoveredState!.stateVersion, equals(initialVersion + 1));
+  });
+
+  test('ReconciledState equality and hashCode', () async {
+    await engine.start('multi-routine');
+    final run = persistence.activeRun!;
+    final state1 = ReconciledState(run: run, events: const []);
+    final state2 = ReconciledState(run: run, events: const []);
+    expect(state1, equals(state2));
+    expect(state1.hashCode, equals(state2.hashCode));
   });
 }

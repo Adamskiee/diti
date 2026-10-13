@@ -9,6 +9,26 @@ class ReconciledState {
   final List<TimerEvent> events;
 
   const ReconciledState({required this.run, required this.events});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ReconciledState &&
+          runtimeType == other.runtimeType &&
+          run == other.run &&
+          _listEquals(events, other.events);
+
+  @override
+  int get hashCode => Object.hash(run, Object.hashAll(events));
+
+  static bool _listEquals(List<TimerEvent> a, List<TimerEvent> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }
 
 class RecoveryManager {
@@ -37,24 +57,28 @@ class RecoveryManager {
 
       if (duration == null) {
         // Open-ended phase: consumes all remaining delta without advancing
-        final hasTransitioned = currentRun != activeRun;
+        final shouldIncrement = currentRun == activeRun
+            ? remainingDeltaMs != activeRun.accumulatedMs
+            : false;
         currentRun = currentRun.copyWith(
           accumulatedMs: remainingDeltaMs,
           phaseStartedAtUtc: nowUtc,
           phaseStartedMonotonicMs: () => nowMonoMs,
-          stateVersion: currentRun.stateVersion + (hasTransitioned ? 1 : 0),
+          stateVersion: currentRun.stateVersion + (shouldIncrement ? 1 : 0),
         );
         break;
       }
 
       if (remainingDeltaMs < duration) {
         // Within the current phase
-        final hasTransitioned = currentRun != activeRun;
+        final shouldIncrement = currentRun == activeRun
+            ? remainingDeltaMs != activeRun.accumulatedMs
+            : false;
         currentRun = currentRun.copyWith(
           accumulatedMs: remainingDeltaMs,
           phaseStartedAtUtc: nowUtc,
           phaseStartedMonotonicMs: () => nowMonoMs,
-          stateVersion: currentRun.stateVersion + (hasTransitioned ? 1 : 0),
+          stateVersion: currentRun.stateVersion + (shouldIncrement ? 1 : 0),
         );
         break;
       }
@@ -62,14 +86,16 @@ class RecoveryManager {
       // Phase duration elapsed
       if (currentPhase.transition == TransitionPolicy.manual) {
         // Manual barrier! Do not advance past manual phase
-        final hasTransitioned =
-            activeRun.phaseStatus != PhaseStatus.awaitingAction || currentRun != activeRun;
+        final shouldIncrement = currentRun == activeRun
+            ? (activeRun.phaseStatus != PhaseStatus.awaitingAction ||
+                remainingDeltaMs != activeRun.accumulatedMs)
+            : (currentRun.phaseStatus != PhaseStatus.awaitingAction);
         currentRun = currentRun.copyWith(
           phaseStatus: PhaseStatus.awaitingAction,
           accumulatedMs: remainingDeltaMs,
           phaseStartedAtUtc: nowUtc,
           phaseStartedMonotonicMs: () => nowMonoMs,
-          stateVersion: currentRun.stateVersion + (hasTransitioned ? 1 : 0),
+          stateVersion: currentRun.stateVersion + (shouldIncrement ? 1 : 0),
         );
         break;
       }

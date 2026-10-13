@@ -227,6 +227,7 @@ class TimerEngineImpl implements TimerEngine {
 
     final updatedRun = _activeRun!.copyWith(
       status: RunStatus.running,
+      phaseStartedAtUtc: nowUtc,
       phaseStartedMonotonicMs: () => nowMono,
       pausedAtUtc: () => null,
       stateVersion: _activeRun!.stateVersion + 1,
