@@ -55,16 +55,27 @@ class FakeClock implements MonotonicClock, WallClock {
   }
 
   void advance(Duration duration) {
+    if (duration.isNegative) {
+      throw ArgumentError.value(
+        duration,
+        'duration',
+        'Cannot advance FakeClock by a negative duration.',
+      );
+    }
+
     final targetMs = _currentMs + duration.inMilliseconds;
-    _currentUtc = _currentUtc.add(duration);
 
     while (_scheduled.isNotEmpty && _scheduled.first.deadlineMs <= targetMs) {
       final entry = _scheduled.removeAt(0);
+      final deltaMs = entry.deadlineMs - _currentMs;
       _currentMs = entry.deadlineMs;
+      _currentUtc = _currentUtc.add(Duration(milliseconds: deltaMs));
       if (!entry.token.isCancelled) {
         entry.callback();
       }
     }
+    final remainingMs = targetMs - _currentMs;
+    _currentUtc = _currentUtc.add(Duration(milliseconds: remainingMs));
     _currentMs = targetMs;
   }
 }

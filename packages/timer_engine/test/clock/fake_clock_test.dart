@@ -86,5 +86,33 @@ void main() {
       expect(clock.utcNow.isUtc, isTrue);
       expect(clock.utcNow, equals(localTime.toUtc()));
     });
+
+    test('synchronizes utcNow with intermediate scheduled callback deadlines',
+        () {
+      final initial = DateTime.utc(2026, 10, 13, 10, 0, 0);
+      final clock = FakeClock(initialUtc: initial);
+      DateTime? observedUtcAt5Min;
+      int? observedMsAt5Min;
+
+      clock.schedule(const Duration(minutes: 5), () {
+        observedUtcAt5Min = clock.utcNow;
+        observedMsAt5Min = clock.nowMs;
+      });
+
+      clock.advance(const Duration(minutes: 10));
+
+      expect(observedMsAt5Min, equals(300000));
+      expect(observedUtcAt5Min, equals(DateTime.utc(2026, 10, 13, 10, 5, 0)));
+      expect(clock.nowMs, equals(600000));
+      expect(clock.utcNow, equals(DateTime.utc(2026, 10, 13, 10, 10, 0)));
+    });
+
+    test('throws ArgumentError when advancing by negative duration', () {
+      final clock = FakeClock();
+      expect(
+        () => clock.advance(const Duration(seconds: -1)),
+        throwsArgumentError,
+      );
+    });
   });
 }
