@@ -127,7 +127,7 @@ void main() {
       // T-001: Start routine
       final startRes = await engine.start(routine.id);
       expect(startRes.success, isTrue);
-      final runId = (engine as TimerEngineImpl).activeRunId!;
+      final runId = engine.activeRunId!;
       expect(engine.getState(runId)?.status, equals(RunStatus.running));
       expect(engine.getState(runId)?.currentPhaseIndex, equals(0));
 

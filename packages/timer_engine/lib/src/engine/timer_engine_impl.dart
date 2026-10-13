@@ -30,6 +30,7 @@ class TimerEngineImpl implements TimerEngine {
 
   TimerRun? _activeRun;
   CancelableToken? _boundaryTimerToken;
+  @override
   String? get activeRunId => _activeRun?.runId;
 
   TimerEngineImpl({
@@ -181,7 +182,6 @@ class TimerEngineImpl implements TimerEngine {
 
     try {
       await persistencePort.persistRunAndEvents(updatedRun, [event]);
-      await notificationPort.cancelBoundaries(runId);
     } catch (_) {
       return TimerCommandResult(
         success: false,
@@ -189,6 +189,10 @@ class TimerEngineImpl implements TimerEngine {
         stateVersion: _activeRun!.stateVersion,
       );
     }
+
+    try {
+      await notificationPort.cancelBoundaries(runId);
+    } catch (_) {}
 
     _boundaryTimerToken?.cancel();
     _activeRun = updatedRun;
@@ -300,7 +304,6 @@ class TimerEngineImpl implements TimerEngine {
 
     try {
       await persistencePort.persistRunAndEvents(updatedRun, [event]);
-      await notificationPort.cancelBoundaries(runId);
     } catch (_) {
       return TimerCommandResult(
         success: false,
@@ -308,6 +311,10 @@ class TimerEngineImpl implements TimerEngine {
         stateVersion: _activeRun!.stateVersion,
       );
     }
+
+    try {
+      await notificationPort.cancelBoundaries(runId);
+    } catch (_) {}
 
     _boundaryTimerToken?.cancel();
     _activeRun = updatedRun;
@@ -330,12 +337,14 @@ class TimerEngineImpl implements TimerEngine {
     final remainingMs = math.max(0, phase.durationMs! - run.accumulatedMs);
     final expectedUtc =
         wallClock.utcNow.add(Duration(milliseconds: remainingMs));
-    notificationPort.scheduleBoundaryNotification(
-      runId: run.runId,
-      phaseId: phase.id,
-      phaseName: phase.name,
-      expectedUtc: expectedUtc,
-    );
+    try {
+      unawaited(notificationPort.scheduleBoundaryNotification(
+        runId: run.runId,
+        phaseId: phase.id,
+        phaseName: phase.name,
+        expectedUtc: expectedUtc,
+      ).catchError((_) {}));
+    } catch (_) {}
 
     _boundaryTimerToken = monotonicClock.schedule(
       Duration(milliseconds: remainingMs),
@@ -401,14 +410,14 @@ class TimerEngineImpl implements TimerEngine {
             : PhaseStatus.finished)
         : PhaseStatus.active;
 
-    final newAccumulatedMs = isCompleted
-        ? (run.currentPhase.durationMs ??
-            (run.accumulatedMs +
-                math.max(
-                    0,
-                    nowMono -
-                        (run.phaseStartedMonotonicMs ?? nowMono))))
+    final segmentElapsed = run.status == RunStatus.running
+        ? math.max(0, nowMono - (run.phaseStartedMonotonicMs ?? nowMono))
         : 0;
+    final actualPhaseElapsed = run.accumulatedMs + segmentElapsed;
+    final phaseDuration =
+        run.currentPhase.durationMs ?? actualPhaseElapsed;
+
+    final newAccumulatedMs = isCompleted ? phaseDuration : 0;
 
     final List<TimerEvent> events;
     final String lastEventId;
@@ -419,13 +428,14 @@ class TimerEngineImpl implements TimerEngine {
         runId: runId,
         type: phaseOutcome,
         occurredAtUtc: nowUtc,
-        durationMs: newAccumulatedMs,
+        durationMs: phaseDuration,
       );
       final runCompletedEvent = TimerEvent(
         eventId: 'evt-run-${nowUtc.millisecondsSinceEpoch}',
         runId: runId,
         type: TimerEventType.runCompleted,
         occurredAtUtc: nowUtc,
+        durationMs: newAccumulatedMs,
       );
       events = [phaseEvent, runCompletedEvent];
       lastEventId = runCompletedEvent.eventId;
@@ -435,6 +445,7 @@ class TimerEngineImpl implements TimerEngine {
         runId: runId,
         type: phaseOutcome,
         occurredAtUtc: nowUtc,
+        durationMs: phaseDuration,
       );
       events = [phaseEvent];
       lastEventId = phaseEvent.eventId;
@@ -455,11 +466,14 @@ class TimerEngineImpl implements TimerEngine {
 
     try {
       await persistencePort.persistRunAndEvents(updatedRun, events);
-      if (isCompleted) {
-        await notificationPort.cancelBoundaries(runId);
-      }
     } catch (_) {
       return false;
+    }
+
+    if (isCompleted) {
+      try {
+        await notificationPort.cancelBoundaries(runId);
+      } catch (_) {}
     }
 
     _activeRun = updatedRun;
@@ -579,7 +593,6 @@ class TimerEngineImpl implements TimerEngine {
 
     try {
       await persistencePort.persistRunAndEvents(updatedRun, [event]);
-      await notificationPort.cancelBoundaries(runId);
     } catch (_) {
       return TimerCommandResult(
         success: false,
@@ -587,6 +600,10 @@ class TimerEngineImpl implements TimerEngine {
         stateVersion: _activeRun!.stateVersion,
       );
     }
+
+    try {
+      await notificationPort.cancelBoundaries(runId);
+    } catch (_) {}
 
     _boundaryTimerToken?.cancel();
     _activeRun = updatedRun;

@@ -3,6 +3,8 @@ import '../domain/timer_event.dart';
 import '../domain/timer_run_state.dart';
 
 abstract interface class TimerEngine {
+  String? get activeRunId;
+
   Future<TimerCommandResult> start(String routineId);
   Future<TimerCommandResult> pause(String runId);
   Future<TimerCommandResult> resume(String runId);
