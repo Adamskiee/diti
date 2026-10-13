@@ -128,5 +128,42 @@ void main() {
       const customException = PersistenceException('Custom disk write failure');
       expect(customException.toString(), contains('Custom disk write failure'));
     });
+
+    test('TimerEvent equality respects metadata and normalizes occurredAtUtc to UTC', () {
+      final localTime = DateTime(2026, 10, 13, 10, 0, 0);
+      final utcTime = localTime.toUtc();
+
+      final e1 = TimerEvent(
+        eventId: 'e-1',
+        runId: 'r-1',
+        type: TimerEventType.runStarted,
+        occurredAtUtc: localTime,
+        durationMs: 100,
+        metadata: {'trigger': 'user_tap', 'count': 1},
+      );
+
+      final e2 = TimerEvent(
+        eventId: 'e-1',
+        runId: 'r-1',
+        type: TimerEventType.runStarted,
+        occurredAtUtc: utcTime,
+        durationMs: 100,
+        metadata: {'trigger': 'user_tap', 'count': 1},
+      );
+
+      final e3DifferentMetadata = TimerEvent(
+        eventId: 'e-1',
+        runId: 'r-1',
+        type: TimerEventType.runStarted,
+        occurredAtUtc: utcTime,
+        durationMs: 100,
+        metadata: {'trigger': 'auto_resume', 'count': 1},
+      );
+
+      expect(e1.occurredAtUtc.isUtc, isTrue);
+      expect(e1, equals(e2));
+      expect(e1.hashCode, equals(e2.hashCode));
+      expect(e1, isNot(equals(e3DifferentMetadata)));
+    });
   });
 }
