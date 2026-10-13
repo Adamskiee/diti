@@ -12,6 +12,7 @@ import '../ports/notification_port.dart';
 import '../ports/routine_repository.dart';
 import '../ports/run_persistence_port.dart';
 import 'command_queue.dart';
+import 'recovery_manager.dart';
 import 'timer_engine.dart';
 
 class TimerEngineImpl implements TimerEngine {
@@ -600,5 +601,43 @@ class TimerEngineImpl implements TimerEngine {
   }
 
   @override
-  Future<void> recover() async {}
+  Future<void> recover() => _queue.run(() async {
+    final activeRun = await persistencePort.getLatestActiveRun();
+    if (activeRun == null) return;
+    if (activeRun.status == RunStatus.completed ||
+        activeRun.status == RunStatus.cancelled) {
+      _activeRun = activeRun;
+      return;
+    }
+
+    final recoveryManager = RecoveryManager(wallClock: wallClock);
+    final reconciled =
+        recoveryManager.reconcile(activeRun, monotonicClock.nowMs);
+
+    if (reconciled.events.isNotEmpty || reconciled.run != activeRun) {
+      await persistencePort.persistRunAndEvents(reconciled.run, reconciled.events);
+    }
+
+    _activeRun = reconciled.run;
+    if (_activeRun!.status == RunStatus.running) {
+      _scheduleBoundaryIfNeeded(_activeRun!);
+    } else {
+      _boundaryTimerToken?.cancel();
+      if (_activeRun!.status == RunStatus.completed ||
+          _activeRun!.status == RunStatus.cancelled) {
+        await notificationPort.cancelBoundaries(_activeRun!.runId);
+      }
+    }
+    _emitState(_activeRun!);
+    for (final event in reconciled.events) {
+      _eventController.add(event);
+    }
+  });
+
+  @override
+  void dispose() {
+    _boundaryTimerToken?.cancel();
+    _stateController.close();
+    _eventController.close();
+  }
 }

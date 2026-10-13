@@ -11,6 +11,7 @@ abstract interface class TimerEngine {
   Future<TimerCommandResult> finishRun(String runId);
   Future<TimerCommandResult> stop(String runId);
   Future<void> recover();
+  void dispose();
 
   TimerRunState? getState(String runId);
   Future<Duration> elapsed(String runId);
