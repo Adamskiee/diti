@@ -7,18 +7,27 @@ import 'tables/timer_events_table.dart';
 import 'tables/sessions_table.dart';
 import 'tables/session_events_table.dart';
 import 'tables/plan_blocks_table.dart';
+import '../daos/routines_dao.dart';
 
 part 'focus_flow_database.g.dart';
 
-@DriftDatabase(tables: [
-  Routines,
-  RoutinePhases,
-  TimerRuns,
-  TimerEvents,
-  Sessions,
-  SessionEvents,
-  PlanBlocks,
-])
+typedef RoutineData = Routine;
+typedef RoutinePhaseData = RoutinePhase;
+
+@DriftDatabase(
+  tables: [
+    Routines,
+    RoutinePhases,
+    TimerRuns,
+    TimerEvents,
+    Sessions,
+    SessionEvents,
+    PlanBlocks,
+  ],
+  daos: [
+    RoutinesDao,
+  ],
+)
 class FocusFlowDatabase extends _$FocusFlowDatabase {
   FocusFlowDatabase(QueryExecutor e) : super(e);
 

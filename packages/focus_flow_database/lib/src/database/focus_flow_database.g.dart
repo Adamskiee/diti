@@ -3120,6 +3120,7 @@ abstract class _$FocusFlowDatabase extends GeneratedDatabase {
   late final $SessionsTable sessions = $SessionsTable(this);
   late final $SessionEventsTable sessionEvents = $SessionEventsTable(this);
   late final $PlanBlocksTable planBlocks = $PlanBlocksTable(this);
+  late final RoutinesDao routinesDao = RoutinesDao(this as FocusFlowDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
