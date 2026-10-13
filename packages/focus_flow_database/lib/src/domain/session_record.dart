@@ -1,0 +1,56 @@
+import 'package:timer_engine/timer_engine.dart';
+
+enum SessionOutcome {
+  completed,
+  cancelled,
+  interrupted,
+}
+
+class SessionEventRecord {
+  final String eventId;
+  final String sessionId;
+  final String eventType;
+  final DateTime occurredAtUtc;
+  final String? phaseId;
+  final String? phaseName;
+  final int durationMs;
+  final String? outcome;
+
+  SessionEventRecord({
+    required this.eventId,
+    required this.sessionId,
+    required this.eventType,
+    required DateTime occurredAtUtc,
+    this.phaseId,
+    this.phaseName,
+    this.durationMs = 0,
+    this.outcome,
+  }) : occurredAtUtc = occurredAtUtc.isUtc ? occurredAtUtc : occurredAtUtc.toUtc();
+}
+
+class SessionRecord {
+  final String sessionId;
+  final String? routineId;
+  final String? planBlockId;
+  final String routineName;
+  final DateTime startedAtUtc;
+  final DateTime endedAtUtc;
+  final int totalDurationMs;
+  final SessionOutcome outcome;
+  final Routine routineSnapshot;
+  final List<SessionEventRecord> events;
+
+  SessionRecord({
+    required this.sessionId,
+    this.routineId,
+    this.planBlockId,
+    required this.routineName,
+    required DateTime startedAtUtc,
+    required DateTime endedAtUtc,
+    required this.totalDurationMs,
+    required this.outcome,
+    required this.routineSnapshot,
+    this.events = const [],
+  })  : startedAtUtc = startedAtUtc.isUtc ? startedAtUtc : startedAtUtc.toUtc(),
+        endedAtUtc = endedAtUtc.isUtc ? endedAtUtc : endedAtUtc.toUtc();
+}

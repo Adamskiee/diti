@@ -1,0 +1,19 @@
+name: focus_flow_database
+description: Drift SQLite persistence layer and adapters for FocusFlow.
+version: 0.1.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  drift: ^2.20.0
+  sqlite3: ^2.4.0
+  meta: ^1.10.0
+  timer_engine:
+    path: ../timer_engine
+
+dev_dependencies:
+  drift_dev: ^2.20.0
+  build_runner: ^2.4.9
+  lints: ^3.0.0
+  test: ^1.24.0
