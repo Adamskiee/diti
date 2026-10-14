@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
-import '../../lib/src/database/focus_flow_database.dart';
+import 'package:focus_flow_database/src/database/focus_flow_database.dart';
 
 void main() {
   late FocusFlowDatabase database;

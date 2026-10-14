@@ -46,8 +46,11 @@ class DriftSessionRepository implements SessionRepository {
   Future<SessionRecord?> getSession(String sessionId) async {
     final row = await dao.getSessionById(sessionId);
     if (row == null) return null;
+    return _mapSession(row);
+  }
 
-    final eventRows = await dao.getEventsForSession(sessionId);
+  Future<SessionRecord> _mapSession(SessionData row) async {
+    final eventRows = await dao.getEventsForSession(row.sessionId);
     final events = eventRows.map((e) {
       return SessionEventRecord(
         eventId: e.eventId,
@@ -89,8 +92,7 @@ class DriftSessionRepository implements SessionRepository {
     final rows = await dao.getSessionsInRange(startUtc: start, endUtc: end);
     final results = <SessionRecord>[];
     for (final r in rows) {
-      final session = await getSession(r.sessionId);
-      if (session != null) results.add(session);
+      results.add(await _mapSession(r));
     }
     return results;
   }
@@ -100,8 +102,7 @@ class DriftSessionRepository implements SessionRepository {
     final rows = await dao.getSessionsForPlanBlock(planBlockId);
     final results = <SessionRecord>[];
     for (final r in rows) {
-      final session = await getSession(r.sessionId);
-      if (session != null) results.add(session);
+      results.add(await _mapSession(r));
     }
     return results;
   }

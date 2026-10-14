@@ -1,5 +1,6 @@
 name: focus_flow_database
 description: Drift SQLite persistence layer and adapters for FocusFlow.
+publish_to: none
 version: 0.1.0
 
 environment:

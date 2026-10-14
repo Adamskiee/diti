@@ -50,7 +50,7 @@ void main() {
 
       // 2. Instantiate TimerEngine with Drift adapters
       final clock = SystemClock();
-      var engine = TimerEngineImpl(
+      final engine = TimerEngineImpl(
         routineRepository: routineRepo,
         persistencePort: persistencePort,
         notificationPort: notificationPort,
@@ -78,6 +78,7 @@ void main() {
       expect(activeInDb!.status, equals(RunStatus.running));
 
       // 5. Simulate App Crash & Restart: dispose old engine, create fresh engine
+      engine.dispose();
       final newEngine = TimerEngineImpl(
         routineRepository: routineRepo,
         persistencePort: persistencePort,
@@ -118,6 +119,8 @@ void main() {
       expect(retrievedSession, isNotNull);
       expect(retrievedSession!.totalDurationMs, equals(1500));
       expect(retrievedSession.routineSnapshot.name, equals('Sprint Cycle'));
+
+      newEngine.dispose();
     });
   });
 }

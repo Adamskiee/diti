@@ -31,6 +31,11 @@ class SnapshotSerializer {
       throw const FormatException('Expected JSON map for routine snapshot');
     }
 
+    final schemaVersion = decoded['schemaVersion'];
+    if (schemaVersion != 1) {
+      throw FormatException('Unsupported or missing snapshot schemaVersion: $schemaVersion');
+    }
+
     final id = decoded['id'] as String? ?? '';
     final name = decoded['name'] as String? ?? '';
 

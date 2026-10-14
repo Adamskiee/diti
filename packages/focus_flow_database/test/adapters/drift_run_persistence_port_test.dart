@@ -127,10 +127,11 @@ void main() {
         occurredAtUtc: DateTime.now().toUtc(),
       );
 
-      expect(
+      await expectLater(
         () => port.persistRunAndEvents(invalidRun, [mismatchedEvent]),
         throwsA(isA<PersistenceException>()),
       );
+      expect(await port.getLatestActiveRun(), isNull);
     });
   });
 }

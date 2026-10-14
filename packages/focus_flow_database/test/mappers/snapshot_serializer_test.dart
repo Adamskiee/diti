@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:timer_engine/timer_engine.dart';
-import '../../lib/src/mappers/snapshot_serializer.dart';
+import 'package:focus_flow_database/focus_flow_database.dart';
 
 void main() {
   group('SnapshotSerializer', () {
@@ -82,6 +82,14 @@ void main() {
     test('throws FormatException on invalid json string', () {
       expect(() => SnapshotSerializer.routineFromJson('not-json'), throwsFormatException);
       expect(() => SnapshotSerializer.metadataFromJson('not-json'), throwsFormatException);
+    });
+
+    test('throws FormatException when schemaVersion is missing or not 1', () {
+      const missingVersion = '{"id":"r1","name":"Routine"}';
+      expect(() => SnapshotSerializer.routineFromJson(missingVersion), throwsFormatException);
+
+      const unsupportedVersion = '{"schemaVersion":2,"id":"r1","name":"Routine"}';
+      expect(() => SnapshotSerializer.routineFromJson(unsupportedVersion), throwsFormatException);
     });
   });
 }

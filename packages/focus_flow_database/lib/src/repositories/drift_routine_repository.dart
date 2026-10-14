@@ -13,8 +13,11 @@ class DriftRoutineRepository implements RoutineRepository {
   Future<Routine?> getRoutine(String routineId) async {
     final routineData = await dao.getRoutineById(routineId);
     if (routineData == null) return null;
+    return _mapRoutine(routineData);
+  }
 
-    final phaseRows = await dao.getPhasesForRoutine(routineId);
+  Future<Routine> _mapRoutine(RoutineData routineData) async {
+    final phaseRows = await dao.getPhasesForRoutine(routineData.id);
     final phases = phaseRows.map((p) {
       return RoutinePhase(
         id: p.id,
@@ -80,8 +83,7 @@ class DriftRoutineRepository implements RoutineRepository {
     final routineRows = await dao.getAllRoutines();
     final result = <Routine>[];
     for (final row in routineRows) {
-      final r = await getRoutine(row.id);
-      if (r != null) result.add(r);
+      result.add(await _mapRoutine(row));
     }
     return result;
   }
