@@ -27,7 +27,10 @@ class BoundaryWindowCalculator {
     final boundaries = <ScheduledBoundary>[];
     int currentPhaseIdx = run.currentPhaseIndex;
     int currentRepeatIdx = run.repeatIndex;
-    int accumulatedTimeInPhase = run.accumulatedMs;
+    final activeElapsedInCurrentPhase = run.status == RunStatus.running
+        ? math.max(0, currentUtc.difference(run.phaseStartedAtUtc).inMilliseconds)
+        : 0;
+    int accumulatedTimeInPhase = run.accumulatedMs + activeElapsedInCurrentPhase;
     DateTime timelineUtc = currentUtc;
     Duration totalLookaheadDuration = Duration.zero;
     int sequence = 0;

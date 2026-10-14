@@ -76,8 +76,9 @@ void main() {
       final routine = createTestRoutine(phases: const [
         RoutinePhase(id: 'p1', name: 'Focus', durationMs: 1500000, transition: TransitionPolicy.auto),
       ]);
-      final run = createTestRun(routine: routine, accumulatedMs: 300000); // 5m elapsed, 20m remain
       final currentUtc = DateTime.utc(2026, 10, 14, 10, 5, 0);
+      final run = createTestRun(routine: routine, accumulatedMs: 300000)
+          .copyWith(phaseStartedAtUtc: currentUtc); // 5m accumulated in previous segment, resumed at 10:05
 
       final boundaries = calculator.calculateUpcomingBoundaries(
         run: run,
@@ -92,6 +93,28 @@ void main() {
       expect(b.scheduledUtc, equals(DateTime.utc(2026, 10, 14, 10, 25, 0)));
       expect(b.isTerminal, isTrue);
       expect(b.notificationId, isPositive);
+    });
+
+    test('calculates boundary correctly when time has elapsed in active running segment without pause', () {
+      final routine = createTestRoutine(phases: const [
+        RoutinePhase(id: 'p1', name: 'Focus', durationMs: 1500000, transition: TransitionPolicy.auto), // 25 min
+      ]);
+      // started at 10:00:00, accumulatedMs = 0 (no pause)
+      final startedAt = DateTime.utc(2026, 10, 14, 10, 0, 0);
+      final run = createTestRun(routine: routine, accumulatedMs: 0).copyWith(
+        phaseStartedAtUtc: startedAt,
+      );
+      // current time is 10:15:00 (15 min elapsed, 10 min remaining)
+      final currentUtc = DateTime.utc(2026, 10, 14, 10, 15, 0);
+
+      final boundaries = calculator.calculateUpcomingBoundaries(
+        run: run,
+        currentUtc: currentUtc,
+      );
+
+      expect(boundaries.length, equals(1));
+      // Should trigger at 10:25:00 (10 min after currentUtc), NOT 10:40:00!
+      expect(boundaries.first.scheduledUtc, equals(DateTime.utc(2026, 10, 14, 10, 25, 0)));
     });
 
     test('looks ahead through consecutive auto phases up to manual transition', () {

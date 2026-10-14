@@ -56,6 +56,14 @@ class FlutterNotificationPermissionService
         exactAlarmsAllowed =
             await androidPlugin.canScheduleExactNotifications() ?? false;
       }
+
+      final iosPlugin = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (iosPlugin != null) {
+        final options = await iosPlugin.checkPermissions();
+        notificationsEnabled = options?.isEnabled ?? false;
+        exactAlarmsAllowed = true;
+      }
     } catch (_) {
       // Platform channel unavailable or uninitialized (e.g. desktop/test runner)
     }

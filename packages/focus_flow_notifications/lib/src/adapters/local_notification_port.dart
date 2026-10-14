@@ -13,7 +13,7 @@ class LocalNotificationPort implements NotificationPort {
 
   final NotificationClient _client;
   final BoundaryWindowCalculator _calculator;
-  final Map<String, List<int>> _scheduledIdsByRun = {};
+  final Map<String, Set<int>> _scheduledIdsByRun = {};
 
   LocalNotificationPort({
     required NotificationClient client,
@@ -22,7 +22,7 @@ class LocalNotificationPort implements NotificationPort {
         _calculator = calculator ?? const BoundaryWindowCalculator();
 
   List<int> getScheduledIds(String runId) =>
-      List.unmodifiable(_scheduledIdsByRun[runId] ?? const []);
+      List.unmodifiable(_scheduledIdsByRun[runId] ?? const <int>{});
 
   @override
   Future<void> scheduleBoundaryNotification({
@@ -132,7 +132,7 @@ class LocalNotificationPort implements NotificationPort {
       );
 
       _scheduledIdsByRun
-          .putIfAbsent(boundary.runId, () => <int>[])
+          .putIfAbsent(boundary.runId, () => <int>{})
           .add(boundary.notificationId);
     } catch (_) {
       // Suppress platform exceptions so core timer flow never breaks
