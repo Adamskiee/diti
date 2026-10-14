@@ -59,6 +59,15 @@ void main() {
       expect(state.currentPhase.id, equals('p1'));
     });
 
+    test('getActiveRun returns null initially and returns active TimerRun after start', () async {
+      expect(engine.getActiveRun(), isNull);
+      await engine.start('study-routine');
+      final activeRun = engine.getActiveRun();
+      expect(activeRun, isNotNull);
+      expect(activeRun!.runId, equals(engine.activeRunId));
+      expect(activeRun.status, equals(RunStatus.running));
+    });
+
     test('T-002: Start a routine with no phases rejects with invalidConfiguration', () async {
       const emptyRoutine = Routine(
         id: 'empty',

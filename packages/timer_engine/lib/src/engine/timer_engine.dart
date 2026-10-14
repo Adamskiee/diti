@@ -1,5 +1,6 @@
 import '../domain/command_result.dart';
 import '../domain/timer_event.dart';
+import '../domain/timer_run.dart';
 import '../domain/timer_run_state.dart';
 
 abstract interface class TimerEngine {
@@ -15,6 +16,7 @@ abstract interface class TimerEngine {
   Future<void> recover();
   void dispose();
 
+  TimerRun? getActiveRun();
   TimerRunState? getState(String runId);
   Future<Duration> elapsed(String runId);
   Stream<TimerRunState> get stateStream;

@@ -33,6 +33,10 @@ class TimerEngineImpl implements TimerEngine {
   @override
   String? get activeRunId => _activeRun?.runId;
 
+  @override
+  TimerRun? getActiveRun() => _activeRun;
+  TimerRun? get activeRun => _activeRun;
+
   TimerEngineImpl({
     required this.monotonicClock,
     required this.wallClock,
