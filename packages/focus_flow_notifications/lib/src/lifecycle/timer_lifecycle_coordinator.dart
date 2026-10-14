@@ -46,6 +46,7 @@ class TimerLifecycleCoordinator {
 
     final run = _timerEngine.getActiveRun();
     if (run != null && run.status == RunStatus.running) {
+      _timerEngine.cancelBoundaryTimer();
       await _notificationPort.scheduleRollingBoundaries(
         run: run,
         currentUtc: _wallClock.utcNow,
