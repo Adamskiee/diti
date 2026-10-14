@@ -42,6 +42,8 @@ typedef PlanBlockData = PlanBlock;
 class FocusFlowDatabase extends _$FocusFlowDatabase {
   FocusFlowDatabase(super.e);
 
+  FocusFlowDatabase.connect(super.e);
+
   FocusFlowDatabase.inMemory() : super(NativeDatabase.memory());
 
   @override

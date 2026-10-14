@@ -25,6 +25,7 @@ class TimerRunState {
   });
 
   int get currentRepetition => repeatIndex + 1;
+  String get phaseName => currentPhase.name;
 
   TimerRunState copyWith({
     String? runId,

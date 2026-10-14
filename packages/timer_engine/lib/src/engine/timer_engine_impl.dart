@@ -657,6 +657,12 @@ class TimerEngineImpl implements TimerEngine {
   });
 
   @override
+  void cancelBoundaryTimer() {
+    _boundaryTimerToken?.cancel();
+    _boundaryTimerToken = null;
+  }
+
+  @override
   void dispose() {
     _boundaryTimerToken?.cancel();
     _stateController.close();

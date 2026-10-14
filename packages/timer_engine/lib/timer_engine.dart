@@ -8,6 +8,7 @@ export 'src/clock/cancelable_token.dart';
 export 'src/clock/monotonic_clock.dart';
 export 'src/clock/wall_clock.dart';
 export 'src/clock/system_clock.dart';
+export 'src/clock/fake_clock.dart';
 
 export 'src/domain/enums.dart';
 export 'src/domain/repeat_rule.dart';
