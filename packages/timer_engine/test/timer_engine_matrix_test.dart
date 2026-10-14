@@ -1,6 +1,5 @@
 import 'package:test/test.dart';
 import 'package:timer_engine/timer_engine.dart';
-import 'fakes/fake_clock.dart';
 import 'fakes/in_memory_routine_repository.dart';
 import 'fakes/in_memory_persistence_port.dart';
 import 'fakes/in_memory_notification_port.dart';

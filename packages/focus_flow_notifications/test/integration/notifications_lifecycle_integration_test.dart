@@ -72,11 +72,11 @@ void main() {
 
     test('reconciles elapsed auto-phases after backgrounding and resume', () async {
       // 1. Save multi-phase routine: 15m Focus (auto) -> 5m Break (auto) -> 10m Review (manual)
-      final routine = Routine(
+      const routine = Routine(
         id: 'pomodoro-e2e',
         name: 'Pomodoro Workflow',
-        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
-        phases: const [
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
           RoutinePhase(id: 'p1', name: 'Focus', durationMs: 900000, transition: TransitionPolicy.auto),
           RoutinePhase(id: 'p2', name: 'Break', durationMs: 300000, transition: TransitionPolicy.auto),
           RoutinePhase(id: 'p3', name: 'Review', durationMs: 600000, transition: TransitionPolicy.manual),
