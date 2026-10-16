@@ -67,6 +67,38 @@ class AnalyticsAggregator {
     DateTimeRange range,
     List<SessionRecord> sessions,
   ) {
+    if (timeframe == AnalyticsTimeframe.today) {
+      final Map<String, List<SessionRecord>> grouped = {};
+      for (final s in sessions) {
+        final localStart = s.startedAtUtc.toLocal();
+        final key = DateFormat('yyyy-MM-dd HH').format(localStart);
+        grouped.putIfAbsent(key, () => []).add(s);
+      }
+
+      final buckets = <DailyBucket>[];
+      DateTime cursor = range.start;
+
+      while (cursor.isBefore(range.end)) {
+        final key = DateFormat('yyyy-MM-dd HH').format(cursor);
+        final hourSessions = grouped[key] ?? [];
+        final hourDuration = hourSessions.fold<int>(0, (sum, s) => sum + s.totalDurationMs);
+        final label = DateFormat('ha').format(cursor).toLowerCase();
+
+        buckets.add(
+          DailyBucket(
+            date: cursor,
+            dayLabel: label,
+            totalDurationMs: hourDuration,
+            sessionCount: hourSessions.length,
+          ),
+        );
+
+        cursor = cursor.add(const Duration(hours: 1));
+      }
+
+      return buckets;
+    }
+
     final Map<String, List<SessionRecord>> grouped = {};
     for (final s in sessions) {
       final localStart = s.startedAtUtc.toLocal();
@@ -82,14 +114,9 @@ class AnalyticsAggregator {
       final daySessions = grouped[key] ?? [];
       final dayDuration = daySessions.fold<int>(0, (sum, s) => sum + s.totalDurationMs);
 
-      String label;
-      if (timeframe == AnalyticsTimeframe.today) {
-        label = DateFormat('ha').format(cursor);
-      } else if (timeframe == AnalyticsTimeframe.thisWeek) {
-        label = DateFormat('E').format(cursor); // "Mon", "Tue"
-      } else {
-        label = DateFormat('d').format(cursor); // "1", "2"
-      }
+      final String label = timeframe == AnalyticsTimeframe.thisWeek
+          ? DateFormat('E').format(cursor)
+          : DateFormat('d').format(cursor);
 
       buckets.add(
         DailyBucket(

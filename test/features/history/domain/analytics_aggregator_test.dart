@@ -172,5 +172,41 @@ void main() {
       expect(summary.planVersusActual!.netVarianceMs, 15 * 60 * 1000); // 15m overrun
       expect(summary.planVersusActual!.linkedSessionCount, 1);
     });
+
+    test('today timeframe generates 24 hourly buckets', () {
+      final todayRange = AnalyticsTimeframe.today.computeRange(now);
+      final todaySession = createSession(
+        id: 's_today',
+        routineName: 'Morning Sprint',
+        start: DateTime(2026, 10, 16, 9, 0), // 9am
+        durationMinutes: 45,
+      );
+
+      final summary = AnalyticsAggregator.computeSummary(
+        sessions: [todaySession],
+        planBlocks: [],
+        timeframe: AnalyticsTimeframe.today,
+        range: todayRange,
+        now: now,
+      );
+
+      expect(summary.dailyBuckets.length, 24);
+      final nineAmBucket = summary.dailyBuckets.firstWhere((b) => b.dayLabel == '9am');
+      expect(nineAmBucket.totalDurationMs, 45 * 60 * 1000);
+      expect(nineAmBucket.sessionCount, 1);
+    });
+
+    test('last30Days timeframe generates 30 daily buckets', () {
+      final thirtyDaysRange = AnalyticsTimeframe.last30Days.computeRange(now);
+      final summary = AnalyticsAggregator.computeSummary(
+        sessions: [],
+        planBlocks: [],
+        timeframe: AnalyticsTimeframe.last30Days,
+        range: thirtyDaysRange,
+        now: now,
+      );
+
+      expect(summary.dailyBuckets.length, 30);
+    });
   });
 }

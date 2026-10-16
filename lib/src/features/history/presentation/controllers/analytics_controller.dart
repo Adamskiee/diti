@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:focus_flow_database/focus_flow_database.dart';
 import 'package:intl/intl.dart';
+import 'package:timer_engine/timer_engine.dart';
 import '../../domain/analytics_aggregator.dart';
 import '../../domain/analytics_models.dart';
 import '../../domain/analytics_timeframe.dart';
@@ -8,14 +9,17 @@ import '../../domain/analytics_timeframe.dart';
 class AnalyticsController extends StateNotifier<AsyncValue<AnalyticsSummary>> {
   final SessionRepository _sessionRepository;
   final PlanBlockRepository _planBlockRepository;
+  final WallClock? _wallClock;
   AnalyticsTimeframe _timeframe;
 
   AnalyticsController({
     required SessionRepository sessionRepository,
     required PlanBlockRepository planBlockRepository,
+    WallClock? wallClock,
     AnalyticsTimeframe initialTimeframe = AnalyticsTimeframe.thisWeek,
   })  : _sessionRepository = sessionRepository,
         _planBlockRepository = planBlockRepository,
+        _wallClock = wallClock,
         _timeframe = initialTimeframe,
         super(const AsyncValue.loading()) {
     load();
@@ -34,7 +38,7 @@ class AnalyticsController extends StateNotifier<AsyncValue<AnalyticsSummary>> {
   Future<void> load() async {
     state = const AsyncValue.loading();
     try {
-      final now = DateTime.now();
+      final now = _wallClock?.utcNow.toLocal() ?? DateTime.now();
       final range = _timeframe.computeRange(now);
 
       // Query sessions in range
@@ -43,15 +47,18 @@ class AnalyticsController extends StateNotifier<AsyncValue<AnalyticsSummary>> {
         range.end.toUtc(),
       );
 
-      // Gather plan blocks for dates in range
-      final planBlocks = <PlanBlock>[];
+      // Gather plan blocks for dates in range in parallel
+      final dateKeys = <String>[];
       DateTime cursor = range.start;
       while (cursor.isBefore(range.end)) {
-        final dateKey = DateFormat('yyyy-MM-dd').format(cursor);
-        final blocks = await _planBlockRepository.getBlocksForDate(dateKey);
-        planBlocks.addAll(blocks);
+        dateKeys.add(DateFormat('yyyy-MM-dd').format(cursor));
         cursor = cursor.add(const Duration(days: 1));
       }
+
+      final blockLists = await Future.wait(
+        dateKeys.map((k) => _planBlockRepository.getBlocksForDate(k)),
+      );
+      final planBlocks = blockLists.expand((b) => b).toList();
 
       final summary = AnalyticsAggregator.computeSummary(
         sessions: sessions,

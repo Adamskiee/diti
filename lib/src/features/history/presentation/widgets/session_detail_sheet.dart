@@ -93,6 +93,34 @@ class SessionDetailSheet extends ConsumerWidget {
             ),
             if (session.planBlockId != null)
               _buildDetailRow('Linked Block', session.planBlockId!),
+            if (session.events.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Phase Log',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...session.events.map((e) {
+                final phaseTitle = e.phaseName ?? e.eventType;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(phaseTitle, style: theme.textTheme.bodySmall),
+                      Text(
+                        DurationFormatter.formatMs(e.durationMs),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -153,12 +181,16 @@ class SessionDetailSheet extends ConsumerWidget {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () async {
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final historyController = ref.read(historyFeedControllerProvider.notifier);
+              final analyticsController = ref.read(analyticsControllerProvider.notifier);
               Navigator.of(ctx).pop();
               Navigator.of(context).pop();
-              await ref
-                  .read(historyFeedControllerProvider.notifier)
-                  .deleteSession(session.sessionId);
-              await ref.read(analyticsControllerProvider.notifier).load();
+              await historyController.deleteSession(session.sessionId);
+              await analyticsController.load();
+              scaffoldMessenger.showSnackBar(
+                const SnackBar(content: Text('Session record deleted')),
+              );
             },
             child: const Text('Delete'),
           ),

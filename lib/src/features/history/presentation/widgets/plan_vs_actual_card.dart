@@ -14,9 +14,14 @@ class PlanVsActualCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isOverrun = metrics.netVarianceMs > 0;
-    final varianceColor = isOverrun ? const Color(0xFFBA1A1A) : const Color(0xFF006C50);
-    final variancePrefix = isOverrun ? '+' : '-';
+    final isZero = metrics.netVarianceMs == 0;
+    final varianceColor = isZero
+        ? const Color(0xFF006C50)
+        : (isOverrun ? const Color(0xFFBA1A1A) : const Color(0xFF006C50));
     final absVariance = metrics.netVarianceMs.abs();
+    final varianceText = isZero
+        ? 'On track'
+        : '${isOverrun ? "+" : "-"}${DurationFormatter.formatMs(absVariance)} ${isOverrun ? "overrun" : "saved"}';
 
     return Card(
       elevation: 0,
@@ -43,7 +48,7 @@ class PlanVsActualCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '$variancePrefix${DurationFormatter.formatMs(absVariance)} ${isOverrun ? "overrun" : "saved"}',
+                    varianceText,
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: varianceColor,
                       fontWeight: FontWeight.bold,

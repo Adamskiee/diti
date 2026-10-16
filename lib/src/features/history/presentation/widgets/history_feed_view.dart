@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:intl/intl.dart';
 import '../../providers/history_providers.dart';
 import 'session_detail_sheet.dart';
 import 'session_feed_tile.dart';
@@ -25,9 +27,6 @@ class HistoryFeedView extends ConsumerWidget {
                 onSelected: (_) {
                   ref.read(historyFeedFilterProvider.notifier).state =
                       HistoryOutcomeFilter.all;
-                  ref
-                      .read(historyFeedControllerProvider.notifier)
-                      .setFilter(HistoryOutcomeFilter.all);
                 },
               ),
               const SizedBox(width: 8),
@@ -37,9 +36,6 @@ class HistoryFeedView extends ConsumerWidget {
                 onSelected: (_) {
                   ref.read(historyFeedFilterProvider.notifier).state =
                       HistoryOutcomeFilter.completed;
-                  ref
-                      .read(historyFeedControllerProvider.notifier)
-                      .setFilter(HistoryOutcomeFilter.completed);
                 },
               ),
               const SizedBox(width: 8),
@@ -50,9 +46,6 @@ class HistoryFeedView extends ConsumerWidget {
                 onSelected: (_) {
                   ref.read(historyFeedFilterProvider.notifier).state =
                       HistoryOutcomeFilter.interruptedOrCancelled;
-                  ref
-                      .read(historyFeedControllerProvider.notifier)
-                      .setFilter(HistoryOutcomeFilter.interruptedOrCancelled);
                 },
               ),
             ],
@@ -86,21 +79,48 @@ class HistoryFeedView extends ConsumerWidget {
                 );
               }
 
+              final Map<String, List<SessionRecord>> grouped = {};
+              for (final s in sessions) {
+                final localDate = s.startedAtUtc.toLocal();
+                final key = DateFormat('yyyy-MM-dd').format(localDate);
+                grouped.putIfAbsent(key, () => []).add(s);
+              }
+
+              final sortedKeys = grouped.keys.toList();
               return ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                itemCount: sessions.length,
-                itemBuilder: (context, index) {
-                  final session = sessions[index];
-                  return SessionFeedTile(
-                    session: session,
-                    onTap: () {
-                      showModalBottomSheet<void>(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (ctx) => SessionDetailSheet(session: session),
-                      );
-                    },
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                itemCount: sortedKeys.length,
+                itemBuilder: (context, sectionIdx) {
+                  final key = sortedKeys[sectionIdx];
+                  final daySessions = grouped[key]!;
+                  final sectionDate = daySessions.first.startedAtUtc.toLocal();
+                  final headerText = _getDateHeader(sectionDate);
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                        child: Text(
+                          headerText,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      ...daySessions.map((session) => SessionFeedTile(
+                            session: session,
+                            onTap: () {
+                              showModalBottomSheet<void>(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (ctx) => SessionDetailSheet(session: session),
+                              );
+                            },
+                          )),
+                      const SizedBox(height: 8),
+                    ],
                   );
                 },
               );
@@ -109,5 +129,16 @@ class HistoryFeedView extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  String _getDateHeader(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final sessionDay = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(sessionDay).inDays;
+
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    return DateFormat('EEE, MMM d, yyyy').format(date);
   }
 }

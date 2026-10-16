@@ -23,7 +23,6 @@ class TimeframeSelectorBar extends ConsumerWidget {
               selected: isSelected,
               onSelected: (_) {
                 ref.read(analyticsTimeframeProvider.notifier).state = timeframe;
-                ref.read(analyticsControllerProvider.notifier).setTimeframe(timeframe);
               },
             ),
           );

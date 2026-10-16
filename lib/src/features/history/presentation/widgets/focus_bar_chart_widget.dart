@@ -62,9 +62,12 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
               height: 140,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  return Row(
+                  final isScrollable = widget.buckets.length > 7;
+                  final content = Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: isScrollable
+                        ? MainAxisAlignment.start
+                        : MainAxisAlignment.spaceEvenly,
                     children: List.generate(widget.buckets.length, (index) {
                       final bucket = widget.buckets[index];
                       final ratio = maxDuration > 0
@@ -72,51 +75,72 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
                           : 0.0;
                       final isSelected = _selectedIdx == index;
 
-                      return Expanded(
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () {
-                            setState(() {
-                              _selectedIdx = isSelected ? null : index;
-                            });
-                            widget.onBucketSelected?.call(bucket);
-                          },
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: Container(
-                                    width: math.max(8.0, (constraints.maxWidth / widget.buckets.length) * 0.4),
-                                    height: math.max(4.0, ratio * 100),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? theme.colorScheme.primary
-                                          : (bucket.totalDurationMs > 0
-                                              ? theme.colorScheme.primary.withValues(alpha: 0.75)
-                                              : theme.colorScheme.outlineVariant),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
+                      final columnWidget = InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          setState(() {
+                            _selectedIdx = isSelected ? null : index;
+                          });
+                          widget.onBucketSelected?.call(bucket);
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Container(
+                                  width: math.max(
+                                    8.0,
+                                    (isScrollable
+                                            ? 36.0
+                                            : constraints.maxWidth /
+                                                widget.buckets.length) *
+                                        0.4,
+                                  ),
+                                  height: math.max(4.0, ratio * 100),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? theme.colorScheme.primary
+                                        : (bucket.totalDurationMs > 0
+                                            ? theme.colorScheme.primary
+                                                .withValues(alpha: 0.75)
+                                            : theme.colorScheme.outlineVariant),
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                bucket.dayLabel,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.onSurfaceVariant,
-                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              bucket.dayLabel,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       );
+
+                      if (isScrollable) {
+                        return SizedBox(width: 36, child: columnWidget);
+                      }
+                      return Expanded(child: columnWidget);
                     }),
                   );
+
+                  if (isScrollable) {
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: content,
+                    );
+                  }
+                  return content;
                 },
               ),
             ),
