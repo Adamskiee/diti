@@ -103,13 +103,13 @@ class DailyPlanController extends AsyncNotifier<DailyPlanState> {
   /// Advances the selected date by one day.
   void nextDay() {
     final current = ref.read(selectedDateProvider);
-    setDate(current.add(const Duration(days: 1)));
+    setDate(DateTime(current.year, current.month, current.day + 1));
   }
 
   /// Moves the selected date back by one day.
   void previousDay() {
     final current = ref.read(selectedDateProvider);
-    setDate(current.subtract(const Duration(days: 1)));
+    setDate(DateTime(current.year, current.month, current.day - 1));
   }
 
   /// Resets the selected date to today.
