@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart' hide RepeatMode;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timer_engine/timer_engine.dart';
+import '../../../core/theme/app_colors.dart';
+import '../controllers/active_timer_controller.dart';
+import 'widgets/circular_timer_dial.dart';
+
+class ActiveTimerScreen extends ConsumerWidget {
+  const ActiveTimerScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(activeTimerControllerProvider);
+    final controller = ref.read(activeTimerControllerProvider.notifier);
+    final theme = Theme.of(context);
+
+    final isPaused = state.status == RunStatus.paused;
+    final isAwaitingAction = state.isAwaitingAction;
+
+    final dialColor = isPaused
+        ? AppColors.pausedAmber
+        : (isAwaitingAction
+            ? AppColors.awaitingActionPulse
+            : theme.colorScheme.primary);
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.keyboard_arrow_down),
+          tooltip: 'Minimize',
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: Text(state.phaseName.isEmpty ? 'Timer' : state.phaseName),
+        actions: [
+          IconButton(
+            key: const Key('timer_stop_button'),
+            icon: const Icon(Icons.close),
+            tooltip: 'Stop Routine',
+            onPressed: () => _confirmStop(context, controller),
+          ),
+        ],
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (state.cycleDescription.isNotEmpty)
+                Text(
+                  state.cycleDescription,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              const SizedBox(height: 24),
+              CircularTimerDial(
+                progress: state.progress,
+                formattedTime: state.formattedTime,
+                primaryColor: dialColor,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              ),
+              const SizedBox(height: 24),
+              if (isPaused)
+                const Chip(
+                  avatar: Icon(Icons.pause, size: 16),
+                  label: Text('PAUSED'),
+                  backgroundColor: AppColors.pausedAmber,
+                )
+              else if (isAwaitingAction)
+                const Chip(
+                  avatar: Icon(Icons.touch_app, size: 16),
+                  label: Text('COMPLETED — READY TO CONTINUE'),
+                  backgroundColor: AppColors.awaitingActionPulse,
+                )
+              else
+                Chip(
+                  label: Text(state.isCountdown ? 'Focusing' : 'Open Flow'),
+                ),
+              if (state.nextPhasePreview != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Next: ${state.nextPhasePreview}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 36),
+              if (isAwaitingAction) ...[
+                FilledButton.icon(
+                  onPressed: () => controller.finishPhase(),
+                  icon: const Icon(Icons.arrow_forward),
+                  label: const Text('Start Next Phase'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ] else ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton.outlined(
+                      tooltip: 'Skip Phase',
+                      icon: const Icon(Icons.skip_next),
+                      onPressed: () => controller.skipPhase(),
+                    ),
+                    const SizedBox(width: 24),
+                    FloatingActionButton.large(
+                      key: const Key('timer_play_pause_button'),
+                      onPressed: () {
+                        if (isPaused) {
+                          controller.resume();
+                        } else {
+                          controller.pause();
+                        }
+                      },
+                      child: Icon(isPaused ? Icons.play_arrow : Icons.pause),
+                    ),
+                    const SizedBox(width: 24),
+                    IconButton.outlined(
+                      tooltip: 'Finish Phase',
+                      icon: const Icon(Icons.check),
+                      onPressed: () => controller.finishPhase(),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmStop(BuildContext context, ActiveTimerController controller) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Stop Routine?'),
+        content:
+            const Text('Are you sure you want to cancel the current session?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Keep Going'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              controller.stop();
+              if (context.mounted) {
+                Navigator.of(context).maybePop();
+              }
+            },
+            child: const Text('Stop', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+}

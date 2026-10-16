@@ -1,0 +1,365 @@
+import 'package:flutter/material.dart' hide RepeatMode;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:focus_flow/src/core/di/database_provider.dart';
+import 'package:focus_flow/src/core/di/notification_providers.dart';
+import 'package:focus_flow/src/core/di/repositories_provider.dart';
+import 'package:focus_flow/src/core/di/timer_engine_provider.dart';
+import 'package:focus_flow/src/features/timer/controllers/active_timer_controller.dart';
+import 'package:focus_flow/src/features/timer/presentation/active_timer_screen.dart';
+import 'package:timer_engine/timer_engine.dart';
+import '../../../../test/helpers/test_fakes.dart';
+
+void main() {
+  group('ActiveTimerScreen', () {
+    testWidgets(
+        'renders countdown, pause button, and handles stop dialog confirmation',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r1',
+        name: 'Pomodoro',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      await container
+          .read(activeTimerControllerProvider.notifier)
+          .startRoutine('r1');
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ActiveTimerScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('25:00'), findsOneWidget);
+      expect(find.text('Focus'), findsWidgets); // Title and chip/phase info
+      expect(find.text('Focusing'), findsOneWidget);
+
+      // Tap pause
+      final pauseButton = find.byKey(const Key('timer_play_pause_button'));
+      expect(pauseButton, findsOneWidget);
+      await tester.tap(pauseButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('PAUSED'), findsOneWidget);
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.paused);
+
+      // Tap stop
+      final stopButton = find.byKey(const Key('timer_stop_button'));
+      await tester.tap(stopButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Stop Routine?'), findsOneWidget);
+
+      // Confirm stop
+      await tester.tap(find.text('Stop'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.cancelled);
+
+      container.dispose();
+      await db.close();
+    });
+
+    testWidgets('dismisses stop dialog when Keep Going is pressed',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_dismiss',
+        name: 'Pomodoro',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      await container
+          .read(activeTimerControllerProvider.notifier)
+          .startRoutine('r_dismiss');
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ActiveTimerScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap stop
+      await tester.tap(find.byKey(const Key('timer_stop_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Stop Routine?'), findsOneWidget);
+
+      // Press Keep Going
+      await tester.tap(find.text('Keep Going'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Stop Routine?'), findsNothing);
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.running);
+
+      container.dispose();
+      await db.close();
+    });
+
+    testWidgets('resumes from pause, skips phase, and finishes phase',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_multi',
+        name: 'Intervals',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Phase One',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto,
+          ),
+          RoutinePhase(
+            id: 'p2',
+            name: 'Phase Two',
+            durationMs: 30000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      await container
+          .read(activeTimerControllerProvider.notifier)
+          .startRoutine('r_multi');
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ActiveTimerScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Pause
+      final playPauseButton = find.byKey(const Key('timer_play_pause_button'));
+      await tester.tap(playPauseButton);
+      await tester.pumpAndSettle();
+      expect(find.text('PAUSED'), findsOneWidget);
+
+      // Resume
+      await tester.tap(playPauseButton);
+      await tester.pumpAndSettle();
+      expect(find.text('PAUSED'), findsNothing);
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.running);
+
+      // Skip phase -> transitions to Phase Two
+      final skipButton = find.byTooltip('Skip Phase');
+      expect(skipButton, findsOneWidget);
+      await tester.tap(skipButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Phase Two'), findsWidgets);
+
+      // Finish phase -> since Phase Two was the last phase in count 1, routine completes
+      final finishButton = find.byTooltip('Finish Phase');
+      expect(finishButton, findsOneWidget);
+      await tester.tap(finishButton);
+      await tester.pumpAndSettle();
+
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.completed);
+
+      container.dispose();
+      await db.close();
+    });
+
+    testWidgets('renders awaitingAction state with prominent Start Next Phase',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_manual',
+        name: 'Manual Transition',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Phase A',
+            durationMs: 10000,
+            transition: TransitionPolicy.manual,
+          ),
+          RoutinePhase(
+            id: 'p2',
+            name: 'Phase B',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      final controller =
+          container.read(activeTimerControllerProvider.notifier);
+      await controller.startRoutine('r_manual');
+
+      // Advance clock by 10s so phase A completes and awaits manual action
+      fakeClock.advance(const Duration(seconds: 10));
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      controller.tick();
+
+      expect(container.read(activeTimerControllerProvider).isAwaitingAction,
+          isTrue);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ActiveTimerScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('COMPLETED — READY TO CONTINUE'), findsOneWidget);
+      expect(find.text('Start Next Phase'), findsOneWidget);
+
+      // Tap 'Start Next Phase'
+      await tester.tap(find.text('Start Next Phase'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Phase B'), findsWidgets);
+      expect(container.read(activeTimerControllerProvider).isAwaitingAction,
+          isFalse);
+
+      container.dispose();
+      await db.close();
+    });
+
+    testWidgets('renders open-ended phase with Open Flow badge', (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_open',
+        name: 'Open Flow Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Free Flow',
+            durationMs: null,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      await container
+          .read(activeTimerControllerProvider.notifier)
+          .startRoutine('r_open');
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ActiveTimerScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Free Flow'), findsWidgets);
+      expect(find.text('Open Flow'), findsOneWidget);
+      expect(find.text('00:00'), findsOneWidget);
+
+      container.dispose();
+      await db.close();
+    });
+  });
+}
