@@ -13,12 +13,10 @@ import 'package:timer_engine/timer_engine.dart';
 import '../helpers/test_fakes.dart';
 
 void main() {
-  testWidgets(
-      'End-to-End: Start routine, record session, and verify in History and Analytics',
-      (tester) async {
+  testWidgets('End-to-End: Start routine, record session, and verify in History and Analytics', (tester) async {
     final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
-    final fakeClient = FakeNotificationClient();
     final db = createInMemoryTestDatabase();
+    final fakeClient = FakeNotificationClient();
 
     final container = ProviderContainer(
       overrides: [
@@ -32,7 +30,7 @@ void main() {
     final routineRepo = container.read(routineRepositoryProvider);
     final sessionRepo = container.read(sessionRepositoryProvider);
 
-    // Seed a routine
+    // 1. Seed a routine
     const routine = Routine(
       id: 'e2e_routine',
       name: 'Flow Focus',
@@ -48,7 +46,7 @@ void main() {
     );
     await routineRepo.saveRoutine(routine);
 
-    // Record a completed session
+    // 2. Record a completed session
     final session = SessionRecord(
       sessionId: 'session_e2e_1',
       routineId: 'e2e_routine',
@@ -72,34 +70,31 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Switch to History & Analytics tab (Tab 2)
-    final historyTabFinder = find.byIcon(Icons.history).evaluate().isNotEmpty
-        ? find.byIcon(Icons.history)
-        : find.byIcon(Icons.history_outlined);
-    await tester.tap(historyTabFinder);
+    // 3. Switch to History & Analytics tab (Tab 2)
+    await tester.tap(find.byIcon(Icons.history_outlined));
     await tester.pumpAndSettle();
 
-    // Verify Analytics view loaded with metrics
+    // 4. Verify Analytics view loaded with metrics
     expect(find.text('Analytics'), findsOneWidget);
     expect(find.text('Focus Activity'), findsOneWidget);
     expect(find.text('Total Focus'), findsOneWidget);
 
-    // Switch to History feed
-    final historySegmentFinder = find.descendant(
-      of: find.byType(SegmentedButton<HistoryTab>),
-      matching: find.text('History'),
+    // 5. Switch to History feed via SegmentedButton in AppBar
+    await tester.tap(
+      find.descendant(
+        of: find.byType(SegmentedButton<HistoryTab>),
+        matching: find.text('History'),
+      ),
     );
-    await tester.tap(historySegmentFinder);
     await tester.pumpAndSettle();
 
-    // Verify session tile is displayed
+    // 6. Verify session tile is displayed
     expect(find.text('Flow Focus'), findsOneWidget);
 
-    // Tap tile to open SessionDetailSheet
+    // 7. Tap tile to open SessionDetailSheet
     await tester.tap(find.text('Flow Focus'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SessionDetailSheet), findsOneWidget);
     expect(
       find.descendant(
         of: find.byType(SessionDetailSheet),
@@ -110,6 +105,5 @@ void main() {
     expect(find.text('Delete Session'), findsOneWidget);
 
     await db.close();
-    container.dispose();
   });
 }
