@@ -352,5 +352,53 @@ void main() {
       await db.close();
       container.dispose();
     });
+
+    testWidgets('AppShell shows SnackBar if startRoutine fails',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+      final fakeCoordinator = FakeCoordinator();
+
+      const testRoutine = Routine(
+        id: 'r-fail',
+        name: 'Empty Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+          timerLifecycleCoordinatorProvider
+              .overrideWithValue(fakeCoordinator),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: AppShell(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.play_arrow));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.byType(ActiveTimerScreen), findsNothing);
+
+      await db.close();
+      container.dispose();
+    });
   });
 }

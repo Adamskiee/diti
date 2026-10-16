@@ -97,5 +97,16 @@ void main() {
       await fake.cancelAll();
       expect(fake.cancelledIds, contains(99));
     });
+
+    test('resolveDatabasePath resolves fallback in test environment', () async {
+      final path = await resolveDatabasePath();
+      expect(path, 'focus_flow.db');
+    });
+
+    test('constructDatabase creates valid FocusFlowDatabase instance', () async {
+      final db = constructDatabase();
+      expect(db, isA<FocusFlowDatabase>());
+      await db.close();
+    });
   });
 }

@@ -72,5 +72,22 @@ void main() {
       expect(find.text('06:15'), findsOneWidget);
       expect(find.text('12:30'), findsNothing);
     });
+
+    testWidgets('renders cleanly when progress is 0.0', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: CircularTimerDial(
+              progress: 0.0,
+              formattedTime: '00:00',
+              primaryColor: Colors.teal,
+              backgroundColor: Colors.grey,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('00:00'), findsOneWidget);
+    });
   });
 }

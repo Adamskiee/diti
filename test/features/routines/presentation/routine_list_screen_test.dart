@@ -377,5 +377,51 @@ void main() {
       container.dispose();
       await db.close();
     });
+
+    test('sets error state when duplicateRoutine or deleteRoutine encounters database failure',
+        () async {
+      final container = ProviderContainer(
+        overrides: [
+          routineRepositoryProvider.overrideWithValue(FailingRoutineRepository()),
+        ],
+      );
+
+      final controller =
+          container.read(routineListControllerProvider.notifier);
+      await container.read(routineListControllerProvider.future);
+
+      const routine = Routine(
+        id: 'r1',
+        name: 'Test',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [],
+      );
+
+      await controller.duplicateRoutine(routine);
+      expect(container.read(routineListControllerProvider).hasError, isTrue);
+
+      await controller.deleteRoutine('r1');
+      expect(container.read(routineListControllerProvider).hasError, isTrue);
+
+      container.dispose();
+    });
   });
+}
+
+class FailingRoutineRepository implements RoutineRepository {
+  @override
+  Future<List<Routine>> getAllRoutines() async => [];
+
+  @override
+  Future<Routine?> getRoutine(String id) async => null;
+
+  @override
+  Future<void> saveRoutine(Routine routine) async {
+    throw Exception('Database error on save');
+  }
+
+  @override
+  Future<void> deleteRoutine(String id) async {
+    throw Exception('Database error on delete');
+  }
 }

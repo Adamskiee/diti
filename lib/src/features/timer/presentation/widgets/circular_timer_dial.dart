@@ -74,14 +74,16 @@ class _DialPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 14;
 
-    final sweepAngle = 2 * math.pi * progress;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      sweepAngle,
-      false,
-      progressPaint,
-    );
+    if (progress > 0) {
+      final sweepAngle = 2 * math.pi * progress;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        sweepAngle,
+        false,
+        progressPaint,
+      );
+    }
   }
 
   @override

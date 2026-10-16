@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:focus_flow_notifications/focus_flow_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'src/core/di/notification_providers.dart';
 import 'src/core/di/repositories_provider.dart';
 import 'src/core/navigation/app_shell.dart';
 import 'src/core/theme/app_theme.dart';
@@ -31,6 +34,11 @@ class _FocusFlowAppState extends ConsumerState<FocusFlowApp> {
   }
 
   Future<void> _bootstrap() async {
+    tz.initializeTimeZones();
+    await ref.read(notificationClientProvider).initialize(
+          settings: LocalNotificationPort.defaultInitializationSettings,
+        );
+
     final repo = ref.read(routineRepositoryProvider);
     await seedStarterRoutines(repo);
 

@@ -231,6 +231,13 @@ void main() {
 
       expect(container.read(activeTimerControllerProvider).status,
           RunStatus.completed);
+      expect(find.text('Routine Complete! Great work.'), findsOneWidget);
+      expect(find.byKey(const Key('timer_done_button')), findsOneWidget);
+      expect(find.byKey(const Key('timer_stop_button')), findsNothing);
+
+      // Tap Done button
+      await tester.tap(find.byKey(const Key('timer_done_button')));
+      await tester.pumpAndSettle();
 
       container.dispose();
       await db.close();

@@ -1,7 +1,7 @@
 import 'package:timer_engine/timer_engine.dart';
 
-final starterRoutines = <Routine>[
-  const Routine(
+const List<Routine> starterRoutines = [
+  Routine(
     id: 'pomodoro-default',
     name: 'Classic Pomodoro',
     repeatRule: RepeatRule(mode: RepeatMode.count, count: 4),
@@ -20,7 +20,7 @@ final starterRoutines = <Routine>[
       ),
     ],
   ),
-  const Routine(
+  Routine(
     id: 'deep-work-default',
     name: 'Deep Work',
     repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
@@ -39,7 +39,7 @@ final starterRoutines = <Routine>[
       ),
     ],
   ),
-  const Routine(
+  Routine(
     id: 'open-flow-default',
     name: 'Open Flow',
     repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),

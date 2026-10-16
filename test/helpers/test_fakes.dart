@@ -10,13 +10,18 @@ FocusFlowDatabase createInMemoryTestDatabase() {
 class FakeNotificationClient implements NotificationClient {
   final List<int> scheduledIds = [];
   final List<int> cancelledIds = [];
+  bool isInitialized = false;
+  InitializationSettings? initializationSettings;
 
   @override
   Future<bool?> initialize({
     required dynamic settings,
     dynamic onNotificationResponse,
-  }) async =>
-      true;
+  }) async {
+    isInitialized = true;
+    initializationSettings = settings as InitializationSettings?;
+    return true;
+  }
 
   @override
   Future<void> zonedSchedule({

@@ -44,6 +44,8 @@ void main() {
       expect(find.text('Classic Pomodoro'), findsOneWidget);
       expect(find.text('Deep Work'), findsOneWidget);
       expect(find.text('Open Flow'), findsOneWidget);
+      expect(fakeClient.isInitialized, isTrue);
+      expect(fakeClient.initializationSettings, isNotNull);
 
       await db.close();
       container.dispose();

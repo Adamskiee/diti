@@ -11,6 +11,13 @@ class LocalNotificationPort implements NotificationPort {
   static const String channelName = 'Timer Phase Boundaries';
   static const String channelDescription = 'Alerts when a focus or break phase completes.';
 
+  static const InitializationSettings defaultInitializationSettings =
+      InitializationSettings(
+    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    iOS: DarwinInitializationSettings(),
+    macOS: DarwinInitializationSettings(),
+  );
+
   final NotificationClient _client;
   final BoundaryWindowCalculator _calculator;
   final Map<String, Set<int>> _scheduledIdsByRun = {};
@@ -20,6 +27,18 @@ class LocalNotificationPort implements NotificationPort {
     BoundaryWindowCalculator? calculator,
   })  : _client = client,
         _calculator = calculator ?? const BoundaryWindowCalculator();
+
+  /// Initializes the underlying notification client with [settings]
+  /// (defaulting to [defaultInitializationSettings]).
+  Future<bool?> initialize({
+    InitializationSettings? settings,
+    void Function(NotificationResponse response)? onNotificationResponse,
+  }) {
+    return _client.initialize(
+      settings: settings ?? defaultInitializationSettings,
+      onNotificationResponse: onNotificationResponse,
+    );
+  }
 
   List<int> getScheduledIds(String runId) =>
       List.unmodifiable(_scheduledIdsByRun[runId] ?? const <int>{});

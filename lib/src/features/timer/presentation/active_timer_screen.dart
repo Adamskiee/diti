@@ -14,14 +14,17 @@ class ActiveTimerScreen extends ConsumerWidget {
     final controller = ref.read(activeTimerControllerProvider.notifier);
     final theme = Theme.of(context);
 
+    final isCompleted = state.status == RunStatus.completed;
     final isPaused = state.status == RunStatus.paused;
     final isAwaitingAction = state.isAwaitingAction;
 
-    final dialColor = isPaused
-        ? AppColors.pausedAmber
-        : (isAwaitingAction
-            ? AppColors.awaitingActionPulse
-            : theme.colorScheme.primary);
+    final dialColor = isCompleted
+        ? theme.colorScheme.primary
+        : (isPaused
+            ? AppColors.pausedAmber
+            : (isAwaitingAction
+                ? AppColors.awaitingActionPulse
+                : theme.colorScheme.primary));
 
     return Scaffold(
       appBar: AppBar(
@@ -32,12 +35,13 @@ class ActiveTimerScreen extends ConsumerWidget {
         ),
         title: Text(state.phaseName.isEmpty ? 'Timer' : state.phaseName),
         actions: [
-          IconButton(
-            key: const Key('timer_stop_button'),
-            icon: const Icon(Icons.close),
-            tooltip: 'Stop Routine',
-            onPressed: () => _confirmStop(context, controller),
-          ),
+          if (!isCompleted)
+            IconButton(
+              key: const Key('timer_stop_button'),
+              icon: const Icon(Icons.close),
+              tooltip: 'Stop Routine',
+              onPressed: () => _confirmStop(context, controller),
+            ),
         ],
       ),
       body: Center(
@@ -61,7 +65,32 @@ class ActiveTimerScreen extends ConsumerWidget {
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
               ),
               const SizedBox(height: 24),
-              if (isPaused)
+              if (isCompleted)
+                Card(
+                  color: theme.colorScheme.primaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Routine Complete! Great work.',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (isPaused)
                 const Chip(
                   avatar: Icon(Icons.pause, size: 16),
                   label: Text('PAUSED'),
@@ -77,7 +106,7 @@ class ActiveTimerScreen extends ConsumerWidget {
                 Chip(
                   label: Text(state.isCountdown ? 'Focusing' : 'Open Flow'),
                 ),
-              if (state.nextPhasePreview != null) ...[
+              if (state.nextPhasePreview != null && !isCompleted) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Next: ${state.nextPhasePreview}',
@@ -87,7 +116,20 @@ class ActiveTimerScreen extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 36),
-              if (isAwaitingAction) ...[
+              if (isCompleted) ...[
+                FilledButton.icon(
+                  key: const Key('timer_done_button'),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: const Icon(Icons.check),
+                  label: const Text('Done'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              ] else if (isAwaitingAction) ...[
                 FilledButton.icon(
                   onPressed: () => controller.finishPhase(),
                   icon: const Icon(Icons.arrow_forward),

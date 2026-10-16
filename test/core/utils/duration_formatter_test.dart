@@ -24,6 +24,7 @@ void main() {
       expect(DurationFormatter.formatDurationSummary(1500000), '25m');
       expect(DurationFormatter.formatDurationSummary(3600000), '1h 00m');
       expect(DurationFormatter.formatDurationSummary(5400000), '1h 30m');
+      expect(DurationFormatter.formatDurationSummary(-1000), '0m');
     });
   });
 }

@@ -20,7 +20,8 @@ class DurationFormatter {
 
   static String formatDurationSummary(int? ms) {
     if (ms == null) return 'Open-ended';
-    final totalMinutes = (ms / 60000).round();
+    final clampedMs = ms < 0 ? 0 : ms;
+    final totalMinutes = (clampedMs / 60000).round();
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
 

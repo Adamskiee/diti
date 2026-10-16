@@ -25,6 +25,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     // Initialize coordinator & recovery
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(timerLifecycleCoordinatorProvider).initialize();
     });
   }
@@ -55,14 +56,23 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
         children: [
           RoutineListScreen(
             onStartRoutine: (routine) async {
-              await ref
+              final result = await ref
                   .read(activeTimerControllerProvider.notifier)
                   .startRoutine(routine.id);
-              if (context.mounted) {
+              if (!context.mounted) return;
+              if (result.success) {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (ctx) => const ActiveTimerScreen(),
                     fullscreenDialog: true,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      result.error?.name ?? 'Failed to start routine',
+                    ),
                   ),
                 );
               }

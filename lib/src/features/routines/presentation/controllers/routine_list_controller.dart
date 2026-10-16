@@ -24,31 +24,39 @@ class RoutineListController extends AsyncNotifier<List<Routine>> {
   }
 
   Future<void> duplicateRoutine(Routine routine) async {
-    final repo = ref.read(routineRepositoryProvider);
-    const uuid = Uuid();
-    final clonedPhases = routine.phases.map((p) {
-      return RoutinePhase(
+    try {
+      final repo = ref.read(routineRepositoryProvider);
+      const uuid = Uuid();
+      final clonedPhases = routine.phases.map((p) {
+        return RoutinePhase(
+          id: uuid.v4(),
+          name: p.name,
+          durationMs: p.durationMs,
+          transition: p.transition,
+        );
+      }).toList();
+
+      final duplicated = Routine(
         id: uuid.v4(),
-        name: p.name,
-        durationMs: p.durationMs,
-        transition: p.transition,
+        name: '${routine.name} (Copy)',
+        repeatRule: routine.repeatRule,
+        phases: clonedPhases,
       );
-    }).toList();
 
-    final duplicated = Routine(
-      id: uuid.v4(),
-      name: '${routine.name} (Copy)',
-      repeatRule: routine.repeatRule,
-      phases: clonedPhases,
-    );
-
-    await repo.saveRoutine(duplicated);
-    await refresh();
+      await repo.saveRoutine(duplicated);
+      await refresh();
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
   }
 
   Future<void> deleteRoutine(String id) async {
-    final repo = ref.read(routineRepositoryProvider);
-    await repo.deleteRoutine(id);
-    await refresh();
+    try {
+      final repo = ref.read(routineRepositoryProvider);
+      await repo.deleteRoutine(id);
+      await refresh();
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
   }
 }

@@ -50,6 +50,7 @@ final timerLifecycleCoordinatorProvider =
     notificationPort: notificationPort,
     wallClock: wallClock,
     permissionService: permissionService,
+    attachLifecycleListener: false,
   );
 
   ref.onDispose(() => coordinator.dispose());
