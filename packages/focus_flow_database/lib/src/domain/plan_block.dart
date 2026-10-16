@@ -28,4 +28,28 @@ class PlanBlock {
     this.status = PlanBlockStatus.scheduled,
   }) : scheduledStartUtc =
             scheduledStartUtc.isUtc ? scheduledStartUtc : scheduledStartUtc.toUtc();
+
+  PlanBlock copyWith({
+    String? id,
+    String? planDate,
+    DateTime? scheduledStartUtc,
+    String? timezoneId,
+    int? plannedDurationMs,
+    String? routineId,
+    int? actualDurationMs,
+    String? sessionId,
+    PlanBlockStatus? status,
+  }) {
+    return PlanBlock(
+      id: id ?? this.id,
+      planDate: planDate ?? this.planDate,
+      scheduledStartUtc: scheduledStartUtc ?? this.scheduledStartUtc,
+      timezoneId: timezoneId ?? this.timezoneId,
+      plannedDurationMs: plannedDurationMs ?? this.plannedDurationMs,
+      routineId: routineId ?? this.routineId,
+      actualDurationMs: actualDurationMs ?? this.actualDurationMs,
+      sessionId: sessionId ?? this.sessionId,
+      status: status ?? this.status,
+    );
+  }
 }

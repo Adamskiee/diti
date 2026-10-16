@@ -41,7 +41,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     _syncState(runState);
     if (runState.status == RunStatus.completed ||
         runState.status == RunStatus.cancelled) {
-      unawaited(_checkAndLinkSession(runState));
+      unawaited(_checkAndLinkSession(runState).catchError((_) {}));
     }
   }
 
@@ -205,15 +205,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       if (block != null) {
         linkedBlock = block;
         await planRepo.updatePlanBlock(
-          PlanBlock(
-            id: block.id,
-            planDate: block.planDate,
-            scheduledStartUtc: block.scheduledStartUtc,
-            timezoneId: block.timezoneId,
-            plannedDurationMs: block.plannedDurationMs,
-            routineId: block.routineId,
-            status: PlanBlockStatus.inProgress,
-          ),
+          block.copyWith(status: PlanBlockStatus.inProgress),
         );
       }
     }
@@ -260,6 +252,12 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
         _syncState(s);
       }
     } else if (!res.success) {
+      if (linkedBlock != null) {
+        final planRepo = ref.read(planBlockRepositoryProvider);
+        await planRepo.updatePlanBlock(
+          linkedBlock.copyWith(status: PlanBlockStatus.scheduled),
+        );
+      }
       _activePlanBlockId = null;
     }
     return res;

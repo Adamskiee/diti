@@ -48,6 +48,10 @@ void main() {
 
       expect(find.byType(PlanBlockDialog), findsOneWidget);
       expect(find.text('Schedule Block'), findsOneWidget);
+      final dialog = tester.widget<PlanBlockDialog>(find.byType(PlanBlockDialog));
+      expect(dialog.initialStartUtc.year, 2026);
+      expect(dialog.initialStartUtc.month, 10);
+      expect(dialog.initialStartUtc.day, 16);
 
       await db.close();
       container.dispose();

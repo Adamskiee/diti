@@ -654,6 +654,68 @@ void main() {
       container.dispose();
       await db.close();
     });
+
+    test(
+        'rolls back plan block status to scheduled if engine start fails',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      const routine1 = Routine(
+        id: 'r_first',
+        name: 'First Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Phase 1',
+            durationMs: 60000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+      await container.read(routineRepositoryProvider).saveRoutine(routine1);
+
+      final planBlock = PlanBlock(
+        id: 'block_rollback',
+        planDate: '2026-10-16',
+        scheduledStartUtc: DateTime.utc(2026, 10, 16, 10, 0),
+        timezoneId: 'UTC',
+        plannedDurationMs: 600000,
+        routineId: 'r_first',
+      );
+      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+
+      // Start first routine so engine is already running
+      await controller.startRoutine('r_first');
+
+      // Attempt to start second routine with planBlockId while engine is already running
+      final result = await controller.startRoutine(
+        'r_first',
+        planBlockId: 'block_rollback',
+      );
+      expect(result.success, isFalse);
+
+      final rolledBackBlock = await container
+          .read(planBlockRepositoryProvider)
+          .getBlockById('block_rollback');
+      expect(rolledBackBlock?.status, PlanBlockStatus.scheduled);
+
+      container.dispose();
+      await db.close();
+    });
   });
 }
 

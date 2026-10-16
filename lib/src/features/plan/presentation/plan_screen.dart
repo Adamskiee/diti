@@ -90,11 +90,23 @@ class PlanScreen extends ConsumerWidget {
     WidgetRef ref,
     String planDate,
   ) async {
+    final now = DateTime.now();
+    final parts = planDate.split('-');
+    final scheduledDate = parts.length == 3
+        ? DateTime(
+            int.parse(parts[0]),
+            int.parse(parts[1]),
+            int.parse(parts[2]),
+            now.hour,
+            now.minute,
+          )
+        : now;
+
     final block = await showDialog<PlanBlock>(
       context: context,
       builder: (ctx) => PlanBlockDialog(
         planDate: planDate,
-        initialStartUtc: DateTime.now().toUtc(),
+        initialStartUtc: scheduledDate.toUtc(),
       ),
     );
 
@@ -170,6 +182,7 @@ class PlanScreen extends ConsumerWidget {
           fullscreenDialog: true,
         ),
       );
+      if (!context.mounted) return;
       ref.read(dailyPlanControllerProvider.notifier).refresh();
     }
   }
