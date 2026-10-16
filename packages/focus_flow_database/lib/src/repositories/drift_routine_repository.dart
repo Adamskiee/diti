@@ -44,6 +44,7 @@ class DriftRoutineRepository implements RoutineRepository {
     );
   }
 
+  @override
   Future<void> saveRoutine(Routine routine) async {
     final now = DateTime.now().toUtc();
     final existing = await dao.getRoutineById(routine.id);
@@ -75,10 +76,12 @@ class DriftRoutineRepository implements RoutineRepository {
     await dao.upsertRoutineWithPhases(routineCompanion, phaseCompanions);
   }
 
+  @override
   Future<void> deleteRoutine(String routineId) async {
     await dao.deleteRoutine(routineId);
   }
 
+  @override
   Future<List<Routine>> getAllRoutines() async {
     final routineRows = await dao.getAllRoutines();
     final result = <Routine>[];
