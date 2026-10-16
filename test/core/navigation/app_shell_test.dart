@@ -6,6 +6,7 @@ import 'package:focus_flow/src/core/di/notification_providers.dart';
 import 'package:focus_flow/src/core/di/repositories_provider.dart';
 import 'package:focus_flow/src/core/di/timer_engine_provider.dart';
 import 'package:focus_flow/src/core/navigation/app_shell.dart';
+import 'package:focus_flow/src/features/plan/presentation/plan_screen.dart';
 import 'package:focus_flow/src/features/routines/presentation/routine_editor_screen.dart';
 import 'package:focus_flow/src/features/settings/presentation/settings_screen.dart';
 import 'package:focus_flow/src/features/timer/controllers/active_timer_controller.dart';
@@ -108,7 +109,8 @@ void main() {
       await tester.tap(find.byIcon(Icons.calendar_today_outlined));
       await tester.pumpAndSettle();
 
-      expect(find.text('Coming in Phase 4B: Time-blocking and schedule routines.'),
+      expect(find.byType(PlanScreen), findsOneWidget);
+      expect(find.textContaining('No blocks scheduled for this day'),
           findsOneWidget);
 
       // Switch to History tab

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/plan/presentation/plan_screen.dart';
 import '../../features/routines/presentation/routine_editor_screen.dart';
 import '../../features/routines/presentation/routine_list_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -85,11 +86,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
               );
             },
           ),
-          _buildPlaceholder(
-            title: 'Daily Plan',
-            description: 'Coming in Phase 4B: Time-blocking and schedule routines.',
-            icon: Icons.calendar_today,
-          ),
+          const PlanScreen(),
           _buildPlaceholder(
             title: 'History & Analytics',
             description: 'Coming in Phase 4C: Session history and productivity metrics.',
