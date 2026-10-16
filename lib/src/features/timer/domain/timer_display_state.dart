@@ -2,6 +2,7 @@ import 'package:timer_engine/timer_engine.dart';
 
 class TimerDisplayState {
   final String? runId;
+  final String? planBlockId;
   final RunStatus status;
   final PhaseStatus phaseStatus;
   final String phaseName;
@@ -15,6 +16,7 @@ class TimerDisplayState {
 
   const TimerDisplayState({
     this.runId,
+    this.planBlockId,
     this.status = RunStatus.idle,
     this.phaseStatus = PhaseStatus.active,
     this.phaseName = '',
@@ -36,6 +38,7 @@ class TimerDisplayState {
 
   TimerDisplayState copyWith({
     String? runId,
+    String? planBlockId,
     RunStatus? status,
     PhaseStatus? phaseStatus,
     String? phaseName,
@@ -49,6 +52,7 @@ class TimerDisplayState {
   }) {
     return TimerDisplayState(
       runId: runId ?? this.runId,
+      planBlockId: planBlockId ?? this.planBlockId,
       status: status ?? this.status,
       phaseStatus: phaseStatus ?? this.phaseStatus,
       phaseName: phaseName ?? this.phaseName,
@@ -70,6 +74,7 @@ class TimerDisplayState {
       other is TimerDisplayState &&
           runtimeType == other.runtimeType &&
           runId == other.runId &&
+          planBlockId == other.planBlockId &&
           status == other.status &&
           phaseStatus == other.phaseStatus &&
           phaseName == other.phaseName &&
@@ -84,6 +89,7 @@ class TimerDisplayState {
   @override
   int get hashCode => Object.hash(
         runId,
+        planBlockId,
         status,
         phaseStatus,
         phaseName,
@@ -98,6 +104,7 @@ class TimerDisplayState {
 
   @override
   String toString() =>
-      'TimerDisplayState(runId: $runId, status: $status, phaseStatus: $phaseStatus, '
-      'phaseName: $phaseName, formattedTime: $formattedTime, progress: $progress)';
+      'TimerDisplayState(runId: $runId, planBlockId: $planBlockId, status: $status, '
+      'phaseStatus: $phaseStatus, phaseName: $phaseName, formattedTime: $formattedTime, '
+      'progress: $progress)';
 }

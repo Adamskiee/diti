@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:focus_flow_database/focus_flow_database.dart';
 import 'package:timer_engine/timer_engine.dart';
+import 'package:uuid/uuid.dart';
+import '../../../core/di/repositories_provider.dart';
 import '../../../core/di/timer_engine_provider.dart';
 import '../../../core/utils/duration_formatter.dart';
 import '../domain/timer_display_state.dart';
@@ -8,6 +11,8 @@ import '../domain/timer_display_state.dart';
 class ActiveTimerController extends Notifier<TimerDisplayState> {
   Timer? _ticker;
   StreamSubscription<TimerRunState>? _engineSub;
+  String? _activePlanBlockId;
+  Future<void>? _linkingSessionFuture;
 
   @override
   TimerDisplayState build() {
@@ -34,6 +39,10 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
 
   void _onEngineState(TimerRunState runState) {
     _syncState(runState);
+    if (runState.status == RunStatus.completed ||
+        runState.status == RunStatus.cancelled) {
+      unawaited(_checkAndLinkSession(runState));
+    }
   }
 
   void _syncState(TimerRunState runState) {
@@ -111,6 +120,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
 
     return TimerDisplayState(
       runId: s.runId,
+      planBlockId: _activePlanBlockId,
       status: s.status,
       phaseStatus: s.phaseStatus,
       phaseName: s.phaseName,
@@ -125,14 +135,132 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     );
   }
 
-  Future<TimerCommandResult> startRoutine(String routineId) async {
+  Future<void> _checkAndLinkSession(TimerRunState runState) {
+    if (_linkingSessionFuture != null) {
+      return _linkingSessionFuture!;
+    }
+    final blockId = _activePlanBlockId;
+    if (blockId == null) return Future.value();
+    _activePlanBlockId = null;
+
+    final completer = Completer<void>();
+    _linkingSessionFuture = completer.future;
+
+    () async {
+      try {
+        final planRepo = ref.read(planBlockRepositoryProvider);
+        final sessionRepo = ref.read(sessionRepositoryProvider);
+
+        SessionRecord? session;
+        try {
+          session = await sessionRepo.getSession(runState.runId);
+        } catch (_) {}
+
+        if (session == null) {
+          try {
+            final blockSessions =
+                await sessionRepo.getSessionsForPlanBlock(blockId);
+            if (blockSessions.isNotEmpty) {
+              session = blockSessions.last;
+            }
+          } catch (_) {}
+        }
+
+        final actualDurationMs =
+            session?.totalDurationMs ?? runState.activeElapsedMs;
+        final sessionId = session?.sessionId ?? runState.runId;
+        final status = runState.status == RunStatus.completed
+            ? PlanBlockStatus.completed
+            : PlanBlockStatus.cancelled;
+
+        await planRepo.linkSession(
+          blockId: blockId,
+          sessionId: sessionId,
+          actualDurationMs: actualDurationMs,
+          status: status,
+        );
+        completer.complete();
+      } catch (e, st) {
+        completer.completeError(e, st);
+      } finally {
+        _linkingSessionFuture = null;
+      }
+    }();
+
+    return completer.future;
+  }
+
+  Future<TimerCommandResult> startRoutine(
+    String routineIdOrName, {
+    String? planBlockId,
+    String? customTitle,
+  }) async {
+    _activePlanBlockId = planBlockId;
+    _linkingSessionFuture = null;
+    PlanBlock? linkedBlock;
+
+    if (planBlockId != null) {
+      final planRepo = ref.read(planBlockRepositoryProvider);
+      final block = await planRepo.getBlockById(planBlockId);
+      if (block != null) {
+        linkedBlock = block;
+        await planRepo.updatePlanBlock(
+          PlanBlock(
+            id: block.id,
+            planDate: block.planDate,
+            scheduledStartUtc: block.scheduledStartUtc,
+            timezoneId: block.timezoneId,
+            plannedDurationMs: block.plannedDurationMs,
+            routineId: block.routineId,
+            status: PlanBlockStatus.inProgress,
+          ),
+        );
+      }
+    }
+
+    // Resolve routine
+    final routineRepo = ref.read(routineRepositoryProvider);
+    String resolvedRoutineId = routineIdOrName;
+    final existingById = await routineRepo.getRoutine(routineIdOrName);
+    if (existingById != null) {
+      resolvedRoutineId = existingById.id;
+    } else {
+      final allRoutines = await routineRepo.getAllRoutines();
+      final matchingByName =
+          allRoutines.where((r) => r.name == routineIdOrName).firstOrNull;
+      if (matchingByName != null) {
+        resolvedRoutineId = matchingByName.id;
+      } else {
+        // Custom activity: create and persist a single-phase routine
+        final newRoutineId = const Uuid().v4();
+        final activityName = customTitle ?? routineIdOrName;
+        final newRoutine = Routine(
+          id: newRoutineId,
+          name: activityName,
+          repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+          phases: [
+            RoutinePhase(
+              id: const Uuid().v4(),
+              name: activityName,
+              durationMs: linkedBlock?.plannedDurationMs ?? 1500000,
+              transition: TransitionPolicy.manual,
+            ),
+          ],
+        );
+        await routineRepo.saveRoutine(newRoutine);
+        resolvedRoutineId = newRoutineId;
+      }
+    }
+
     final engine = ref.read(timerEngineProvider);
-    final res = await engine.start(routineId);
+    final res = await engine.start(resolvedRoutineId);
     if (res.success && engine.activeRunId != null) {
       final s = engine.getState(engine.activeRunId!);
       if (s != null) {
         _syncState(s);
       }
+    } else if (!res.success) {
+      _activePlanBlockId = null;
     }
     return res;
   }
@@ -192,6 +320,10 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
+        if (s.status == RunStatus.completed ||
+            s.status == RunStatus.cancelled) {
+          await _checkAndLinkSession(s);
+        }
       }
     }
     return res;
@@ -207,6 +339,10 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
+        if (s.status == RunStatus.completed ||
+            s.status == RunStatus.cancelled) {
+          await _checkAndLinkSession(s);
+        }
       }
     }
     return res;
@@ -222,13 +358,30 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
+        await _checkAndLinkSession(s);
       } else {
+        final cancelledRunState = TimerRunState(
+          runId: runId,
+          status: RunStatus.cancelled,
+          phaseStatus: PhaseStatus.active,
+          currentPhase: RoutinePhase(
+            id: 'unknown',
+            name: state.phaseName,
+            transition: TransitionPolicy.manual,
+          ),
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: state.displayElapsedMs,
+          stateVersion: 0,
+        );
         state = TimerDisplayState(
           runId: runId,
+          planBlockId: _activePlanBlockId,
           status: RunStatus.cancelled,
           phaseName: state.phaseName,
         );
         _stopTicker();
+        await _checkAndLinkSession(cancelledRunState);
       }
     }
     return res;

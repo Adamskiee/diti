@@ -6,6 +6,7 @@ import 'package:focus_flow/src/core/di/repositories_provider.dart';
 import 'package:focus_flow/src/core/di/timer_engine_provider.dart';
 import 'package:focus_flow/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:focus_flow/src/features/timer/domain/timer_display_state.dart';
+import 'package:focus_flow_database/focus_flow_database.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../../helpers/test_fakes.dart';
 
@@ -375,6 +376,280 @@ void main() {
       expect(displayState.status, RunStatus.running);
       expect(displayState.phaseName, 'Study');
       expect(displayState.formattedTime, '02:00');
+
+      container.dispose();
+      await db.close();
+    });
+
+    test(
+        'linking planBlockId updates block to inProgress and records actual duration on finish',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      const routine = Routine(
+        id: 'r_pomodoro',
+        name: 'Pomodoro',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Work',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ), // 25 min
+        ],
+      );
+      await container.read(routineRepositoryProvider).saveRoutine(routine);
+
+      final planBlock = PlanBlock(
+        id: 'block_001',
+        planDate: '2026-10-16',
+        scheduledStartUtc: DateTime.utc(2026, 10, 16, 9, 0),
+        timezoneId: 'UTC',
+        plannedDurationMs: 1500000,
+        routineId: 'r_pomodoro',
+      );
+      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+
+      // Start routine linked to block
+      final res = await controller.startRoutine('r_pomodoro', planBlockId: 'block_001');
+      expect(res.success, isTrue);
+      expect(container.read(activeTimerControllerProvider).planBlockId, 'block_001');
+
+      // Block is inProgress
+      var updatedBlock =
+          await container.read(planBlockRepositoryProvider).getBlockById('block_001');
+      expect(updatedBlock?.status, PlanBlockStatus.inProgress);
+
+      // Advance clock 25 mins and finish phase
+      fakeClock.advance(const Duration(minutes: 25));
+      await controller.finishPhase();
+
+      // Block is completed with actual duration recorded
+      updatedBlock =
+          await container.read(planBlockRepositoryProvider).getBlockById('block_001');
+      expect(updatedBlock?.status, PlanBlockStatus.completed);
+      expect(updatedBlock?.actualDurationMs, 1500000);
+      expect(updatedBlock?.sessionId, isNotNull);
+
+      container.dispose();
+      await db.close();
+    });
+
+    test(
+        'cancelling active timer run updates linked planBlock to cancelled and records actual duration',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      const routine = Routine(
+        id: 'r_cancel',
+        name: 'Pomodoro Cancel',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Work',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+      await container.read(routineRepositoryProvider).saveRoutine(routine);
+
+      final planBlock = PlanBlock(
+        id: 'block_002',
+        planDate: '2026-10-16',
+        scheduledStartUtc: DateTime.utc(2026, 10, 16, 9, 0),
+        timezoneId: 'UTC',
+        plannedDurationMs: 1500000,
+        routineId: 'r_cancel',
+      );
+      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      await controller.startRoutine('r_cancel', planBlockId: 'block_002');
+
+      // Advance clock 10 mins (600000 ms) and stop/cancel
+      fakeClock.advance(const Duration(minutes: 10));
+      await controller.stop();
+
+      final updatedBlock =
+          await container.read(planBlockRepositoryProvider).getBlockById('block_002');
+      expect(updatedBlock?.status, PlanBlockStatus.cancelled);
+      expect(updatedBlock?.actualDurationMs, 600000);
+      expect(updatedBlock?.sessionId, isNotNull);
+
+      container.dispose();
+      await db.close();
+    });
+
+    test(
+        'startRoutine resolves routine by name when id does not exist',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      const routine = Routine(
+        id: 'uuid_custom_123',
+        name: 'Classic Pomodoro',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+      await container.read(routineRepositoryProvider).saveRoutine(routine);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      final res = await controller.startRoutine('Classic Pomodoro');
+      expect(res.success, isTrue);
+
+      final state = container.read(activeTimerControllerProvider);
+      expect(state.phaseName, 'Focus');
+      expect(state.status, RunStatus.running);
+
+      container.dispose();
+      await db.close();
+    });
+
+    test(
+        'startRoutine creates and persists custom routine for unknown custom activity and links plan block',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      final planBlock = PlanBlock(
+        id: 'block_custom',
+        planDate: '2026-10-16',
+        scheduledStartUtc: DateTime.utc(2026, 10, 16, 9, 0),
+        timezoneId: 'UTC',
+        plannedDurationMs: 1800000, // 30 min
+        routineId: 'Team Standup',
+      );
+      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      final res = await controller.startRoutine('Team Standup', planBlockId: 'block_custom');
+      expect(res.success, isTrue);
+
+      final state = container.read(activeTimerControllerProvider);
+      expect(state.phaseName, 'Team Standup');
+      expect(state.displayRemainingMs, 1800000);
+
+      // Advance clock 35 mins (overrun: 2100000 ms) and finish phase
+      fakeClock.advance(const Duration(minutes: 35));
+      await controller.finishPhase();
+
+      final updatedBlock =
+          await container.read(planBlockRepositoryProvider).getBlockById('block_custom');
+      expect(updatedBlock?.status, PlanBlockStatus.completed);
+      expect(updatedBlock?.actualDurationMs, 1800000);
+
+      container.dispose();
+      await db.close();
+    });
+
+    test(
+        'open-ended routine tracks overrun when actual duration exceeds planned duration',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      const routine = Routine(
+        id: 'r_open_ended',
+        name: 'Open Flow',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Flow',
+            durationMs: null,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+      await container.read(routineRepositoryProvider).saveRoutine(routine);
+
+      final planBlock = PlanBlock(
+        id: 'block_overrun',
+        planDate: '2026-10-16',
+        scheduledStartUtc: DateTime.utc(2026, 10, 16, 9, 0),
+        timezoneId: 'UTC',
+        plannedDurationMs: 900000, // 15 min planned
+        routineId: 'r_open_ended',
+      );
+      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      await controller.startRoutine('r_open_ended', planBlockId: 'block_overrun');
+
+      // Advance clock 25 mins (1500000 ms - overrun of +10 min)
+      fakeClock.advance(const Duration(minutes: 25));
+      await controller.finishPhase();
+
+      final updatedBlock =
+          await container.read(planBlockRepositoryProvider).getBlockById('block_overrun');
+      expect(updatedBlock?.status, PlanBlockStatus.completed);
+      expect(updatedBlock?.actualDurationMs, 1500000);
+      expect(updatedBlock!.actualDurationMs! > updatedBlock.plannedDurationMs, isTrue);
 
       container.dispose();
       await db.close();
