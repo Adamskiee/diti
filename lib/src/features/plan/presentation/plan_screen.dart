@@ -164,12 +164,13 @@ class PlanScreen extends ConsumerWidget {
             );
 
     if (res.success && context.mounted) {
-      Navigator.of(context).push(
+      await Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (ctx) => const ActiveTimerScreen(),
           fullscreenDialog: true,
         ),
       );
+      ref.read(dailyPlanControllerProvider.notifier).refresh();
     }
   }
 }
