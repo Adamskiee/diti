@@ -6,6 +6,7 @@ import 'package:focus_flow/src/core/di/notification_providers.dart';
 import 'package:focus_flow/src/core/di/repositories_provider.dart';
 import 'package:focus_flow/src/core/di/timer_engine_provider.dart';
 import 'package:focus_flow/src/core/navigation/app_shell.dart';
+import 'package:focus_flow/src/features/history/presentation/history_analytics_screen.dart';
 import 'package:focus_flow/src/features/plan/presentation/plan_screen.dart';
 import 'package:focus_flow/src/features/routines/presentation/routine_editor_screen.dart';
 import 'package:focus_flow/src/features/settings/presentation/settings_screen.dart';
@@ -117,10 +118,15 @@ void main() {
       await tester.tap(find.byIcon(Icons.history_outlined));
       await tester.pumpAndSettle();
 
+      expect(find.byType(HistoryAnalyticsScreen), findsOneWidget);
+      expect(find.text('Analytics'), findsOneWidget);
       expect(
-          find.text(
-              'Coming in Phase 4C: Session history and productivity metrics.'),
-          findsOneWidget);
+        find.descendant(
+          of: find.byType(HistoryAnalyticsScreen),
+          matching: find.text('History'),
+        ),
+        findsOneWidget,
+      );
 
       // Switch to Settings tab
       await tester.tap(find.byIcon(Icons.settings_outlined));

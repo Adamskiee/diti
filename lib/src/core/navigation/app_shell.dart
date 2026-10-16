@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/history/presentation/history_analytics_screen.dart';
 import '../../features/plan/presentation/plan_screen.dart';
 import '../../features/routines/presentation/routine_editor_screen.dart';
 import '../../features/routines/presentation/routine_list_screen.dart';
@@ -87,11 +88,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
             },
           ),
           const PlanScreen(),
-          _buildPlaceholder(
-            title: 'History & Analytics',
-            description: 'Coming in Phase 4C: Session history and productivity metrics.',
-            icon: Icons.history,
-          ),
+          const HistoryAnalyticsScreen(),
           const SettingsScreen(),
         ],
       ),
@@ -128,33 +125,6 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder({
-    required String title,
-    required String description,
-    required IconData icon,
-  }) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              Text(
-                description,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
