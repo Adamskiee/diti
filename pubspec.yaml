@@ -1,0 +1,27 @@
+name: focus_flow
+description: Cross-platform daily planning and multi-phase routine timer.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  timer_engine:
+    path: packages/timer_engine
+  focus_flow_database:
+    path: packages/focus_flow_database
+  focus_flow_notifications:
+    path: packages/focus_flow_notifications
+  uuid: ^4.5.1
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
