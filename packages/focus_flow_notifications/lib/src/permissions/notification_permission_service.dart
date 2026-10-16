@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../ports/notification_client.dart';
 
 class NotificationPermissionStatus {
   final bool notificationsEnabled;
@@ -29,6 +30,9 @@ class NotificationPermissionStatus {
 }
 
 abstract interface class NotificationPermissionService {
+  factory NotificationPermissionService({NotificationClient? client}) =
+      FlutterNotificationPermissionService.withClient;
+
   Future<NotificationPermissionStatus> checkStatus();
   Future<bool> requestNotificationPermissions();
   Future<bool> requestExactAlarmPermission();
@@ -41,6 +45,10 @@ class FlutterNotificationPermissionService
   FlutterNotificationPermissionService(
       [FlutterLocalNotificationsPlugin? plugin])
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+
+  factory FlutterNotificationPermissionService.withClient({NotificationClient? client}) {
+    return FlutterNotificationPermissionService();
+  }
 
   @override
   Future<NotificationPermissionStatus> checkStatus() async {

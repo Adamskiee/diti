@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'tables/routines_table.dart';
@@ -45,6 +46,14 @@ class FocusFlowDatabase extends _$FocusFlowDatabase {
   FocusFlowDatabase.connect(super.e);
 
   FocusFlowDatabase.inMemory() : super(NativeDatabase.memory());
+
+  factory FocusFlowDatabase.defaults() {
+    return FocusFlowDatabase(
+      NativeDatabase.createInBackground(
+        File('focus_flow.db'),
+      ),
+    );
+  }
 
   @override
   int get schemaVersion => 1;
