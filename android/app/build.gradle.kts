@@ -1,4 +1,3 @@
-import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -12,7 +11,7 @@ val keystoreProperties = Properties()
 val hasKeystore = keystorePropertiesFile.exists()
 
 if (hasKeystore) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
 android {

@@ -112,14 +112,17 @@ jobs:
 
       - name: Stage Android Release Assets
         id: stage
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           mkdir -p staging/android
-          RAW_TAG="${{ github.event.inputs.tag_name }}"
+          RAW_TAG="$TAG_INPUT"
           if [ -z "$RAW_TAG" ]; then
-            RAW_TAG="${{ github.ref_name }}"
+            RAW_TAG="$REF_NAME"
           fi
-          # Fallback if manual dispatch had empty tag and wasn't run on tag ref
-          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ]; then
+          # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
+          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
             RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
           fi
 
@@ -173,13 +176,17 @@ jobs:
         run: flutter build linux --release
 
       - name: Stage Tarball and Build AppImage
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           mkdir -p staging/linux
-          RAW_TAG="${{ github.event.inputs.tag_name }}"
+          RAW_TAG="$TAG_INPUT"
           if [ -z "$RAW_TAG" ]; then
-            RAW_TAG="${{ github.ref_name }}"
+            RAW_TAG="$REF_NAME"
           fi
-          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ]; then
+          # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
+          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
             RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
           fi
 
@@ -265,12 +272,16 @@ jobs:
 
       - name: Determine Release Tag
         id: tag_info
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          RAW_TAG="${{ github.event.inputs.tag_name }}"
+          RAW_TAG="$TAG_INPUT"
           if [ -z "$RAW_TAG" ]; then
-            RAW_TAG="${{ github.ref_name }}"
+            RAW_TAG="$REF_NAME"
           fi
-          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ]; then
+          # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
+          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
             RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
           fi
 

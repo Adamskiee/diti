@@ -48,7 +48,7 @@ jobs:
           echo "Resolving root dependencies..."
           flutter pub get
 
-      - name: Verify Code Formatting & Static Analysis
+      - name: Static Analysis & Linter
         run: |
           echo "Analyzing packages and root project..."
           flutter analyze --fatal-infos
