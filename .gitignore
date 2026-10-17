@@ -21,3 +21,8 @@ coverage/
 # OS
 .DS_Store
 Thumbs.db
+
+# Android Signing
+android/key.properties
+*.keystore
+*.jks
