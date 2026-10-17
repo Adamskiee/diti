@@ -1,0 +1,325 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag Name (e.g. v1.0.0)'
+        required: false
+        default: ''
+
+jobs:
+  verify:
+    name: Pre-Release Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: |
+          for pkg in packages/*; do
+            if [ -f "$pkg/pubspec.yaml" ]; then
+              (cd "$pkg" && flutter pub get)
+            fi
+          done
+          flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Test
+        run: |
+          for pkg in packages/*; do
+            if [ -d "$pkg/test" ]; then
+              (cd "$pkg" && flutter test)
+            fi
+          done
+          flutter test test/
+
+  build-android:
+    name: Build Android Artifacts
+    needs: [verify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: |
+          for pkg in packages/*; do
+            if [ -f "$pkg/pubspec.yaml" ]; then
+              (cd "$pkg" && flutter pub get)
+            fi
+          done
+          flutter pub get
+
+      - name: Configure Keystore Signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Configuring release keystore from secrets..."
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+            cat <<EOF > android/key.properties
+          storeFile=app/release.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+          else
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret provided. Falling back to debug signing."
+          fi
+
+      - name: Build Universal APK
+        run: flutter build apk --release
+
+      - name: Build Split per-ABI APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Build Android App Bundle (AAB)
+        run: flutter build appbundle --release
+
+      - name: Stage Android Release Assets
+        id: stage
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          mkdir -p staging/android
+          RAW_TAG="$TAG_INPUT"
+          if [ -z "$RAW_TAG" ]; then
+            RAW_TAG="$REF_NAME"
+          fi
+          # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
+          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
+            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
+          fi
+
+          echo "Using tag prefix: $RAW_TAG"
+
+          cp build/app/outputs/flutter-apk/app-release.apk "staging/android/aditime-${RAW_TAG}-android-universal.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "staging/android/aditime-${RAW_TAG}-android-arm64-v8a.apk"
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "staging/android/aditime-${RAW_TAG}-android-armeabi-v7a.apk"
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk "staging/android/aditime-${RAW_TAG}-android-x86_64.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "staging/android/aditime-${RAW_TAG}-android.aab"
+
+          ls -la staging/android/
+
+      - name: Upload Android Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-assets
+          path: staging/android/*
+          retention-days: 1
+
+  build-linux:
+    name: Build Linux Desktop Artifacts
+    needs: [verify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libsecret-1-dev wget file
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: |
+          for pkg in packages/*; do
+            if [ -f "$pkg/pubspec.yaml" ]; then
+              (cd "$pkg" && flutter pub get)
+            fi
+          done
+          flutter pub get
+
+      - name: Build Linux Bundle
+        run: flutter build linux --release
+
+      - name: Stage Tarball and Build AppImage
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          mkdir -p staging/linux
+          RAW_TAG="$TAG_INPUT"
+          if [ -z "$RAW_TAG" ]; then
+            RAW_TAG="$REF_NAME"
+          fi
+          # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
+          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
+            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
+          fi
+
+          echo "Using tag prefix: $RAW_TAG"
+
+          # 1. Package compressed tarball bundle
+          TAR_DIR="aditime-${RAW_TAG}-linux-x64"
+          mkdir -p "staging/$TAR_DIR"
+          cp -r build/linux/x64/release/bundle/* "staging/$TAR_DIR/"
+          (cd "staging/$TAR_DIR" && ln -sf focus_flow aditime)
+          tar -czf "staging/linux/aditime-${RAW_TAG}-linux-x86_64.tar.gz" -C staging "$TAR_DIR"
+          rm -rf "staging/$TAR_DIR"
+
+          # 2. Package AppImage using extracted appimagetool (bypasses FUSE in CI)
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+          ./appimagetool --appimage-extract
+
+          mkdir -p AppDir/usr/bin AppDir/usr/lib AppDir/usr/share/icons/hicolor/256x256/apps
+          cp -r build/linux/x64/release/bundle/lib/* AppDir/usr/lib/ || true
+          cp -r build/linux/x64/release/bundle/data AppDir/usr/bin/
+          cp build/linux/x64/release/bundle/focus_flow AppDir/usr/bin/
+
+          # Create AppRun entrypoint
+          cat << 'EOF' > AppDir/AppRun
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "${0}")")"
+          export LD_LIBRARY_PATH="$HERE/usr/lib:$LD_LIBRARY_PATH"
+          exec "$HERE/usr/bin/focus_flow" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+
+          # Create desktop entry
+          cat << 'EOF' > AppDir/aditime.desktop
+          [Desktop Entry]
+          Name=Aditime
+          Comment=Cross-platform daily planning and multi-phase routine timer.
+          Exec=focus_flow
+          Icon=aditime
+          Type=Application
+          Categories=Utility;Productivity;
+          Terminal=false
+          EOF
+
+          # Copy or generate icon
+          if [ -f linux/flutter/ephemeral/runner/assets/icon.png ]; then
+            cp linux/flutter/ephemeral/runner/assets/icon.png AppDir/aditime.png
+          else
+            # Create a placeholder 256x256 PNG if no asset icon exists
+            python3 -c "
+          import zlib, struct
+          def make_png():
+              width, height = 256, 256
+              raw_data = b''.join(b'\x00' + b'\x1e\x88\xe5' * width for _ in range(height))
+              def chunk(tag, data):
+                  return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', zlib.crc32(tag + data) & 0xffffffff)
+              return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw_data)) + chunk(b'IEND', b'')
+          open('AppDir/aditime.png', 'wb').write(make_png())
+          "
+          fi
+          cp AppDir/aditime.png AppDir/usr/share/icons/hicolor/256x256/apps/aditime.png
+
+          ARCH=x86_64 ./squashfs-root/AppRun AppDir "staging/linux/aditime-${RAW_TAG}-linux-x86_64.AppImage"
+
+          ls -la staging/linux/
+
+      - name: Upload Linux Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release-assets
+          path: staging/linux/*
+          retention-days: 1
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [verify, build-android, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Determine Release Tag
+        id: tag_info
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          RAW_TAG="$TAG_INPUT"
+          if [ -z "$RAW_TAG" ]; then
+            RAW_TAG="$REF_NAME"
+          fi
+          # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
+          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
+            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
+          fi
+
+          echo "tag=$RAW_TAG" >> "$GITHUB_OUTPUT"
+
+          # Detect prerelease (contains -alpha, -beta, -rc)
+          if echo "$RAW_TAG" | grep -Eq -- '-(alpha|beta|rc)'; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download Android Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-assets
+          path: dist
+
+      - name: Download Linux Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-release-assets
+          path: dist
+
+      - name: Compute SHA-256 Checksums
+        run: |
+          cd dist
+          sha256sum * > checksums.txt
+          echo "Generated Checksums:"
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag_info.outputs.tag }}
+          name: Aditime ${{ steps.tag_info.outputs.tag }}
+          draft: false
+          prerelease: ${{ steps.tag_info.outputs.is_prerelease == 'true' }}
+          generate_release_notes: true
+          files: |
+            dist/*
