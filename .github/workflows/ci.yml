@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+jobs:
+  quality-check:
+    name: Code Quality & Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: |
+          for pkg in packages/*; do
+            if [ -f "$pkg/pubspec.yaml" ]; then
+              echo "Resolving dependencies for $pkg..."
+              (cd "$pkg" && flutter pub get)
+            fi
+          done
+          echo "Resolving root dependencies..."
+          flutter pub get
+
+      - name: Verify Code Formatting & Static Analysis
+        run: |
+          echo "Analyzing packages and root project..."
+          flutter analyze --fatal-infos
+
+      - name: Run Package Tests
+        run: |
+          for pkg in packages/*; do
+            if [ -d "$pkg/test" ]; then
+              echo "Running tests in $pkg..."
+              (cd "$pkg" && flutter test)
+            fi
+          done
+
+      - name: Run Root Tests
+        run: |
+          echo "Running root application tests..."
+          flutter test test/
