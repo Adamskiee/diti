@@ -7,6 +7,11 @@
 build/
 .pub-cache/
 .pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+coverage/
+*.lock
 
 # IDE
 .idea/

@@ -16,6 +16,9 @@ class LocalNotificationPort implements NotificationPort {
     android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     iOS: DarwinInitializationSettings(),
     macOS: DarwinInitializationSettings(),
+    linux: LinuxInitializationSettings(
+      defaultActionName: 'Open notification',
+    ),
   );
 
   final NotificationClient _client;
@@ -127,6 +130,8 @@ class LocalNotificationPort implements NotificationPort {
     const notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: darwinDetails,
+      macOS: darwinDetails,
+      linux: LinuxNotificationDetails(),
     );
 
     final payload = jsonEncode({

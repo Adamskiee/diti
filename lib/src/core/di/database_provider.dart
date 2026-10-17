@@ -8,19 +8,16 @@ import 'package:path_provider/path_provider.dart';
 
 /// Resolves the file path for the SQLite database.
 ///
-/// On mobile platforms (Android/iOS), places the database in [getApplicationDocumentsDirectory].
-/// Falls back to 'focus_flow.db' on desktop or when running in environments where [path_provider]
+/// Places the database in [getApplicationDocumentsDirectory].
+/// Falls back to 'focus_flow.db' when running in environments where [path_provider]
 /// is unavailable (e.g. unit/widget tests).
 Future<String> resolveDatabasePath() async {
-  if (Platform.isAndroid || Platform.isIOS) {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      return p.join(dir.path, 'focus_flow.db');
-    } catch (_) {
-      return 'focus_flow.db';
-    }
+  try {
+    final dir = await getApplicationDocumentsDirectory();
+    return p.join(dir.path, 'focus_flow.db');
+  } catch (_) {
+    return 'focus_flow.db';
   }
-  return 'focus_flow.db';
 }
 
 /// Creates a [QueryExecutor] that lazily resolves the SQLite database path
