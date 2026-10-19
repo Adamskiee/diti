@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
-import 'package:focus_flow_notifications/focus_flow_notifications.dart';
+import 'package:diti_database/diti_database.dart';
+import 'package:diti_notifications/diti_notifications.dart';
 import 'package:timer_engine/timer_engine.dart';
 import 'database_provider.dart';
 import 'notification_providers.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/core/theme/app_colors.dart';
-import 'package:focus_flow/src/features/plan/presentation/widgets/conflict_warning_banner.dart';
+import 'package:diti/src/core/theme/app_colors.dart';
+import 'package:diti/src/features/plan/presentation/widgets/conflict_warning_banner.dart';
 
 void main() {
   group('ConflictWarningBanner', () {

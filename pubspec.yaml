@@ -1,5 +1,5 @@
-name: focus_flow
-description: Cross-platform daily planning and multi-phase routine timer.
+name: diti
+description: Diti - Cross-platform daily planning and multi-phase routine timer.
 publish_to: none
 version: 1.0.0
 
@@ -13,10 +13,10 @@ dependencies:
   flutter_riverpod: ^2.6.1
   timer_engine:
     path: packages/timer_engine
-  focus_flow_database:
-    path: packages/focus_flow_database
-  focus_flow_notifications:
-    path: packages/focus_flow_notifications
+  diti_database:
+    path: packages/diti_database
+  diti_notifications:
+    path: packages/diti_notifications
   uuid: ^4.5.1
   intl: ^0.20.2
   path_provider: ^2.1.5
@@ -33,4 +33,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/
 

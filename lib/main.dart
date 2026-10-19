@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:focus_flow_notifications/focus_flow_notifications.dart';
+import 'package:diti_notifications/diti_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'src/core/di/notification_providers.dart';
 import 'src/core/di/repositories_provider.dart';
@@ -12,19 +12,19 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     const ProviderScope(
-      child: FocusFlowApp(),
+      child: DitiApp(),
     ),
   );
 }
 
-class FocusFlowApp extends ConsumerStatefulWidget {
-  const FocusFlowApp({super.key});
+class DitiApp extends ConsumerStatefulWidget {
+  const DitiApp({super.key});
 
   @override
-  ConsumerState<FocusFlowApp> createState() => _FocusFlowAppState();
+  ConsumerState<DitiApp> createState() => _DitiAppState();
 }
 
-class _FocusFlowAppState extends ConsumerState<FocusFlowApp> {
+class _DitiAppState extends ConsumerState<DitiApp> {
   bool _initialized = false;
 
   @override
@@ -60,7 +60,7 @@ class _FocusFlowAppState extends ConsumerState<FocusFlowApp> {
     }
 
     return MaterialApp(
-      title: 'FocusFlow',
+      title: 'Diti',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       home: const AppShell(),

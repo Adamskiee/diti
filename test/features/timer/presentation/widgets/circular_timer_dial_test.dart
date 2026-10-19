@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/features/timer/presentation/widgets/circular_timer_dial.dart';
+import 'package:diti/src/features/timer/presentation/widgets/circular_timer_dial.dart';
 
 void main() {
   group('CircularTimerDial', () {

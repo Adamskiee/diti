@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/core/utils/duration_formatter.dart';
+import 'package:diti/src/core/utils/duration_formatter.dart';
 
 void main() {
   group('DurationFormatter', () {

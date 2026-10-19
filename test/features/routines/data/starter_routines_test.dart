@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/features/routines/data/starter_routines.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti/src/features/routines/data/starter_routines.dart';
+import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../../helpers/test_fakes.dart';
 

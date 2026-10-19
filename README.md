@@ -1,4 +1,8 @@
-# Aditime (Focus Flow)
+# Diti
+
+<p align="center">
+  <img src="assets/diti-256.png" alt="Diti App Icon" width="128" height="128" />
+</p>
 
 [![CI](https://github.com/Adamskiee/aditime/actions/workflows/ci.yml/badge.svg)](https://github.com/Adamskiee/aditime/actions/workflows/ci.yml)
 
@@ -6,7 +10,7 @@ Cross-platform daily planning and multi-phase routine timer built with Flutter.
 
 ## Installation & Updates (Linux)
 
-Aditime can be installed and updated with a single non-root command. All routines, sessions, and timer data are stored in `~/Documents/focus_flow.db` and are sustained across all updates.
+Diti can be installed and updated with a single non-root command. All routines, sessions, and timer data are stored in `~/Documents/diti.db` (existing data from legacy `focus_flow.db` is migrated automatically) and sustained across updates.
 
 ### Install
 Run the installer script:
@@ -16,18 +20,18 @@ Run the installer script:
 *(Or to build and install directly from your local workspace: `./scripts/install-linux.sh --local`)*
 
 This configures:
-- **Executable:** `~/.local/bin/aditime`
-- **Application Menu:** Aditime launcher and icon in `~/.local/share/applications/aditime.desktop`
-- **Updater:** `~/.local/bin/aditime-update`
+- **Executable:** `~/.local/bin/diti` (with `~/.local/bin/aditime` compatibility symlink)
+- **Application Menu:** Diti launcher and icon in `~/.local/share/applications/diti.desktop`
+- **Updater:** `~/.local/bin/diti-update` (or `diti --update`)
 
 ### Updating
 Whenever a new release is published, update with one command:
 ```bash
-aditime-update
+diti-update
 # Or:
-aditime --update
+diti --update
 ```
-Your routines, plans, and history stored in `~/Documents/focus_flow.db` remain fully intact.
+Your routines, plans, and history stored in `~/Documents/diti.db` remain fully intact.
 
 ## Getting Started
 
@@ -59,7 +63,7 @@ flutter analyze --fatal-infos
 
 ## CI/CD & Releases
 
-Aditime features automated CI/CD powered by GitHub Actions:
+Diti features automated CI/CD powered by GitHub Actions:
 
 - **Continuous Integration (`ci.yml`)**: Automatically validates linter rules (`flutter analyze --fatal-infos`) and executes tests across all packages on Pull Requests and pushes to `main`.
 - **Automated Releases (`release.yml`)**: Builds, signs, and distributes multi-platform binaries upon pushing version tags (`v*.*.*`) or via manual `workflow_dispatch`.
@@ -67,14 +71,14 @@ Aditime features automated CI/CD powered by GitHub Actions:
 ### Released Binaries
 Each GitHub Release includes:
 - **Android**:
-  - `aditime-<version>-android-universal.apk` (universal device compatibility)
-  - `aditime-<version>-android-arm64-v8a.apk` (optimized 64-bit ARM)
-  - `aditime-<version>-android-armeabi-v7a.apk` (32-bit legacy ARM)
-  - `aditime-<version>-android-x86_64.apk` (emulators & x86_64 tablets)
-  - `aditime-<version>-android.aab` (Google Play App Bundle)
+  - `diti-<version>-android-universal.apk` (universal device compatibility)
+  - `diti-<version>-android-arm64-v8a.apk` (optimized 64-bit ARM)
+  - `diti-<version>-android-armeabi-v7a.apk` (32-bit legacy ARM)
+  - `diti-<version>-android-x86_64.apk` (emulators & x86_64 tablets)
+  - `diti-<version>-android.aab` (Google Play App Bundle)
 - **Linux Desktop**:
-  - `aditime-<version>-linux-x86_64.AppImage` (standalone portable executable)
-  - `aditime-<version>-linux-x86_64.tar.gz` (bundled directory archive)
+  - `diti-<version>-linux-x86_64.AppImage` (standalone portable executable)
+  - `diti-<version>-linux-x86_64.tar.gz` (bundled directory archive)
 - **Verification**:
   - `checksums.txt` (SHA256 integrity hashes)
 

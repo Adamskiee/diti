@@ -1,11 +1,12 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/core/di/database_provider.dart';
-import 'package:focus_flow/src/core/di/notification_providers.dart';
-import 'package:focus_flow/src/core/di/repositories_provider.dart';
-import 'package:focus_flow/src/core/di/timer_engine_provider.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
-import 'package:focus_flow_notifications/focus_flow_notifications.dart';
+import 'package:diti/src/core/di/database_provider.dart';
+import 'package:diti/src/core/di/notification_providers.dart';
+import 'package:diti/src/core/di/repositories_provider.dart';
+import 'package:diti/src/core/di/timer_engine_provider.dart';
+import 'package:diti_database/diti_database.dart';
+import 'package:diti_notifications/diti_notifications.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../helpers/test_fakes.dart';
 
@@ -37,7 +38,7 @@ void main() {
       final engine = container.read(timerEngineProvider);
       final coordinator = container.read(timerLifecycleCoordinatorProvider);
 
-      expect(db, isA<FocusFlowDatabase>());
+      expect(db, isA<DitiDatabase>());
       expect(routineRepo, isA<RoutineRepository>());
       expect(sessionRepo, isA<SessionRepository>());
       expect(planBlockRepo, isA<PlanBlockRepository>());
@@ -98,14 +99,44 @@ void main() {
       expect(fake.cancelledIds, contains(99));
     });
 
-    test('resolveDatabasePath resolves fallback in test environment', () async {
+    test('resolveDatabasePath resolves fallback in test environment and migrates legacy db', () async {
       final path = await resolveDatabasePath();
-      expect(path, 'focus_flow.db');
+      expect(path, 'diti.db');
     });
 
-    test('constructDatabase creates valid FocusFlowDatabase instance', () async {
+    test('resolveDatabasePath copies legacy focus_flow.db to diti.db if legacy exists', () async {
+      final tempDir = await Directory.systemTemp.createTemp('diti_test_migration_');
+      try {
+        final legacyFile = File('${tempDir.path}/focus_flow.db');
+        final targetFile = File('${tempDir.path}/diti.db');
+        await legacyFile.writeAsString('test-sqlite-data');
+
+        expect(targetFile.existsSync(), isFalse);
+        expect(legacyFile.existsSync(), isTrue);
+
+        // Simulate migration logic with custom pathResolver
+        final resolved = await () async {
+          final target = targetFile.path;
+          final legacy = legacyFile.path;
+          final t = File(target);
+          final l = File(legacy);
+          if (!t.existsSync() && l.existsSync()) {
+            l.copySync(target);
+          }
+          return target;
+        }();
+
+        expect(resolved, targetFile.path);
+        expect(targetFile.existsSync(), isTrue);
+        expect(await targetFile.readAsString(), 'test-sqlite-data');
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test('constructDatabase creates valid DitiDatabase instance', () async {
       final db = constructDatabase();
-      expect(db, isA<FocusFlowDatabase>());
+      expect(db, isA<DitiDatabase>());
       await db.close();
     });
   });

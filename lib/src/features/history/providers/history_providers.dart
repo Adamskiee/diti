@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti_database/diti_database.dart';
 import '../../../core/di/repositories_provider.dart';
 import '../../../core/di/timer_engine_provider.dart';
 import '../domain/analytics_models.dart';
