@@ -1,6 +1,6 @@
 name: focus_flow_notifications
 description: Local notifications scheduling adapter and background lifecycle handler for FocusFlow.
-version: 0.1.0
+version: 1.0.0
 publish_to: none
 
 environment:
