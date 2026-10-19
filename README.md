@@ -4,6 +4,31 @@
 
 Cross-platform daily planning and multi-phase routine timer built with Flutter.
 
+## Installation & Updates (Linux)
+
+Aditime can be installed and updated with a single non-root command. All routines, sessions, and timer data are stored in `~/Documents/focus_flow.db` and are sustained across all updates.
+
+### Install
+Run the installer script:
+```bash
+./scripts/install-linux.sh
+```
+*(Or to build and install directly from your local workspace: `./scripts/install-linux.sh --local`)*
+
+This configures:
+- **Executable:** `~/.local/bin/aditime`
+- **Application Menu:** Aditime launcher and icon in `~/.local/share/applications/aditime.desktop`
+- **Updater:** `~/.local/bin/aditime-update`
+
+### Updating
+Whenever a new release is published, update with one command:
+```bash
+aditime-update
+# Or:
+aditime --update
+```
+Your routines, plans, and history stored in `~/Documents/focus_flow.db` remain fully intact.
+
 ## Getting Started
 
 ### Prerequisites
