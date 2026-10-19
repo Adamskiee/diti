@@ -6,6 +6,7 @@ import 'package:focus_flow/src/core/di/notification_providers.dart';
 import 'package:focus_flow/src/core/di/repositories_provider.dart';
 import 'package:focus_flow/src/core/di/timer_engine_provider.dart';
 import 'package:focus_flow/src/core/navigation/app_shell.dart';
+import 'package:focus_flow/src/features/plan/presentation/widgets/plan_block_card.dart';
 import 'package:focus_flow/src/features/plan/providers/plan_providers.dart';
 import 'package:focus_flow/src/features/routines/data/starter_routines.dart';
 import 'package:focus_flow/src/features/timer/controllers/active_timer_controller.dart';
@@ -80,7 +81,14 @@ void main() {
     expect(find.text('Scheduled'), findsNWidgets(2)); // Pomodoro and Deep Work
 
     // 5. Tap "Start Block" on Classic Pomodoro
-    final startButton = find.widgetWithText(FilledButton, 'Start Block').first;
+    final pomodoroCard = find.ancestor(
+      of: find.text('Classic Pomodoro'),
+      matching: find.byType(PlanBlockCard),
+    );
+    final startButton = find.descendant(
+      of: pomodoroCard,
+      matching: find.widgetWithText(FilledButton, 'Start Block'),
+    );
     await tester.tap(startButton);
     await tester.pumpAndSettle();
 

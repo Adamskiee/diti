@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:focus_flow_database/focus_flow_database.dart';
 
 import '../../../../core/di/repositories_provider.dart';
+import '../../../../core/di/timer_engine_provider.dart';
 import '../../domain/daily_plan_state.dart';
 import '../../domain/plan_block_conflict.dart';
 import '../../domain/plan_block_conflict_detector.dart';
@@ -114,6 +115,6 @@ class DailyPlanController extends AsyncNotifier<DailyPlanState> {
 
   /// Resets the selected date to today.
   void setToday() {
-    setDate(DateTime.now());
+    setDate(ref.read(wallClockProvider).utcNow.toLocal());
   }
 }

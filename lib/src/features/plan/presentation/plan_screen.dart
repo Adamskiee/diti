@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:focus_flow_database/focus_flow_database.dart';
+import '../../../core/di/timer_engine_provider.dart';
 import '../../timer/controllers/active_timer_controller.dart';
 import '../../timer/presentation/active_timer_screen.dart';
 import '../providers/plan_providers.dart';
@@ -90,7 +91,7 @@ class PlanScreen extends ConsumerWidget {
     WidgetRef ref,
     String planDate,
   ) async {
-    final now = DateTime.now();
+    final now = ref.read(wallClockProvider).utcNow.toLocal();
     final parts = planDate.split('-');
     final scheduledDate = parts.length == 3
         ? DateTime(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/di/timer_engine_provider.dart';
 import '../../../../core/utils/duration_formatter.dart';
 import '../../providers/plan_providers.dart';
 
@@ -23,7 +24,7 @@ class DateSelectorStrip extends ConsumerWidget {
     final controller = ref.read(dailyPlanControllerProvider.notifier);
     final theme = Theme.of(context);
 
-    final now = DateTime.now();
+    final now = ref.watch(wallClockProvider).utcNow.toLocal();
     final isToday = selectedDate.year == now.year &&
         selectedDate.month == now.month &&
         selectedDate.day == now.day;

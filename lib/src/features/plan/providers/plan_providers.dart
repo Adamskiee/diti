@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/di/timer_engine_provider.dart';
 import '../domain/daily_plan_state.dart';
 import '../presentation/controllers/daily_plan_controller.dart';
 
 /// Holds the currently selected calendar date for daily planning.
 final selectedDateProvider = StateProvider<DateTime>((ref) {
-  return DateTime.now();
+  final wallClock = ref.watch(wallClockProvider);
+  return wallClock.utcNow.toLocal();
 });
 
 /// Formats the selected date into 'YYYY-MM-DD' string for querying the database.
