@@ -227,9 +227,11 @@ jobs:
           Exec=focus_flow
           Icon=aditime
           Type=Application
-          Categories=Utility;Productivity;
+          Categories=Utility;Clock;
           Terminal=false
           EOF
+          mkdir -p AppDir/usr/share/applications
+          cp AppDir/aditime.desktop AppDir/usr/share/applications/aditime.desktop
 
           # Copy or generate icon
           if [ -f linux/flutter/ephemeral/runner/assets/icon.png ]; then
