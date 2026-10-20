@@ -17,7 +17,10 @@ if (hasKeystore) {
 android {
     namespace = "com.adilabs.diti"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    val envNdkVersion = System.getenv("ANDROID_NDK_VERSION")
+        ?: System.getenv("ANDROID_NDK")?.let { java.io.File(it).name }
+        ?: System.getenv("ANDROID_NDK_HOME")?.let { java.io.File(it).name }
+    ndkVersion = if (!envNdkVersion.isNullOrBlank()) envNdkVersion else flutter.ndkVersion
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
