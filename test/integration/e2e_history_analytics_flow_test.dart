@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/core/di/database_provider.dart';
-import 'package:focus_flow/src/core/di/notification_providers.dart';
-import 'package:focus_flow/src/core/di/repositories_provider.dart';
-import 'package:focus_flow/src/core/di/timer_engine_provider.dart';
-import 'package:focus_flow/src/core/navigation/app_shell.dart';
-import 'package:focus_flow/src/features/history/presentation/widgets/session_detail_sheet.dart';
-import 'package:focus_flow/src/features/history/providers/history_providers.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti/src/core/di/database_provider.dart';
+import 'package:diti/src/core/di/notification_providers.dart';
+import 'package:diti/src/core/di/repositories_provider.dart';
+import 'package:diti/src/core/di/timer_engine_provider.dart';
+import 'package:diti/src/core/navigation/app_shell.dart';
+import 'package:diti/src/features/history/presentation/widgets/session_detail_sheet.dart';
+import 'package:diti/src/features/history/providers/history_providers.dart';
+import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../helpers/test_fakes.dart';
 

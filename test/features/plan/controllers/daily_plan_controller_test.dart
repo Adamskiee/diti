@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/core/di/database_provider.dart';
-import 'package:focus_flow/src/features/plan/presentation/controllers/daily_plan_controller.dart';
-import 'package:focus_flow/src/features/plan/providers/plan_providers.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti/src/core/di/database_provider.dart';
+import 'package:diti/src/features/plan/presentation/controllers/daily_plan_controller.dart';
+import 'package:diti/src/features/plan/providers/plan_providers.dart';
+import 'package:diti_database/diti_database.dart';
 
 import '../../../helpers/test_fakes.dart';
 
 void main() {
   group('DailyPlanController', () {
-    late FocusFlowDatabase db;
+    late DitiDatabase db;
     late ProviderContainer container;
 
     setUp(() {

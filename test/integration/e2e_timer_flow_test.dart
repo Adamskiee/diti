@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/main.dart';
-import 'package:focus_flow/src/core/di/database_provider.dart';
-import 'package:focus_flow/src/core/di/notification_providers.dart';
-import 'package:focus_flow/src/core/di/repositories_provider.dart';
-import 'package:focus_flow/src/core/di/timer_engine_provider.dart';
-import 'package:focus_flow/src/core/navigation/app_shell.dart';
-import 'package:focus_flow/src/features/routines/data/starter_routines.dart';
-import 'package:focus_flow/src/features/timer/controllers/active_timer_controller.dart';
+import 'package:diti/main.dart';
+import 'package:diti/src/core/di/database_provider.dart';
+import 'package:diti/src/core/di/notification_providers.dart';
+import 'package:diti/src/core/di/repositories_provider.dart';
+import 'package:diti/src/core/di/timer_engine_provider.dart';
+import 'package:diti/src/core/navigation/app_shell.dart';
+import 'package:diti/src/features/routines/data/starter_routines.dart';
+import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../helpers/test_fakes.dart';
 
 void main() {
-  group('FocusFlowApp & E2E Timer Flow Integration Tests', () {
+  group('DitiApp & E2E Timer Flow Integration Tests', () {
     testWidgets(
-        'FocusFlowApp bootstraps routines, initializes notifications, and renders AppShell',
+        'DitiApp bootstraps routines, initializes notifications, and renders AppShell',
         (tester) async {
       final db = createInMemoryTestDatabase();
       final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
@@ -33,7 +33,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const FocusFlowApp(),
+          child: const DitiApp(),
         ),
       );
 

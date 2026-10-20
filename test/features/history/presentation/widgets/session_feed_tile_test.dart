@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/features/history/presentation/widgets/session_feed_tile.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti/src/features/history/presentation/widgets/session_feed_tile.dart';
+import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
 
 void main() {

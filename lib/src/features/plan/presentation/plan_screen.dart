@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti_database/diti_database.dart';
 import '../../../core/di/timer_engine_provider.dart';
 import '../../timer/controllers/active_timer_controller.dart';
 import '../../timer/presentation/active_timer_screen.dart';

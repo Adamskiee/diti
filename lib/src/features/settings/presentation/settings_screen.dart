@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:focus_flow_notifications/focus_flow_notifications.dart';
+import 'package:diti_notifications/diti_notifications.dart';
 import '../../../core/di/notification_providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -54,7 +54,7 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           const SizedBox(height: 24),
-          const Text('About FocusFlow', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('About Diti', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Card(
             child: ListTile(

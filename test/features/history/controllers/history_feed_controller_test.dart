@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/features/history/presentation/controllers/history_feed_controller.dart';
-import 'package:focus_flow/src/features/history/providers/history_providers.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti/src/features/history/presentation/controllers/history_feed_controller.dart';
+import 'package:diti/src/features/history/providers/history_providers.dart';
+import 'package:diti_database/diti_database.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:timer_engine/timer_engine.dart';
 

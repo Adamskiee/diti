@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/features/history/domain/analytics_models.dart';
-import 'package:focus_flow/src/features/history/presentation/widgets/focus_bar_chart_widget.dart';
+import 'package:diti/src/features/history/domain/analytics_models.dart';
+import 'package:diti/src/features/history/presentation/widgets/focus_bar_chart_widget.dart';
 
 void main() {
   testWidgets('FocusBarChartWidget renders day labels and handles empty buckets', (tester) async {

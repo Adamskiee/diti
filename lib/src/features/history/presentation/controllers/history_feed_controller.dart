@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti_database/diti_database.dart';
 import '../../providers/history_providers.dart';
 
 class HistoryFeedController

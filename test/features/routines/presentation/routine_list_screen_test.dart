@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/core/di/database_provider.dart';
-import 'package:focus_flow/src/core/di/repositories_provider.dart';
-import 'package:focus_flow/src/features/routines/presentation/routine_list_screen.dart';
-import 'package:focus_flow/src/features/routines/presentation/widgets/routine_card.dart';
-import 'package:focus_flow/src/features/routines/providers/routines_providers.dart';
+import 'package:diti/src/core/di/database_provider.dart';
+import 'package:diti/src/core/di/repositories_provider.dart';
+import 'package:diti/src/features/routines/presentation/routine_list_screen.dart';
+import 'package:diti/src/features/routines/presentation/widgets/routine_card.dart';
+import 'package:diti/src/features/routines/providers/routines_providers.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../../helpers/test_fakes.dart';
 

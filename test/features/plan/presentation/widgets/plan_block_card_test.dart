@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/core/theme/app_colors.dart';
-import 'package:focus_flow/src/features/plan/domain/plan_block_conflict.dart';
-import 'package:focus_flow/src/features/plan/presentation/widgets/conflict_warning_banner.dart';
-import 'package:focus_flow/src/features/plan/presentation/widgets/plan_block_card.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti/src/core/theme/app_colors.dart';
+import 'package:diti/src/features/plan/domain/plan_block_conflict.dart';
+import 'package:diti/src/features/plan/presentation/widgets/conflict_warning_banner.dart';
+import 'package:diti/src/features/plan/presentation/widgets/plan_block_card.dart';
+import 'package:diti_database/diti_database.dart';
 import 'package:intl/intl.dart';
 
 void main() {

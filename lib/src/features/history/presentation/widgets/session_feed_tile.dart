@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
+import 'package:diti_database/diti_database.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/duration_formatter.dart';
 

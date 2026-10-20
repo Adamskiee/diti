@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:focus_flow/src/features/history/domain/analytics_models.dart';
-import 'package:focus_flow/src/features/history/presentation/widgets/plan_vs_actual_card.dart';
+import 'package:diti/src/features/history/domain/analytics_models.dart';
+import 'package:diti/src/features/history/presentation/widgets/plan_vs_actual_card.dart';
 
 void main() {
   testWidgets('PlanVsActualCard renders overrun correctly', (tester) async {

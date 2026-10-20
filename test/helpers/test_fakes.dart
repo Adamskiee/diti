@@ -1,10 +1,10 @@
 import 'package:drift/native.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:focus_flow_database/focus_flow_database.dart';
-import 'package:focus_flow_notifications/focus_flow_notifications.dart';
+import 'package:diti_database/diti_database.dart';
+import 'package:diti_notifications/diti_notifications.dart';
 
-FocusFlowDatabase createInMemoryTestDatabase() {
-  return FocusFlowDatabase(NativeDatabase.memory());
+DitiDatabase createInMemoryTestDatabase() {
+  return DitiDatabase(NativeDatabase.memory());
 }
 
 class FakeNotificationClient implements NotificationClient {
