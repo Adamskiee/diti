@@ -123,7 +123,7 @@ fi
 # 3. Install bundle into ~/.local/share/aditime/bundle
 echo "Staging application files into $INSTALL_DIR/bundle..."
 mkdir -p "$INSTALL_DIR/bundle.new"
-cp -r "$BUNDLE_SOURCE"/* "$INSTALL_DIR/bundle.new/"
+cp -r "$BUNDLE_SOURCE/." "$INSTALL_DIR/bundle.new/"
 chmod +x "$INSTALL_DIR/bundle.new/diti" 2>/dev/null || true
 (cd "$INSTALL_DIR/bundle.new" && ln -sf diti focus_flow && ln -sf diti aditime) 2>/dev/null || true
 
@@ -137,16 +137,24 @@ rm -rf "$INSTALL_DIR/bundle.old"
 
 echo "$TARGET_TAG" > "$INSTALL_DIR/version"
 
-# 4. Install launcher wrapper at ~/.local/bin/aditime
+# 4. Install launcher wrapper at ~/.local/bin/diti
 cat << 'EOF' > "$BIN_DIR/diti"
 #!/usr/bin/env bash
+set -euo pipefail
+DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
+BIN_DIR="$HOME/.local/bin"
 if [ "${1:-}" = "--update" ]; then
-  exec "$HOME/.local/bin/diti-update" "${@:2}"
+  exec "$BIN_DIR/diti-update" "${@:2}"
 fi
-exec "$HOME/.local/share/diti/bundle/diti" "$@"
+exec "$DATA_DIR/diti/bundle/diti" "$@"
 EOF
 chmod +x "$BIN_DIR/diti"
-ln -sf "$BIN_DIR/diti" "$BIN_DIR/diti"
+
+# Compatibility symlinks: aditime / focus_flow -> diti launcher
+for alias_name in aditime focus_flow; do
+  rm -f "$BIN_DIR/$alias_name"
+  ln -sfn "$BIN_DIR/diti" "$BIN_DIR/$alias_name"
+done
 
 # 5. Install standalone updater at ~/.local/bin/aditime-update
 cat << 'EOF' > "$BIN_DIR/diti-update"
@@ -230,7 +238,7 @@ mkdir -p "$TMP_DIR/extracted"
 tar -xzf "$TMP_DIR/$TARBALL_NAME" -C "$TMP_DIR/extracted" --strip-components=1
 
 mkdir -p "$INSTALL_DIR/bundle.new"
-cp -r "$TMP_DIR/extracted"/* "$INSTALL_DIR/bundle.new/"
+cp -r "$TMP_DIR/extracted/." "$INSTALL_DIR/bundle.new/"
 chmod +x "$INSTALL_DIR/bundle.new/diti" 2>/dev/null || true
 (cd "$INSTALL_DIR/bundle.new" && ln -sf diti focus_flow && ln -sf diti aditime) 2>/dev/null || true
 
@@ -252,7 +260,8 @@ fi
 echo "=================================================="
 EOF
 chmod +x "$BIN_DIR/diti-update"
-ln -sf "$BIN_DIR/diti-update" "$BIN_DIR/aditime-update" 2>/dev/null || true
+rm -f "$BIN_DIR/aditime-update"
+ln -sfn "$BIN_DIR/diti-update" "$BIN_DIR/aditime-update"
 
 # 6. Install application icon
 cat << 'EOF' | base64 -d > "$ICON_DIR/diti.png"
