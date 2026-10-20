@@ -83,14 +83,18 @@ jobs:
 
       - name: Configure Android NDK
         run: |
-          if [ -d "$ANDROID_SDK_ROOT/ndk" ]; then
+          if [ -n "$ANDROID_NDK_HOME" ] && [ -d "$ANDROID_NDK_HOME" ]; then
+            echo "Using ANDROID_NDK_HOME: $ANDROID_NDK_HOME"
+            echo "ANDROID_NDK_VERSION=$(basename "$ANDROID_NDK_HOME")" >> $GITHUB_ENV
+          elif [ -n "$ANDROID_NDK" ] && [ -d "$ANDROID_NDK" ]; then
+            echo "Using ANDROID_NDK: $ANDROID_NDK"
+            echo "ANDROID_NDK_VERSION=$(basename "$ANDROID_NDK")" >> $GITHUB_ENV
+          elif [ -d "$ANDROID_SDK_ROOT/ndk" ]; then
             INSTALLED_NDK=$(ls -1 "$ANDROID_SDK_ROOT/ndk" 2>/dev/null | sort -V | tail -n 1)
             if [ -n "$INSTALLED_NDK" ]; then
               echo "Found preinstalled Android NDK: $INSTALLED_NDK"
               echo "ANDROID_NDK_VERSION=$INSTALLED_NDK" >> $GITHUB_ENV
             fi
-          elif [ -n "$ANDROID_NDK_HOME" ] && [ -d "$ANDROID_NDK_HOME" ]; then
-            echo "ANDROID_NDK_VERSION=$(basename "$ANDROID_NDK_HOME")" >> $GITHUB_ENV
           fi
 
       - name: Configure Keystore Signing
