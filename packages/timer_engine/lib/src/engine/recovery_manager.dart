@@ -56,6 +56,12 @@ class RecoveryManager {
     // The reconstructed wall clock: the end of the last phase that ended is
     // the start of the phase that comes next. The phases crossed while the
     // app was dead are laid out forward from the phase the run was on.
+    //
+    // The reconstruction is a wall-clock approximation: it knows the phase
+    // lengths, not when the run was actually running, so a pause in the run's
+    // history shifts the reconstructed spans. The recorded *durations* are
+    // exact — paused time is never counted — but the spans are a
+    // reconstruction, not a record of when the phase really ran.
     var phaseEndUtc =
         activeRun.phaseFirstStartedAtUtc ?? activeRun.phaseStartedAtUtc;
 
@@ -183,10 +189,13 @@ class RecoveryManager {
         currentPhaseIndex: newPhaseIndex,
         repeatIndex: newRepeatIndex,
         accumulatedMs: 0,
-        phaseLedger: [...activeRun.phaseLedger, ...ledgerEntries],
-        // The phase that is current now starts at the moment recovery ran;
-        // an ended run keeps the first start of the phase that just ended.
-        phaseFirstStartedAtUtc: isCompleted ? phaseStartUtc : nowUtc,
+        // The phase that is current now started when the phase just crossed
+        // ended, in the reconstructed wall clock. `phaseStartedAtUtc` is the
+        // current *segment's* start and is reset on every resume, while this
+        // is the phase's *first* start and survives one — the same difference
+        // the live engine's resume path keeps. An ended run keeps the first
+        // start of the phase that just ended.
+        phaseFirstStartedAtUtc: isCompleted ? phaseStartUtc : phaseEndUtc,
         phaseStartedAtUtc: nowUtc,
         phaseStartedMonotonicMs: () => newStatus == RunStatus.running ? nowMonoMs : null,
         stateVersion: currentRun.stateVersion + 1,
@@ -196,6 +205,14 @@ class RecoveryManager {
       if (isCompleted) {
         break;
       }
+    }
+
+    // The ledger is built once, here: the phases the run had already recorded
+    // plus the ones this reconciliation crossed.
+    if (ledgerEntries.isNotEmpty) {
+      currentRun = currentRun.copyWith(
+        phaseLedger: [...activeRun.phaseLedger, ...ledgerEntries],
+      );
     }
 
     return ReconciledState(run: currentRun, events: events);

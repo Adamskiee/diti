@@ -200,7 +200,8 @@ void main() {
     expect(third.totalActiveElapsedMs, equals(first.totalActiveElapsedMs));
   });
 
-  test('recovery stops at a manual phase and keeps the partial time', () async {
+  test('recovery keeps a manual phase active until its duration is reached',
+      () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;
 
@@ -221,7 +222,7 @@ void main() {
     expect(state.phaseStatus, equals(PhaseStatus.active));
   });
 
-  test('recovery restores a manual phase whose time is up as awaitingAction',
+  test('recovery stops at a manual phase that has reached its duration',
       () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;
@@ -354,6 +355,14 @@ void main() {
       state.completedPhases.map((entry) => entry.phaseIndex).toList(),
       equals([0, 1, 2]),
     );
+    // The ledger is contiguous across the two crashes: the phase the second
+    // recovery crossed starts where the first recovery's last entry ended.
+    for (var i = 1; i < state.completedPhases.length; i++) {
+      expect(
+        state.completedPhases[i].startedAtUtc,
+        equals(state.completedPhases[i - 1].endedAtUtc),
+      );
+    }
   });
 
   test('a forever-repeating routine records one entry per phase occurrence',
@@ -416,6 +425,38 @@ void main() {
     expect(
       state.totalActiveElapsedMs,
       equals(clock.utcNow.difference(startedAt).inMilliseconds),
+    );
+  });
+
+  test('the ledger stays contiguous across the recovered and live boundary',
+      () async {
+    await engine.start('multi-routine');
+    final runId = engine.activeRunId!;
+
+    engine.dispose();
+    clock.advance(const Duration(minutes: 35));
+
+    final recovered = freshEngine();
+    await recovered.recover();
+    expect(recovered.getState(runId)!.completedPhases, hasLength(2));
+
+    // The app runs on: work-2 has 20 minutes left, then the user ends it.
+    clock.advance(const Duration(minutes: 20));
+    await pumpEventQueue();
+    final result = await recovered.finishPhase(runId);
+    expect(result.success, isTrue);
+
+    final entries = recovered.getState(runId)!.completedPhases;
+    expect(entries, hasLength(3));
+
+    final lastRecovered = entries[1];
+    final live = entries[2];
+    // The live entry starts exactly where the last recovered entry ended.
+    expect(live.startedAtUtc, equals(lastRecovered.endedAtUtc));
+    // And the time it spans is the time it really took.
+    expect(
+      live.endedAtUtc.difference(live.startedAtUtc).inMilliseconds,
+      equals(live.durationMs),
     );
   });
 }
