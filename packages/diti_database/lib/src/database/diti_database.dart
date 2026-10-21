@@ -12,6 +12,8 @@ import '../daos/routines_dao.dart';
 import '../daos/timer_runs_dao.dart';
 import '../daos/sessions_dao.dart';
 import '../daos/plan_blocks_dao.dart';
+import 'migrations/migration_runner.dart';
+import 'migrations/migration_registry.dart';
 
 part 'diti_database.g.dart';
 
@@ -41,17 +43,24 @@ typedef PlanBlockData = PlanBlock;
   ],
 )
 class DitiDatabase extends _$DitiDatabase {
-  DitiDatabase(super.e);
+  final MigrationRunner? _customMigrationRunner;
 
-  DitiDatabase.connect(super.e);
+  DitiDatabase(super.e, {MigrationRunner? migrationRunner})
+      : _customMigrationRunner = migrationRunner;
 
-  DitiDatabase.inMemory() : super(NativeDatabase.memory());
+  DitiDatabase.connect(super.e, {MigrationRunner? migrationRunner})
+      : _customMigrationRunner = migrationRunner;
 
-  factory DitiDatabase.defaults() {
+  DitiDatabase.inMemory({MigrationRunner? migrationRunner})
+      : _customMigrationRunner = migrationRunner,
+        super(NativeDatabase.memory());
+
+  factory DitiDatabase.defaults({MigrationRunner? migrationRunner}) {
     return DitiDatabase(
       NativeDatabase.createInBackground(
         File('diti.db'),
       ),
+      migrationRunner: migrationRunner,
     );
   }
 
@@ -62,6 +71,10 @@ class DitiDatabase extends _$DitiDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
+        },
+        onUpgrade: (m, from, to) async {
+          final runner = _customMigrationRunner ?? MigrationRunner(defaultMigrationRegistry);
+          await runner.upgrade(this, m, from, to);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON;');

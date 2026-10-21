@@ -32,3 +32,9 @@ export 'src/repositories/session_repository.dart';
 export 'src/repositories/drift_session_repository.dart';
 export 'src/repositories/plan_block_repository.dart';
 export 'src/repositories/drift_plan_block_repository.dart';
+
+// Migrations
+export 'src/database/migrations/schema_migration.dart';
+export 'src/database/migrations/migration_registry.dart';
+export 'src/database/migrations/migration_runner.dart';
+export 'src/database/migrations/migration_exceptions.dart';
