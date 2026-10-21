@@ -1,4 +1,5 @@
 import 'package:diti_database/diti_database.dart';
+import 'package:timer_engine/timer_engine.dart';
 
 class DraftSessionState {
   final SessionRecord? candidateSession;
@@ -9,6 +10,10 @@ class DraftSessionState {
   final bool isSaving;
   final String? validationError;
 
+  /// The phases the run recorded, with the active time each of them took.
+  /// Its durations always add up to [draftDurationMs].
+  final List<PhaseLedgerEntry> phaseBreakdown;
+
   const DraftSessionState({
     this.candidateSession,
     this.planBlockId,
@@ -17,6 +22,7 @@ class DraftSessionState {
     this.isVisible = false,
     this.isSaving = false,
     this.validationError,
+    this.phaseBreakdown = const [],
   });
 
   DraftSessionState copyWith({
@@ -28,6 +34,7 @@ class DraftSessionState {
     bool? isSaving,
     String? validationError,
     bool clearValidationError = false,
+    List<PhaseLedgerEntry>? phaseBreakdown,
   }) {
     return DraftSessionState(
       candidateSession: candidateSession ?? this.candidateSession,
@@ -39,6 +46,7 @@ class DraftSessionState {
       validationError: clearValidationError
           ? null
           : (validationError ?? this.validationError),
+      phaseBreakdown: phaseBreakdown ?? this.phaseBreakdown,
     );
   }
 }

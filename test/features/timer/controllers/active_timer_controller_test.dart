@@ -606,7 +606,9 @@ void main() {
       final updatedBlock =
           await container.read(planBlockRepositoryProvider).getBlockById('block_custom');
       expect(updatedBlock?.status, PlanBlockStatus.completed);
-      expect(updatedBlock?.actualDurationMs, 1800000);
+      // The phase really ran 35 minutes, so that is the session's time: the
+      // configured 30 minutes are not what the user spent.
+      expect(updatedBlock?.actualDurationMs, 2100000);
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
       container.dispose();
@@ -774,6 +776,9 @@ void main() {
 
       // Start routine and advance to completion
       await container.read(activeTimerControllerProvider.notifier).startRoutine('r1');
+      // The run has to have run for a while: a run without measurable time
+      // produces no session at all.
+      fakeClock.advance(const Duration(minutes: 5));
       final engine = container.read(timerEngineProvider);
       await engine.finishRun(engine.activeRunId!);
 

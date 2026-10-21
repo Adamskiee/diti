@@ -69,6 +69,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -97,6 +98,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -122,6 +124,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -148,6 +151,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -188,6 +192,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -214,6 +219,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -245,6 +251,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -272,6 +279,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -321,6 +329,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
@@ -364,6 +373,7 @@ void main() {
           repeatIndex: 0,
           activeElapsedMs: 25 * 60 * 1000,
           stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
         ),
         routineSnapshot: testRoutine,
       );
