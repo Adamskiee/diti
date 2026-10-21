@@ -21,7 +21,7 @@ void main() {
 
     SessionRecord createValidSession({
       String sessionId = 'sess-1',
-      String routineId = 'routine-1',
+      String? routineId = 'routine-1',
       String routineName = 'Deep Work',
       DateTime? startedAtUtc,
       DateTime? endedAtUtc,
@@ -49,6 +49,36 @@ void main() {
       final result = SessionValidator.validate(
         session,
         nowUtc: DateTime.utc(2026, 10, 20, 11, 0),
+      );
+      expect(result.isValid, isTrue);
+      expect(result.errors, isEmpty);
+    });
+
+    test('session with null routineId passes validation', () {
+      final session = createValidSession(routineId: null);
+      final result = SessionValidator.validate(
+        session,
+        nowUtc: DateTime.utc(2026, 10, 20, 11, 0),
+      );
+      expect(result.isValid, isTrue);
+      expect(result.errors, isEmpty);
+    });
+
+    test('exact boundary totalDurationMs 1000ms is valid', () {
+      final session = createValidSession(totalDurationMs: 1000);
+      final result = SessionValidator.validate(
+        session,
+        nowUtc: DateTime.utc(2026, 10, 20, 11, 0),
+      );
+      expect(result.isValid, isTrue);
+      expect(result.errors, isEmpty);
+    });
+
+    test('exact boundary totalDurationMs 86400000ms (24h) is valid', () {
+      final session = createValidSession(totalDurationMs: 86400000);
+      final result = SessionValidator.validate(
+        session,
+        nowUtc: DateTime.utc(2026, 10, 21, 11, 0),
       );
       expect(result.isValid, isTrue);
       expect(result.errors, isEmpty);

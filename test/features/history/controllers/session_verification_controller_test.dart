@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
-import 'package:diti/src/features/history/domain/draft_session.dart';
 import 'package:diti/src/features/history/presentation/controllers/session_verification_controller.dart';
 
 class MockSessionRepository extends Mock implements SessionRepository {}
@@ -363,6 +363,37 @@ void main() {
         that: isA<PlanBlock>().having((b) => b.status, 'status', PlanBlockStatus.scheduled),
       ))).called(1);
       verifyNever(() => mockSessionRepo.recordSession(any()));
+    });
+
+    test('confirmSave returns false immediately when re-entrant while isSaving is true', () async {
+      final completer = Completer<void>();
+      when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) => completer.future);
+
+      final runState = TimerRunState(
+        runId: 'run-reentrant',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 60000,
+        stateVersion: 1,
+      );
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+      );
+
+      final firstCallFuture = controller.confirmSave();
+      expect(controller.state.isSaving, isTrue);
+
+      final secondCallResult = await controller.confirmSave();
+      expect(secondCallResult, isFalse);
+
+      completer.complete();
+      final firstCallResult = await firstCallFuture;
+      expect(firstCallResult, isTrue);
+      verify(() => mockSessionRepo.recordSession(any())).called(1);
     });
   });
 }

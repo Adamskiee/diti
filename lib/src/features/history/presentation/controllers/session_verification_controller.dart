@@ -87,7 +87,7 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
 
   Future<bool> confirmSave() async {
     final candidate = state.candidateSession;
-    if (candidate == null) return false;
+    if (state.isSaving || candidate == null) return false;
 
     final trimmedName = state.draftRoutineName.trim();
     final finalDuration = state.draftDurationMs;

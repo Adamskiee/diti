@@ -38,7 +38,7 @@ class SessionValidator {
     DateTime? nowUtc,
   }) {
     final errors = <SessionValidationError>[];
-    final now = nowUtc ?? DateTime.now().toUtc();
+    final now = (nowUtc ?? DateTime.now()).toUtc();
 
     // 1. Duration checks
     if (session.totalDurationMs < minDurationMs) {

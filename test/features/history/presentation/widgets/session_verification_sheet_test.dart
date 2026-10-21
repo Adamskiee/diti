@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -229,6 +230,154 @@ void main() {
 
       expect(find.text('Discard Session?'), findsNothing);
       expect(controller.state.candidateSession, isNotNull);
+    });
+
+    testWidgets(
+        'tapping Discard when duration <= 5m discards immediately without dialog',
+        (tester) async {
+      await controller.prepareVerification(
+        runState: TimerRunState(
+          runId: 'run-w6',
+          status: RunStatus.completed,
+          phaseStatus: PhaseStatus.finished,
+          currentPhase: testRoutine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 60 * 1000,
+          stateVersion: 1,
+        ),
+        routineSnapshot: testRoutine,
+      );
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Discard Session?'), findsNothing);
+      expect(controller.state.candidateSession, isNull);
+    });
+
+    testWidgets(
+        'confirming Discard in dialog for session > 5m calls controller.discard()',
+        (tester) async {
+      await controller.prepareVerification(
+        runState: TimerRunState(
+          runId: 'run-w7',
+          status: RunStatus.completed,
+          phaseStatus: PhaseStatus.finished,
+          currentPhase: testRoutine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 25 * 60 * 1000,
+          stateVersion: 1,
+        ),
+        routineSnapshot: testRoutine,
+      );
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Discard Session?'), findsOneWidget);
+
+      final dialogDiscardButton = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Discard'),
+      );
+      await tester.tap(dialogDiscardButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Discard Session?'), findsNothing);
+      expect(controller.state.candidateSession, isNull);
+    });
+
+    testWidgets('inputs and chips are disabled while isSaving is true',
+        (tester) async {
+      final saveCompleter = Completer<void>();
+      registerFallbackValue(SessionRecord(
+        sessionId: 'dummy',
+        routineId: 'dummy',
+        routineName: 'dummy',
+        startedAtUtc: DateTime.now().toUtc(),
+        endedAtUtc: DateTime.now().toUtc(),
+        totalDurationMs: 1000,
+        outcome: SessionOutcome.completed,
+        routineSnapshot: testRoutine,
+      ));
+      when(() => mockSessionRepo.recordSession(any()))
+          .thenAnswer((_) => saveCompleter.future);
+
+      await controller.prepareVerification(
+        runState: TimerRunState(
+          runId: 'run-w8',
+          status: RunStatus.completed,
+          phaseStatus: PhaseStatus.finished,
+          currentPhase: testRoutine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 25 * 60 * 1000,
+          stateVersion: 1,
+        ),
+        routineSnapshot: testRoutine,
+      );
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Tap Save to trigger isSaving: true
+      await tester.tap(find.text('Save to Analytics'));
+      await tester.pump();
+
+      expect(controller.state.isSaving, isTrue);
+
+      final textField =
+          tester.widget<TextFormField>(find.byType(TextFormField));
+      expect(textField.enabled, isFalse);
+
+      final chips = tester.widgetList<ActionChip>(find.byType(ActionChip));
+      for (final chip in chips) {
+        expect(chip.onPressed, isNull);
+      }
+
+      final popScopeFinder = find.byWidgetPredicate((w) => w is PopScope);
+      expect(popScopeFinder, findsOneWidget);
+      final popScope = tester.widget(popScopeFinder) as PopScope;
+      expect(popScope.canPop, isFalse);
+
+      saveCompleter.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('Android back pop invokes discard on controller',
+        (tester) async {
+      await controller.prepareVerification(
+        runState: TimerRunState(
+          runId: 'run-w9',
+          status: RunStatus.completed,
+          phaseStatus: PhaseStatus.finished,
+          currentPhase: testRoutine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 25 * 60 * 1000,
+          stateVersion: 1,
+        ),
+        routineSnapshot: testRoutine,
+      );
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final popScopeFinder = find.byWidgetPredicate((w) => w is PopScope);
+      expect(popScopeFinder, findsOneWidget);
+      final dynamic popScopeWidget = tester.widget(popScopeFinder);
+      popScopeWidget.onPopInvokedWithResult(true, null);
+      await tester.pumpAndSettle();
+
+      expect(controller.state.candidateSession, isNull);
     });
   });
 }

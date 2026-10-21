@@ -7,7 +7,6 @@ import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/core/navigation/app_shell.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_verification_sheet.dart';
-import 'package:diti/src/features/history/providers/history_providers.dart';
 import 'package:diti/src/features/plan/presentation/widgets/plan_block_card.dart';
 import 'package:diti/src/features/plan/providers/plan_providers.dart';
 import 'package:diti/src/features/routines/data/starter_routines.dart';

@@ -10,7 +10,6 @@ import 'package:diti/src/features/history/presentation/widgets/session_feed_tile
 import 'package:diti/src/features/history/presentation/widgets/session_verification_sheet.dart';
 import 'package:diti/src/features/history/providers/history_providers.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
-import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../helpers/test_fakes.dart';
 

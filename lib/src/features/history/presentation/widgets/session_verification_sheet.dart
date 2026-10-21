@@ -41,7 +41,14 @@ class _SessionVerificationSheetState
         isCompleted ? theme.colorScheme.primary : Colors.orange;
     final outcomeLabel = isCompleted ? 'Completed' : 'Cancelled';
 
-    return SafeArea(
+    return PopScope(
+      canPop: !state.isSaving,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          controller.discard();
+        }
+      },
+      child: SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
           left: 20,
@@ -89,6 +96,7 @@ class _SessionVerificationSheetState
               // Activity Title Field
               TextFormField(
                 controller: _titleController,
+                enabled: !state.isSaving,
                 decoration: InputDecoration(
                   labelText: 'Activity / Routine Name',
                   border: OutlineInputBorder(
@@ -135,23 +143,31 @@ class _SessionVerificationSheetState
                         children: [
                           ActionChip(
                             label: const Text('-5m'),
-                            onPressed: () => controller
-                                .adjustDuration(const Duration(minutes: -5)),
+                            onPressed: state.isSaving
+                                ? null
+                                : () => controller
+                                    .adjustDuration(const Duration(minutes: -5)),
                           ),
                           ActionChip(
                             label: const Text('-1m'),
-                            onPressed: () => controller
-                                .adjustDuration(const Duration(minutes: -1)),
+                            onPressed: state.isSaving
+                                ? null
+                                : () => controller
+                                    .adjustDuration(const Duration(minutes: -1)),
                           ),
                           ActionChip(
                             label: const Text('+1m'),
-                            onPressed: () => controller
-                                .adjustDuration(const Duration(minutes: 1)),
+                            onPressed: state.isSaving
+                                ? null
+                                : () => controller
+                                    .adjustDuration(const Duration(minutes: 1)),
                           ),
                           ActionChip(
                             label: const Text('+5m'),
-                            onPressed: () => controller
-                                .adjustDuration(const Duration(minutes: 5)),
+                            onPressed: state.isSaving
+                                ? null
+                                : () => controller
+                                    .adjustDuration(const Duration(minutes: 5)),
                           ),
                         ],
                       ),
@@ -279,6 +295,7 @@ class _SessionVerificationSheetState
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
