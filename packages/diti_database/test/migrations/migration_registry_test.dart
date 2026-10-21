@@ -85,5 +85,16 @@ void main() {
         throwsA(isA<StateError>()),
       );
     });
+
+    test('rejects non-positive version bounds', () {
+      expect(
+        () => registry.register(const _MockStep(0, 1)),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(
+        () => registry.resolveSteps(0, 1),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
   });
 }

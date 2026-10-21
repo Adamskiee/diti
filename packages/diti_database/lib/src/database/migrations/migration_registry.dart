@@ -13,6 +13,11 @@ class MigrationRegistry {
 
   /// Registers a contiguous migration step (e.g. 1 -> 2).
   void register(SchemaMigration migration) {
+    if (migration.fromVersion < 1) {
+      throw ArgumentError(
+        'Migration fromVersion must be >= 1, got ${migration.fromVersion}',
+      );
+    }
     if (migration.toVersion != migration.fromVersion + 1) {
       throw ArgumentError(
         'Migration step must be strictly contiguous: '
@@ -29,6 +34,9 @@ class MigrationRegistry {
 
   /// Resolves an ordered list of contiguous steps from [fromVersion] to [toVersion].
   List<SchemaMigration> resolveSteps(int fromVersion, int toVersion) {
+    if (fromVersion < 1) {
+      throw ArgumentError('fromVersion must be >= 1, got $fromVersion');
+    }
     if (fromVersion > toVersion) {
       throw UnsupportedError(
         'Database downgrades are not supported (from: $fromVersion, to: $toVersion).',
