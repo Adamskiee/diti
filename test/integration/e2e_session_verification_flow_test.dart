@@ -6,6 +6,7 @@ import 'package:diti/src/core/di/notification_providers.dart';
 import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/core/navigation/app_shell.dart';
+import 'package:diti/src/features/history/presentation/widgets/session_feed_tile.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_verification_sheet.dart';
 import 'package:diti/src/features/history/providers/history_providers.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
@@ -88,9 +89,13 @@ void main() {
     // 6. Verify sheet is dismissed
     expect(find.byType(SessionVerificationSheet), findsNothing);
 
-    // 7. Switch to History & Analytics tab
+    // 7. Switch to History & Analytics tab (defaults to Analytics tab)
     await tester.tap(find.byIcon(Icons.history_outlined));
     await tester.pumpAndSettle();
+
+    // 8. Verify the verified session is aggregated into Analytics view
+    expect(find.text('Total Focus'), findsOneWidget);
+    expect(find.text('30:00'), findsOneWidget);
 
     // Switch to History tab in SegmentedButton
     await tester.tap(
@@ -101,8 +106,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 8. Verify the updated session appears with verified name
+    // 9. Verify the updated session appears in History with verified name and duration
+    expect(find.byType(SessionFeedTile), findsOneWidget);
     expect(find.text('Verified Sprint'), findsOneWidget);
+    expect(find.text('30:00'), findsOneWidget);
 
     await db.close();
     container.dispose();
