@@ -29,6 +29,11 @@ class TimerRun {
   /// When the phase that is currently running first started running. It
   /// survives pauses and resumes, so a phase that is paused and resumed is
   /// still measured from its first start.
+  ///
+  /// It is the *next* phase's first start once a phase advances, so a run
+  /// that continues points at the phase it is on. A run that has ended
+  /// keeps the first start of the phase that was running when it ended:
+  /// the run's end is never stamped onto it.
   final DateTime? phaseFirstStartedAtUtc;
 
   TimerRun({

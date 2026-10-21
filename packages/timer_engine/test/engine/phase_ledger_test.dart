@@ -262,6 +262,9 @@ void main() {
         () async {
       await engine.start('pomodoro');
       final runId = engine.activeRunId!;
+      final startedAt = clock.utcNow;
+      final focusEndedAt = startedAt.add(const Duration(minutes: 25));
+      final runEndedAt = startedAt.add(const Duration(minutes: 30));
 
       await advancePhase(const Duration(minutes: 25));
       await advancePhase(const Duration(minutes: 5));
@@ -276,12 +279,16 @@ void main() {
       expect(focus.kind, equals(PhaseKind.focus));
       expect(focus.durationMs, equals(1500000));
       expect(focus.outcome, equals(PhaseStatus.finished));
+      expect(focus.startedAtUtc, equals(startedAt));
+      expect(focus.endedAtUtc, equals(focusEndedAt));
 
       final rest = state.completedPhases[1];
       expect(rest.phaseId, equals('break'));
       expect(rest.kind, equals(PhaseKind.rest));
       expect(rest.durationMs, equals(300000));
       expect(rest.outcome, equals(PhaseStatus.finished));
+      expect(rest.startedAtUtc, equals(focusEndedAt));
+      expect(rest.endedAtUtc, equals(runEndedAt));
 
       final ledgerTotal = state.completedPhases
           .fold<int>(0, (total, entry) => total + entry.durationMs);
@@ -371,6 +378,43 @@ void main() {
       // 27 minutes of actual time, not the configured 25.
       expect(state.completedPhases.single.durationMs, equals(1620000));
       expect(state.totalActiveElapsedMs, equals(1620000));
+    });
+
+    test('a completed run keeps the last phase first start, not the run end',
+        () async {
+      await engine.start('pomodoro');
+
+      await advancePhase(const Duration(minutes: 25));
+      final breakStartedAt = clock.utcNow;
+      await advancePhase(const Duration(minutes: 5));
+
+      final persisted = persistence.activeRun!;
+      expect(persisted.phaseFirstStartedAtUtc, equals(breakStartedAt));
+      expect(persisted.phaseFirstStartedAtUtc, isNot(equals(clock.utcNow)));
+    });
+
+    test('the accumulator is zero after the run completes', () async {
+      await engine.start('pomodoro');
+
+      await advancePhase(const Duration(minutes: 25));
+      await advancePhase(const Duration(minutes: 5));
+
+      final persisted = persistence.activeRun!;
+      expect(persisted.accumulatedMs, equals(0));
+      expect(persisted.ledgerTotalMs, equals(1800000));
+    });
+
+    test('the run total holds mid-phase, not only at a boundary', () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+
+      await advancePhase(const Duration(minutes: 25));
+      clock.advance(const Duration(minutes: 3));
+      await pumpEventQueue();
+
+      final state = engine.getState(runId)!;
+      expect(state.activeElapsedMs, equals(180000));
+      expect(state.totalActiveElapsedMs, equals(1500000 + 180000));
     });
 
     test('the accumulator is zero when a phase ends', () async {
