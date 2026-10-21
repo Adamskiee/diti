@@ -12,6 +12,9 @@ class TimerRuns extends Table {
   IntColumn get stateVersion => integer()();
   TextColumn get lastEventId => text().nullable()();
   TextColumn get routineSnapshotJson => text()();
+  TextColumn get phaseLedgerJson => text().withDefault(const Constant('[]'))();
+  DateTimeColumn get runStartedAtUtc => dateTime().nullable()();
+  DateTimeColumn get phaseFirstStartedAtUtc => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {runId};

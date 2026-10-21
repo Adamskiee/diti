@@ -406,9 +406,16 @@ class $RoutinePhasesTable extends RoutinePhases
   late final GeneratedColumn<String> transitionPolicy = GeneratedColumn<String>(
       'transition_policy', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+      'kind', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('focus'));
   @override
   List<GeneratedColumn> get $columns =>
-      [id, routineId, orderIndex, name, durationMs, transitionPolicy];
+      [id, routineId, orderIndex, name, durationMs, transitionPolicy, kind];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -458,6 +465,10 @@ class $RoutinePhasesTable extends RoutinePhases
     } else if (isInserting) {
       context.missing(_transitionPolicyMeta);
     }
+    if (data.containsKey('kind')) {
+      context.handle(
+          _kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    }
     return context;
   }
 
@@ -479,6 +490,8 @@ class $RoutinePhasesTable extends RoutinePhases
           .read(DriftSqlType.int, data['${effectivePrefix}duration_ms']),
       transitionPolicy: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}transition_policy'])!,
+      kind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
     );
   }
 
@@ -495,13 +508,15 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
   final String name;
   final int? durationMs;
   final String transitionPolicy;
+  final String kind;
   const RoutinePhase(
       {required this.id,
       required this.routineId,
       required this.orderIndex,
       required this.name,
       this.durationMs,
-      required this.transitionPolicy});
+      required this.transitionPolicy,
+      required this.kind});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -513,6 +528,7 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
       map['duration_ms'] = Variable<int>(durationMs);
     }
     map['transition_policy'] = Variable<String>(transitionPolicy);
+    map['kind'] = Variable<String>(kind);
     return map;
   }
 
@@ -526,6 +542,7 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
           ? const Value.absent()
           : Value(durationMs),
       transitionPolicy: Value(transitionPolicy),
+      kind: Value(kind),
     );
   }
 
@@ -539,6 +556,7 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
       name: serializer.fromJson<String>(json['name']),
       durationMs: serializer.fromJson<int?>(json['durationMs']),
       transitionPolicy: serializer.fromJson<String>(json['transitionPolicy']),
+      kind: serializer.fromJson<String>(json['kind']),
     );
   }
   @override
@@ -551,6 +569,7 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
       'name': serializer.toJson<String>(name),
       'durationMs': serializer.toJson<int?>(durationMs),
       'transitionPolicy': serializer.toJson<String>(transitionPolicy),
+      'kind': serializer.toJson<String>(kind),
     };
   }
 
@@ -560,7 +579,8 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
           int? orderIndex,
           String? name,
           Value<int?> durationMs = const Value.absent(),
-          String? transitionPolicy}) =>
+          String? transitionPolicy,
+          String? kind}) =>
       RoutinePhase(
         id: id ?? this.id,
         routineId: routineId ?? this.routineId,
@@ -568,6 +588,7 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
         name: name ?? this.name,
         durationMs: durationMs.present ? durationMs.value : this.durationMs,
         transitionPolicy: transitionPolicy ?? this.transitionPolicy,
+        kind: kind ?? this.kind,
       );
   RoutinePhase copyWithCompanion(RoutinePhasesCompanion data) {
     return RoutinePhase(
@@ -581,6 +602,7 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
       transitionPolicy: data.transitionPolicy.present
           ? data.transitionPolicy.value
           : this.transitionPolicy,
+      kind: data.kind.present ? data.kind.value : this.kind,
     );
   }
 
@@ -592,14 +614,15 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
           ..write('orderIndex: $orderIndex, ')
           ..write('name: $name, ')
           ..write('durationMs: $durationMs, ')
-          ..write('transitionPolicy: $transitionPolicy')
+          ..write('transitionPolicy: $transitionPolicy, ')
+          ..write('kind: $kind')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(
-      id, routineId, orderIndex, name, durationMs, transitionPolicy);
+      id, routineId, orderIndex, name, durationMs, transitionPolicy, kind);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -609,7 +632,8 @@ class RoutinePhase extends DataClass implements Insertable<RoutinePhase> {
           other.orderIndex == this.orderIndex &&
           other.name == this.name &&
           other.durationMs == this.durationMs &&
-          other.transitionPolicy == this.transitionPolicy);
+          other.transitionPolicy == this.transitionPolicy &&
+          other.kind == this.kind);
 }
 
 class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
@@ -619,6 +643,7 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
   final Value<String> name;
   final Value<int?> durationMs;
   final Value<String> transitionPolicy;
+  final Value<String> kind;
   final Value<int> rowid;
   const RoutinePhasesCompanion({
     this.id = const Value.absent(),
@@ -627,6 +652,7 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
     this.name = const Value.absent(),
     this.durationMs = const Value.absent(),
     this.transitionPolicy = const Value.absent(),
+    this.kind = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutinePhasesCompanion.insert({
@@ -636,6 +662,7 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
     required String name,
     this.durationMs = const Value.absent(),
     required String transitionPolicy,
+    this.kind = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         routineId = Value(routineId),
@@ -649,6 +676,7 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
     Expression<String>? name,
     Expression<int>? durationMs,
     Expression<String>? transitionPolicy,
+    Expression<String>? kind,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -658,6 +686,7 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
       if (name != null) 'name': name,
       if (durationMs != null) 'duration_ms': durationMs,
       if (transitionPolicy != null) 'transition_policy': transitionPolicy,
+      if (kind != null) 'kind': kind,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -669,6 +698,7 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
       Value<String>? name,
       Value<int?>? durationMs,
       Value<String>? transitionPolicy,
+      Value<String>? kind,
       Value<int>? rowid}) {
     return RoutinePhasesCompanion(
       id: id ?? this.id,
@@ -677,6 +707,7 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
       name: name ?? this.name,
       durationMs: durationMs ?? this.durationMs,
       transitionPolicy: transitionPolicy ?? this.transitionPolicy,
+      kind: kind ?? this.kind,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -702,6 +733,9 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
     if (transitionPolicy.present) {
       map['transition_policy'] = Variable<String>(transitionPolicy.value);
     }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -717,6 +751,7 @@ class RoutinePhasesCompanion extends UpdateCompanion<RoutinePhase> {
           ..write('name: $name, ')
           ..write('durationMs: $durationMs, ')
           ..write('transitionPolicy: $transitionPolicy, ')
+          ..write('kind: $kind, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -793,6 +828,26 @@ class $TimerRunsTable extends TimerRuns
   late final GeneratedColumn<String> routineSnapshotJson =
       GeneratedColumn<String>('routine_snapshot_json', aliasedName, false,
           type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _phaseLedgerJsonMeta =
+      const VerificationMeta('phaseLedgerJson');
+  @override
+  late final GeneratedColumn<String> phaseLedgerJson = GeneratedColumn<String>(
+      'phase_ledger_json', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
+  static const VerificationMeta _runStartedAtUtcMeta =
+      const VerificationMeta('runStartedAtUtc');
+  @override
+  late final GeneratedColumn<DateTime> runStartedAtUtc =
+      GeneratedColumn<DateTime>('run_started_at_utc', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _phaseFirstStartedAtUtcMeta =
+      const VerificationMeta('phaseFirstStartedAtUtc');
+  @override
+  late final GeneratedColumn<DateTime> phaseFirstStartedAtUtc =
+      GeneratedColumn<DateTime>('phase_first_started_at_utc', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         runId,
@@ -805,7 +860,10 @@ class $TimerRunsTable extends TimerRuns
         pausedAtUtc,
         stateVersion,
         lastEventId,
-        routineSnapshotJson
+        routineSnapshotJson,
+        phaseLedgerJson,
+        runStartedAtUtc,
+        phaseFirstStartedAtUtc
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -897,6 +955,25 @@ class $TimerRunsTable extends TimerRuns
     } else if (isInserting) {
       context.missing(_routineSnapshotJsonMeta);
     }
+    if (data.containsKey('phase_ledger_json')) {
+      context.handle(
+          _phaseLedgerJsonMeta,
+          phaseLedgerJson.isAcceptableOrUnknown(
+              data['phase_ledger_json']!, _phaseLedgerJsonMeta));
+    }
+    if (data.containsKey('run_started_at_utc')) {
+      context.handle(
+          _runStartedAtUtcMeta,
+          runStartedAtUtc.isAcceptableOrUnknown(
+              data['run_started_at_utc']!, _runStartedAtUtcMeta));
+    }
+    if (data.containsKey('phase_first_started_at_utc')) {
+      context.handle(
+          _phaseFirstStartedAtUtcMeta,
+          phaseFirstStartedAtUtc.isAcceptableOrUnknown(
+              data['phase_first_started_at_utc']!,
+              _phaseFirstStartedAtUtcMeta));
+    }
     return context;
   }
 
@@ -930,6 +1007,13 @@ class $TimerRunsTable extends TimerRuns
       routineSnapshotJson: attachedDatabase.typeMapping.read(
           DriftSqlType.string,
           data['${effectivePrefix}routine_snapshot_json'])!,
+      phaseLedgerJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}phase_ledger_json'])!,
+      runStartedAtUtc: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}run_started_at_utc']),
+      phaseFirstStartedAtUtc: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime,
+          data['${effectivePrefix}phase_first_started_at_utc']),
     );
   }
 
@@ -951,6 +1035,9 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
   final int stateVersion;
   final String? lastEventId;
   final String routineSnapshotJson;
+  final String phaseLedgerJson;
+  final DateTime? runStartedAtUtc;
+  final DateTime? phaseFirstStartedAtUtc;
   const TimerRun(
       {required this.runId,
       required this.status,
@@ -962,7 +1049,10 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
       this.pausedAtUtc,
       required this.stateVersion,
       this.lastEventId,
-      required this.routineSnapshotJson});
+      required this.routineSnapshotJson,
+      required this.phaseLedgerJson,
+      this.runStartedAtUtc,
+      this.phaseFirstStartedAtUtc});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -981,6 +1071,14 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
       map['last_event_id'] = Variable<String>(lastEventId);
     }
     map['routine_snapshot_json'] = Variable<String>(routineSnapshotJson);
+    map['phase_ledger_json'] = Variable<String>(phaseLedgerJson);
+    if (!nullToAbsent || runStartedAtUtc != null) {
+      map['run_started_at_utc'] = Variable<DateTime>(runStartedAtUtc);
+    }
+    if (!nullToAbsent || phaseFirstStartedAtUtc != null) {
+      map['phase_first_started_at_utc'] =
+          Variable<DateTime>(phaseFirstStartedAtUtc);
+    }
     return map;
   }
 
@@ -1001,6 +1099,13 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
           ? const Value.absent()
           : Value(lastEventId),
       routineSnapshotJson: Value(routineSnapshotJson),
+      phaseLedgerJson: Value(phaseLedgerJson),
+      runStartedAtUtc: runStartedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(runStartedAtUtc),
+      phaseFirstStartedAtUtc: phaseFirstStartedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phaseFirstStartedAtUtc),
     );
   }
 
@@ -1021,6 +1126,10 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
       lastEventId: serializer.fromJson<String?>(json['lastEventId']),
       routineSnapshotJson:
           serializer.fromJson<String>(json['routineSnapshotJson']),
+      phaseLedgerJson: serializer.fromJson<String>(json['phaseLedgerJson']),
+      runStartedAtUtc: serializer.fromJson<DateTime?>(json['runStartedAtUtc']),
+      phaseFirstStartedAtUtc:
+          serializer.fromJson<DateTime?>(json['phaseFirstStartedAtUtc']),
     );
   }
   @override
@@ -1038,6 +1147,10 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
       'stateVersion': serializer.toJson<int>(stateVersion),
       'lastEventId': serializer.toJson<String?>(lastEventId),
       'routineSnapshotJson': serializer.toJson<String>(routineSnapshotJson),
+      'phaseLedgerJson': serializer.toJson<String>(phaseLedgerJson),
+      'runStartedAtUtc': serializer.toJson<DateTime?>(runStartedAtUtc),
+      'phaseFirstStartedAtUtc':
+          serializer.toJson<DateTime?>(phaseFirstStartedAtUtc),
     };
   }
 
@@ -1052,7 +1165,10 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
           Value<DateTime?> pausedAtUtc = const Value.absent(),
           int? stateVersion,
           Value<String?> lastEventId = const Value.absent(),
-          String? routineSnapshotJson}) =>
+          String? routineSnapshotJson,
+          String? phaseLedgerJson,
+          Value<DateTime?> runStartedAtUtc = const Value.absent(),
+          Value<DateTime?> phaseFirstStartedAtUtc = const Value.absent()}) =>
       TimerRun(
         runId: runId ?? this.runId,
         status: status ?? this.status,
@@ -1065,6 +1181,13 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
         stateVersion: stateVersion ?? this.stateVersion,
         lastEventId: lastEventId.present ? lastEventId.value : this.lastEventId,
         routineSnapshotJson: routineSnapshotJson ?? this.routineSnapshotJson,
+        phaseLedgerJson: phaseLedgerJson ?? this.phaseLedgerJson,
+        runStartedAtUtc: runStartedAtUtc.present
+            ? runStartedAtUtc.value
+            : this.runStartedAtUtc,
+        phaseFirstStartedAtUtc: phaseFirstStartedAtUtc.present
+            ? phaseFirstStartedAtUtc.value
+            : this.phaseFirstStartedAtUtc,
       );
   TimerRun copyWithCompanion(TimerRunsCompanion data) {
     return TimerRun(
@@ -1093,6 +1216,15 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
       routineSnapshotJson: data.routineSnapshotJson.present
           ? data.routineSnapshotJson.value
           : this.routineSnapshotJson,
+      phaseLedgerJson: data.phaseLedgerJson.present
+          ? data.phaseLedgerJson.value
+          : this.phaseLedgerJson,
+      runStartedAtUtc: data.runStartedAtUtc.present
+          ? data.runStartedAtUtc.value
+          : this.runStartedAtUtc,
+      phaseFirstStartedAtUtc: data.phaseFirstStartedAtUtc.present
+          ? data.phaseFirstStartedAtUtc.value
+          : this.phaseFirstStartedAtUtc,
     );
   }
 
@@ -1109,7 +1241,10 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
           ..write('pausedAtUtc: $pausedAtUtc, ')
           ..write('stateVersion: $stateVersion, ')
           ..write('lastEventId: $lastEventId, ')
-          ..write('routineSnapshotJson: $routineSnapshotJson')
+          ..write('routineSnapshotJson: $routineSnapshotJson, ')
+          ..write('phaseLedgerJson: $phaseLedgerJson, ')
+          ..write('runStartedAtUtc: $runStartedAtUtc, ')
+          ..write('phaseFirstStartedAtUtc: $phaseFirstStartedAtUtc')
           ..write(')'))
         .toString();
   }
@@ -1126,7 +1261,10 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
       pausedAtUtc,
       stateVersion,
       lastEventId,
-      routineSnapshotJson);
+      routineSnapshotJson,
+      phaseLedgerJson,
+      runStartedAtUtc,
+      phaseFirstStartedAtUtc);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1141,7 +1279,10 @@ class TimerRun extends DataClass implements Insertable<TimerRun> {
           other.pausedAtUtc == this.pausedAtUtc &&
           other.stateVersion == this.stateVersion &&
           other.lastEventId == this.lastEventId &&
-          other.routineSnapshotJson == this.routineSnapshotJson);
+          other.routineSnapshotJson == this.routineSnapshotJson &&
+          other.phaseLedgerJson == this.phaseLedgerJson &&
+          other.runStartedAtUtc == this.runStartedAtUtc &&
+          other.phaseFirstStartedAtUtc == this.phaseFirstStartedAtUtc);
 }
 
 class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
@@ -1156,6 +1297,9 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
   final Value<int> stateVersion;
   final Value<String?> lastEventId;
   final Value<String> routineSnapshotJson;
+  final Value<String> phaseLedgerJson;
+  final Value<DateTime?> runStartedAtUtc;
+  final Value<DateTime?> phaseFirstStartedAtUtc;
   final Value<int> rowid;
   const TimerRunsCompanion({
     this.runId = const Value.absent(),
@@ -1169,6 +1313,9 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
     this.stateVersion = const Value.absent(),
     this.lastEventId = const Value.absent(),
     this.routineSnapshotJson = const Value.absent(),
+    this.phaseLedgerJson = const Value.absent(),
+    this.runStartedAtUtc = const Value.absent(),
+    this.phaseFirstStartedAtUtc = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TimerRunsCompanion.insert({
@@ -1183,6 +1330,9 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
     required int stateVersion,
     this.lastEventId = const Value.absent(),
     required String routineSnapshotJson,
+    this.phaseLedgerJson = const Value.absent(),
+    this.runStartedAtUtc = const Value.absent(),
+    this.phaseFirstStartedAtUtc = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : runId = Value(runId),
         status = Value(status),
@@ -1205,6 +1355,9 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
     Expression<int>? stateVersion,
     Expression<String>? lastEventId,
     Expression<String>? routineSnapshotJson,
+    Expression<String>? phaseLedgerJson,
+    Expression<DateTime>? runStartedAtUtc,
+    Expression<DateTime>? phaseFirstStartedAtUtc,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1220,6 +1373,10 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
       if (lastEventId != null) 'last_event_id': lastEventId,
       if (routineSnapshotJson != null)
         'routine_snapshot_json': routineSnapshotJson,
+      if (phaseLedgerJson != null) 'phase_ledger_json': phaseLedgerJson,
+      if (runStartedAtUtc != null) 'run_started_at_utc': runStartedAtUtc,
+      if (phaseFirstStartedAtUtc != null)
+        'phase_first_started_at_utc': phaseFirstStartedAtUtc,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1236,6 +1393,9 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
       Value<int>? stateVersion,
       Value<String?>? lastEventId,
       Value<String>? routineSnapshotJson,
+      Value<String>? phaseLedgerJson,
+      Value<DateTime?>? runStartedAtUtc,
+      Value<DateTime?>? phaseFirstStartedAtUtc,
       Value<int>? rowid}) {
     return TimerRunsCompanion(
       runId: runId ?? this.runId,
@@ -1249,6 +1409,10 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
       stateVersion: stateVersion ?? this.stateVersion,
       lastEventId: lastEventId ?? this.lastEventId,
       routineSnapshotJson: routineSnapshotJson ?? this.routineSnapshotJson,
+      phaseLedgerJson: phaseLedgerJson ?? this.phaseLedgerJson,
+      runStartedAtUtc: runStartedAtUtc ?? this.runStartedAtUtc,
+      phaseFirstStartedAtUtc:
+          phaseFirstStartedAtUtc ?? this.phaseFirstStartedAtUtc,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1290,6 +1454,16 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
       map['routine_snapshot_json'] =
           Variable<String>(routineSnapshotJson.value);
     }
+    if (phaseLedgerJson.present) {
+      map['phase_ledger_json'] = Variable<String>(phaseLedgerJson.value);
+    }
+    if (runStartedAtUtc.present) {
+      map['run_started_at_utc'] = Variable<DateTime>(runStartedAtUtc.value);
+    }
+    if (phaseFirstStartedAtUtc.present) {
+      map['phase_first_started_at_utc'] =
+          Variable<DateTime>(phaseFirstStartedAtUtc.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1310,6 +1484,9 @@ class TimerRunsCompanion extends UpdateCompanion<TimerRun> {
           ..write('stateVersion: $stateVersion, ')
           ..write('lastEventId: $lastEventId, ')
           ..write('routineSnapshotJson: $routineSnapshotJson, ')
+          ..write('phaseLedgerJson: $phaseLedgerJson, ')
+          ..write('runStartedAtUtc: $runStartedAtUtc, ')
+          ..write('phaseFirstStartedAtUtc: $phaseFirstStartedAtUtc, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2238,6 +2415,13 @@ class $SessionEventsTable extends SessionEvents
   late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
       'outcome', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+      'kind', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('focus'));
   @override
   List<GeneratedColumn> get $columns => [
         eventId,
@@ -2247,7 +2431,8 @@ class $SessionEventsTable extends SessionEvents
         phaseId,
         phaseName,
         durationMs,
-        outcome
+        outcome,
+        kind
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2303,6 +2488,10 @@ class $SessionEventsTable extends SessionEvents
       context.handle(_outcomeMeta,
           outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta));
     }
+    if (data.containsKey('kind')) {
+      context.handle(
+          _kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    }
     return context;
   }
 
@@ -2328,6 +2517,8 @@ class $SessionEventsTable extends SessionEvents
           .read(DriftSqlType.int, data['${effectivePrefix}duration_ms'])!,
       outcome: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}outcome']),
+      kind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
     );
   }
 
@@ -2346,6 +2537,7 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
   final String? phaseName;
   final int durationMs;
   final String? outcome;
+  final String kind;
   const SessionEvent(
       {required this.eventId,
       required this.sessionId,
@@ -2354,7 +2546,8 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
       this.phaseId,
       this.phaseName,
       required this.durationMs,
-      this.outcome});
+      this.outcome,
+      required this.kind});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2372,6 +2565,7 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
     if (!nullToAbsent || outcome != null) {
       map['outcome'] = Variable<String>(outcome);
     }
+    map['kind'] = Variable<String>(kind);
     return map;
   }
 
@@ -2391,6 +2585,7 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
       outcome: outcome == null && nullToAbsent
           ? const Value.absent()
           : Value(outcome),
+      kind: Value(kind),
     );
   }
 
@@ -2406,6 +2601,7 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
       phaseName: serializer.fromJson<String?>(json['phaseName']),
       durationMs: serializer.fromJson<int>(json['durationMs']),
       outcome: serializer.fromJson<String?>(json['outcome']),
+      kind: serializer.fromJson<String>(json['kind']),
     );
   }
   @override
@@ -2420,6 +2616,7 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
       'phaseName': serializer.toJson<String?>(phaseName),
       'durationMs': serializer.toJson<int>(durationMs),
       'outcome': serializer.toJson<String?>(outcome),
+      'kind': serializer.toJson<String>(kind),
     };
   }
 
@@ -2431,7 +2628,8 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
           Value<String?> phaseId = const Value.absent(),
           Value<String?> phaseName = const Value.absent(),
           int? durationMs,
-          Value<String?> outcome = const Value.absent()}) =>
+          Value<String?> outcome = const Value.absent(),
+          String? kind}) =>
       SessionEvent(
         eventId: eventId ?? this.eventId,
         sessionId: sessionId ?? this.sessionId,
@@ -2441,6 +2639,7 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
         phaseName: phaseName.present ? phaseName.value : this.phaseName,
         durationMs: durationMs ?? this.durationMs,
         outcome: outcome.present ? outcome.value : this.outcome,
+        kind: kind ?? this.kind,
       );
   SessionEvent copyWithCompanion(SessionEventsCompanion data) {
     return SessionEvent(
@@ -2455,6 +2654,7 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
       durationMs:
           data.durationMs.present ? data.durationMs.value : this.durationMs,
       outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      kind: data.kind.present ? data.kind.value : this.kind,
     );
   }
 
@@ -2468,14 +2668,15 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
           ..write('phaseId: $phaseId, ')
           ..write('phaseName: $phaseName, ')
           ..write('durationMs: $durationMs, ')
-          ..write('outcome: $outcome')
+          ..write('outcome: $outcome, ')
+          ..write('kind: $kind')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(eventId, sessionId, eventType, occurredAtUtc,
-      phaseId, phaseName, durationMs, outcome);
+      phaseId, phaseName, durationMs, outcome, kind);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2487,7 +2688,8 @@ class SessionEvent extends DataClass implements Insertable<SessionEvent> {
           other.phaseId == this.phaseId &&
           other.phaseName == this.phaseName &&
           other.durationMs == this.durationMs &&
-          other.outcome == this.outcome);
+          other.outcome == this.outcome &&
+          other.kind == this.kind);
 }
 
 class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
@@ -2499,6 +2701,7 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
   final Value<String?> phaseName;
   final Value<int> durationMs;
   final Value<String?> outcome;
+  final Value<String> kind;
   final Value<int> rowid;
   const SessionEventsCompanion({
     this.eventId = const Value.absent(),
@@ -2509,6 +2712,7 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
     this.phaseName = const Value.absent(),
     this.durationMs = const Value.absent(),
     this.outcome = const Value.absent(),
+    this.kind = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SessionEventsCompanion.insert({
@@ -2520,6 +2724,7 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
     this.phaseName = const Value.absent(),
     this.durationMs = const Value.absent(),
     this.outcome = const Value.absent(),
+    this.kind = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : eventId = Value(eventId),
         sessionId = Value(sessionId),
@@ -2534,6 +2739,7 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
     Expression<String>? phaseName,
     Expression<int>? durationMs,
     Expression<String>? outcome,
+    Expression<String>? kind,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2545,6 +2751,7 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
       if (phaseName != null) 'phase_name': phaseName,
       if (durationMs != null) 'duration_ms': durationMs,
       if (outcome != null) 'outcome': outcome,
+      if (kind != null) 'kind': kind,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2558,6 +2765,7 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
       Value<String?>? phaseName,
       Value<int>? durationMs,
       Value<String?>? outcome,
+      Value<String>? kind,
       Value<int>? rowid}) {
     return SessionEventsCompanion(
       eventId: eventId ?? this.eventId,
@@ -2568,6 +2776,7 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
       phaseName: phaseName ?? this.phaseName,
       durationMs: durationMs ?? this.durationMs,
       outcome: outcome ?? this.outcome,
+      kind: kind ?? this.kind,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2599,6 +2808,9 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
     if (outcome.present) {
       map['outcome'] = Variable<String>(outcome.value);
     }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2616,6 +2828,7 @@ class SessionEventsCompanion extends UpdateCompanion<SessionEvent> {
           ..write('phaseName: $phaseName, ')
           ..write('durationMs: $durationMs, ')
           ..write('outcome: $outcome, ')
+          ..write('kind: $kind, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3390,8 +3603,10 @@ class $$RoutinesTableTableManager extends RootTableManager<
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) =>
-                  (e.readTable(table), $$RoutinesTableReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable<$RoutinesTable, Routine>(table),
+                    $$RoutinesTableReferences(db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: ({routinePhasesRefs = false}) {
             return PrefetchHooks(
@@ -3442,6 +3657,7 @@ typedef $$RoutinePhasesTableCreateCompanionBuilder = RoutinePhasesCompanion
   required String name,
   Value<int?> durationMs,
   required String transitionPolicy,
+  Value<String> kind,
   Value<int> rowid,
 });
 typedef $$RoutinePhasesTableUpdateCompanionBuilder = RoutinePhasesCompanion
@@ -3452,6 +3668,7 @@ typedef $$RoutinePhasesTableUpdateCompanionBuilder = RoutinePhasesCompanion
   Value<String> name,
   Value<int?> durationMs,
   Value<String> transitionPolicy,
+  Value<String> kind,
   Value<int> rowid,
 });
 
@@ -3500,6 +3717,9 @@ class $$RoutinePhasesTableFilterComposer
       column: $table.transitionPolicy,
       builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnFilters(column));
+
   $$RoutinesTableFilterComposer get routineId {
     final $$RoutinesTableFilterComposer composer = $composerBuilder(
         composer: this,
@@ -3546,6 +3766,9 @@ class $$RoutinePhasesTableOrderingComposer
       column: $table.transitionPolicy,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnOrderings(column));
+
   $$RoutinesTableOrderingComposer get routineId {
     final $$RoutinesTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -3590,6 +3813,9 @@ class $$RoutinePhasesTableAnnotationComposer
 
   GeneratedColumn<String> get transitionPolicy => $composableBuilder(
       column: $table.transitionPolicy, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
 
   $$RoutinesTableAnnotationComposer get routineId {
     final $$RoutinesTableAnnotationComposer composer = $composerBuilder(
@@ -3641,6 +3867,7 @@ class $$RoutinePhasesTableTableManager extends RootTableManager<
             Value<String> name = const Value.absent(),
             Value<int?> durationMs = const Value.absent(),
             Value<String> transitionPolicy = const Value.absent(),
+            Value<String> kind = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               RoutinePhasesCompanion(
@@ -3650,6 +3877,7 @@ class $$RoutinePhasesTableTableManager extends RootTableManager<
             name: name,
             durationMs: durationMs,
             transitionPolicy: transitionPolicy,
+            kind: kind,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -3659,6 +3887,7 @@ class $$RoutinePhasesTableTableManager extends RootTableManager<
             required String name,
             Value<int?> durationMs = const Value.absent(),
             required String transitionPolicy,
+            Value<String> kind = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               RoutinePhasesCompanion.insert(
@@ -3668,11 +3897,12 @@ class $$RoutinePhasesTableTableManager extends RootTableManager<
             name: name,
             durationMs: durationMs,
             transitionPolicy: transitionPolicy,
+            kind: kind,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$RoutinePhasesTable, RoutinePhase>(table),
                     $$RoutinePhasesTableReferences(db, table, e)
                   ))
               .toList(),
@@ -3738,6 +3968,9 @@ typedef $$TimerRunsTableCreateCompanionBuilder = TimerRunsCompanion Function({
   required int stateVersion,
   Value<String?> lastEventId,
   required String routineSnapshotJson,
+  Value<String> phaseLedgerJson,
+  Value<DateTime?> runStartedAtUtc,
+  Value<DateTime?> phaseFirstStartedAtUtc,
   Value<int> rowid,
 });
 typedef $$TimerRunsTableUpdateCompanionBuilder = TimerRunsCompanion Function({
@@ -3752,6 +3985,9 @@ typedef $$TimerRunsTableUpdateCompanionBuilder = TimerRunsCompanion Function({
   Value<int> stateVersion,
   Value<String?> lastEventId,
   Value<String> routineSnapshotJson,
+  Value<String> phaseLedgerJson,
+  Value<DateTime?> runStartedAtUtc,
+  Value<DateTime?> phaseFirstStartedAtUtc,
   Value<int> rowid,
 });
 
@@ -3818,6 +4054,18 @@ class $$TimerRunsTableFilterComposer
 
   ColumnFilters<String> get routineSnapshotJson => $composableBuilder(
       column: $table.routineSnapshotJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get phaseLedgerJson => $composableBuilder(
+      column: $table.phaseLedgerJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get runStartedAtUtc => $composableBuilder(
+      column: $table.runStartedAtUtc,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get phaseFirstStartedAtUtc => $composableBuilder(
+      column: $table.phaseFirstStartedAtUtc,
       builder: (column) => ColumnFilters(column));
 
   Expression<bool> timerEventsRefs(
@@ -3888,6 +4136,18 @@ class $$TimerRunsTableOrderingComposer
   ColumnOrderings<String> get routineSnapshotJson => $composableBuilder(
       column: $table.routineSnapshotJson,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get phaseLedgerJson => $composableBuilder(
+      column: $table.phaseLedgerJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get runStartedAtUtc => $composableBuilder(
+      column: $table.runStartedAtUtc,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get phaseFirstStartedAtUtc => $composableBuilder(
+      column: $table.phaseFirstStartedAtUtc,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$TimerRunsTableAnnotationComposer
@@ -3931,6 +4191,15 @@ class $$TimerRunsTableAnnotationComposer
 
   GeneratedColumn<String> get routineSnapshotJson => $composableBuilder(
       column: $table.routineSnapshotJson, builder: (column) => column);
+
+  GeneratedColumn<String> get phaseLedgerJson => $composableBuilder(
+      column: $table.phaseLedgerJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get runStartedAtUtc => $composableBuilder(
+      column: $table.runStartedAtUtc, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get phaseFirstStartedAtUtc => $composableBuilder(
+      column: $table.phaseFirstStartedAtUtc, builder: (column) => column);
 
   Expression<T> timerEventsRefs<T extends Object>(
       Expression<T> Function($$TimerEventsTableAnnotationComposer a) f) {
@@ -3988,6 +4257,9 @@ class $$TimerRunsTableTableManager extends RootTableManager<
             Value<int> stateVersion = const Value.absent(),
             Value<String?> lastEventId = const Value.absent(),
             Value<String> routineSnapshotJson = const Value.absent(),
+            Value<String> phaseLedgerJson = const Value.absent(),
+            Value<DateTime?> runStartedAtUtc = const Value.absent(),
+            Value<DateTime?> phaseFirstStartedAtUtc = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TimerRunsCompanion(
@@ -4002,6 +4274,9 @@ class $$TimerRunsTableTableManager extends RootTableManager<
             stateVersion: stateVersion,
             lastEventId: lastEventId,
             routineSnapshotJson: routineSnapshotJson,
+            phaseLedgerJson: phaseLedgerJson,
+            runStartedAtUtc: runStartedAtUtc,
+            phaseFirstStartedAtUtc: phaseFirstStartedAtUtc,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -4016,6 +4291,9 @@ class $$TimerRunsTableTableManager extends RootTableManager<
             required int stateVersion,
             Value<String?> lastEventId = const Value.absent(),
             required String routineSnapshotJson,
+            Value<String> phaseLedgerJson = const Value.absent(),
+            Value<DateTime?> runStartedAtUtc = const Value.absent(),
+            Value<DateTime?> phaseFirstStartedAtUtc = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TimerRunsCompanion.insert(
@@ -4030,11 +4308,14 @@ class $$TimerRunsTableTableManager extends RootTableManager<
             stateVersion: stateVersion,
             lastEventId: lastEventId,
             routineSnapshotJson: routineSnapshotJson,
+            phaseLedgerJson: phaseLedgerJson,
+            runStartedAtUtc: runStartedAtUtc,
+            phaseFirstStartedAtUtc: phaseFirstStartedAtUtc,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$TimerRunsTable, TimerRun>(table),
                     $$TimerRunsTableReferences(db, table, e)
                   ))
               .toList(),
@@ -4314,7 +4595,7 @@ class $$TimerEventsTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$TimerEventsTable, TimerEvent>(table),
                     $$TimerEventsTableReferences(db, table, e)
                   ))
               .toList(),
@@ -4642,8 +4923,10 @@ class $$SessionsTableTableManager extends RootTableManager<
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) =>
-                  (e.readTable(table), $$SessionsTableReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable<$SessionsTable, Session>(table),
+                    $$SessionsTableReferences(db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: ({sessionEventsRefs = false}) {
             return PrefetchHooks(
@@ -4696,6 +4979,7 @@ typedef $$SessionEventsTableCreateCompanionBuilder = SessionEventsCompanion
   Value<String?> phaseName,
   Value<int> durationMs,
   Value<String?> outcome,
+  Value<String> kind,
   Value<int> rowid,
 });
 typedef $$SessionEventsTableUpdateCompanionBuilder = SessionEventsCompanion
@@ -4708,6 +4992,7 @@ typedef $$SessionEventsTableUpdateCompanionBuilder = SessionEventsCompanion
   Value<String?> phaseName,
   Value<int> durationMs,
   Value<String?> outcome,
+  Value<String> kind,
   Value<int> rowid,
 });
 
@@ -4761,6 +5046,9 @@ class $$SessionEventsTableFilterComposer
   ColumnFilters<String> get outcome => $composableBuilder(
       column: $table.outcome, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnFilters(column));
+
   $$SessionsTableFilterComposer get sessionId {
     final $$SessionsTableFilterComposer composer = $composerBuilder(
         composer: this,
@@ -4813,6 +5101,9 @@ class $$SessionEventsTableOrderingComposer
   ColumnOrderings<String> get outcome => $composableBuilder(
       column: $table.outcome, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnOrderings(column));
+
   $$SessionsTableOrderingComposer get sessionId {
     final $$SessionsTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -4863,6 +5154,9 @@ class $$SessionEventsTableAnnotationComposer
 
   GeneratedColumn<String> get outcome =>
       $composableBuilder(column: $table.outcome, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
 
   $$SessionsTableAnnotationComposer get sessionId {
     final $$SessionsTableAnnotationComposer composer = $composerBuilder(
@@ -4916,6 +5210,7 @@ class $$SessionEventsTableTableManager extends RootTableManager<
             Value<String?> phaseName = const Value.absent(),
             Value<int> durationMs = const Value.absent(),
             Value<String?> outcome = const Value.absent(),
+            Value<String> kind = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SessionEventsCompanion(
@@ -4927,6 +5222,7 @@ class $$SessionEventsTableTableManager extends RootTableManager<
             phaseName: phaseName,
             durationMs: durationMs,
             outcome: outcome,
+            kind: kind,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -4938,6 +5234,7 @@ class $$SessionEventsTableTableManager extends RootTableManager<
             Value<String?> phaseName = const Value.absent(),
             Value<int> durationMs = const Value.absent(),
             Value<String?> outcome = const Value.absent(),
+            Value<String> kind = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SessionEventsCompanion.insert(
@@ -4949,11 +5246,12 @@ class $$SessionEventsTableTableManager extends RootTableManager<
             phaseName: phaseName,
             durationMs: durationMs,
             outcome: outcome,
+            kind: kind,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$SessionEventsTable, SessionEvent>(table),
                     $$SessionEventsTableReferences(db, table, e)
                   ))
               .toList(),
@@ -5221,7 +5519,11 @@ class $$PlanBlocksTableTableManager extends RootTableManager<
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable<$PlanBlocksTable, PlanBlock>(table),
+                    BaseReferences<_$DitiDatabase, $PlanBlocksTable, PlanBlock>(
+                        db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: null,
         ));

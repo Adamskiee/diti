@@ -10,6 +10,7 @@ class SessionEvents extends Table {
   TextColumn get phaseName => text().nullable()();
   IntColumn get durationMs => integer().withDefault(const Constant(0))();
   TextColumn get outcome => text().nullable()();
+  TextColumn get kind => text().withDefault(const Constant('focus'))(); // 'focus' | 'rest'
 
   @override
   Set<Column> get primaryKey => {eventId};
