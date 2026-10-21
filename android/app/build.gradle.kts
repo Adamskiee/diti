@@ -38,6 +38,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        manifestPlaceholders["appName"] = "Diti"
     }
 
     signingConfigs {
@@ -53,6 +54,10 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            manifestPlaceholders["appName"] = "Diti (Debug)"
+        }
         release {
             if (hasKeystore && signingConfigs.findByName("release") != null) {
                 signingConfig = signingConfigs.getByName("release")
