@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/history/domain/draft_session.dart';
 import '../../features/history/presentation/history_analytics_screen.dart';
+import '../../features/history/presentation/widgets/session_verification_sheet.dart';
+import '../../features/history/providers/history_providers.dart';
 import '../../features/plan/presentation/plan_screen.dart';
 import '../../features/routines/presentation/routine_editor_screen.dart';
 import '../../features/routines/presentation/routine_list_screen.dart';
@@ -51,6 +54,21 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
     final timerState = ref.watch(activeTimerControllerProvider);
+
+    ref.listen<DraftSessionState>(
+      sessionVerificationControllerProvider,
+      (prev, next) {
+        if (next.isVisible && (prev == null || !prev.isVisible)) {
+          showModalBottomSheet<void>(
+            context: context,
+            isDismissible: false,
+            enableDrag: false,
+            isScrollControlled: true,
+            builder: (ctx) => const SessionVerificationSheet(),
+          );
+        }
+      },
+    );
 
     return Scaffold(
       body: IndexedStack(

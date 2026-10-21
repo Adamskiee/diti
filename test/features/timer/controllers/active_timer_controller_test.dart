@@ -4,6 +4,7 @@ import 'package:diti/src/core/di/database_provider.dart';
 import 'package:diti/src/core/di/notification_providers.dart';
 import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
+import 'package:diti/src/features/history/providers/history_providers.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:diti/src/features/timer/domain/timer_display_state.dart';
 import 'package:diti_database/diti_database.dart';
@@ -438,6 +439,10 @@ void main() {
       fakeClock.advance(const Duration(minutes: 25));
       await controller.finishPhase();
 
+      await container
+          .read(sessionVerificationControllerProvider.notifier)
+          .confirmSave();
+
       // Block is completed with actual duration recorded
       updatedBlock =
           await container.read(planBlockRepositoryProvider).getBlockById('block_001');
@@ -445,6 +450,7 @@ void main() {
       expect(updatedBlock?.actualDurationMs, 1500000);
       expect(updatedBlock?.sessionId, isNotNull);
 
+      await Future<void>.delayed(const Duration(milliseconds: 20));
       container.dispose();
       await db.close();
     });
@@ -497,12 +503,17 @@ void main() {
       fakeClock.advance(const Duration(minutes: 10));
       await controller.stop();
 
+      await container
+          .read(sessionVerificationControllerProvider.notifier)
+          .confirmSave();
+
       final updatedBlock =
           await container.read(planBlockRepositoryProvider).getBlockById('block_002');
       expect(updatedBlock?.status, PlanBlockStatus.cancelled);
       expect(updatedBlock?.actualDurationMs, 600000);
       expect(updatedBlock?.sessionId, isNotNull);
 
+      await Future<void>.delayed(const Duration(milliseconds: 20));
       container.dispose();
       await db.close();
     });
@@ -588,11 +599,16 @@ void main() {
       fakeClock.advance(const Duration(minutes: 35));
       await controller.finishPhase();
 
+      await container
+          .read(sessionVerificationControllerProvider.notifier)
+          .confirmSave();
+
       final updatedBlock =
           await container.read(planBlockRepositoryProvider).getBlockById('block_custom');
       expect(updatedBlock?.status, PlanBlockStatus.completed);
       expect(updatedBlock?.actualDurationMs, 1800000);
 
+      await Future<void>.delayed(const Duration(milliseconds: 20));
       container.dispose();
       await db.close();
     });
@@ -645,12 +661,17 @@ void main() {
       fakeClock.advance(const Duration(minutes: 25));
       await controller.finishPhase();
 
+      await container
+          .read(sessionVerificationControllerProvider.notifier)
+          .confirmSave();
+
       final updatedBlock =
           await container.read(planBlockRepositoryProvider).getBlockById('block_overrun');
       expect(updatedBlock?.status, PlanBlockStatus.completed);
       expect(updatedBlock?.actualDurationMs, 1500000);
       expect(updatedBlock!.actualDurationMs! > updatedBlock.plannedDurationMs, isTrue);
 
+      await Future<void>.delayed(const Duration(milliseconds: 20));
       container.dispose();
       await db.close();
     });
@@ -715,6 +736,50 @@ void main() {
 
       container.dispose();
       await db.close();
+    });
+
+    test(
+        'transitions to completed triggers SessionVerificationController.prepareVerification',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r1',
+        name: 'Pomodoro',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+
+      // Start routine and advance to completion
+      await container.read(activeTimerControllerProvider.notifier).startRoutine('r1');
+      final engine = container.read(timerEngineProvider);
+      await engine.finishRun(engine.activeRunId!);
+
+      final verificationState = container.read(sessionVerificationControllerProvider);
+      expect(verificationState.isVisible, isTrue);
+      expect(verificationState.candidateSession?.outcome, equals(SessionOutcome.completed));
     });
   });
 }
