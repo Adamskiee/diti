@@ -3,6 +3,7 @@ import 'package:timer_engine/timer_engine.dart';
 import 'package:diti_database/src/database/diti_database.dart'
     hide Routine, RoutinePhase, TimerRun, TimerEvent;
 import 'package:diti_database/src/domain/session_record.dart';
+import 'package:diti_database/src/domain/session_validator.dart';
 import 'package:diti_database/src/repositories/drift_session_repository.dart';
 
 void main() {
@@ -78,6 +79,55 @@ void main() {
     test('returns null for non-existent session', () async {
       final fetched = await repository.getSession('non-existent');
       expect(fetched, isNull);
+    });
+
+    test('recordSession throws SessionValidationException when session is invalid', () async {
+      final invalidSession = SessionRecord(
+        sessionId: 'inv-1',
+        routineId: 'r1',
+        routineName: 'Test Routine',
+        startedAtUtc: DateTime.utc(2026, 10, 20, 10, 0),
+        endedAtUtc: DateTime.utc(2026, 10, 20, 10, 0),
+        totalDurationMs: 0, // Invalid: < 1000ms
+        outcome: SessionOutcome.completed,
+        routineSnapshot: routine,
+      );
+
+      expect(
+        () => repository.recordSession(invalidSession),
+        throwsA(isA<SessionValidationException>()),
+      );
+    });
+
+    test('recordSession upserts existing sessionId without duplicating or failing', () async {
+      final sessionInitial = SessionRecord(
+        sessionId: 'session-idempotent',
+        routineId: 'r1',
+        routineName: 'Initial Name',
+        startedAtUtc: DateTime.utc(2026, 10, 20, 10, 0),
+        endedAtUtc: DateTime.utc(2026, 10, 20, 10, 25),
+        totalDurationMs: 1500000,
+        outcome: SessionOutcome.completed,
+        routineSnapshot: routine,
+      );
+      await repository.recordSession(sessionInitial);
+
+      final sessionUpdated = SessionRecord(
+        sessionId: 'session-idempotent',
+        routineId: 'r1',
+        routineName: 'Updated Name',
+        startedAtUtc: DateTime.utc(2026, 10, 20, 10, 0),
+        endedAtUtc: DateTime.utc(2026, 10, 20, 10, 30),
+        totalDurationMs: 1800000,
+        outcome: SessionOutcome.completed,
+        routineSnapshot: routine,
+      );
+      await repository.recordSession(sessionUpdated);
+
+      final retrieved = await repository.getSession('session-idempotent');
+      expect(retrieved, isNotNull);
+      expect(retrieved!.routineName, equals('Updated Name'));
+      expect(retrieved.totalDurationMs, equals(1800000));
     });
 
     test('retrieves sessions in UTC range ordered descending by started timestamp', () async {

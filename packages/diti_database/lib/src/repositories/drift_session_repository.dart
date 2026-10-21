@@ -3,6 +3,7 @@ import 'package:diti_database/src/database/diti_database.dart'
     hide Routine, RoutinePhase, TimerRun, TimerEvent;
 import 'package:diti_database/src/daos/sessions_dao.dart';
 import 'package:diti_database/src/domain/session_record.dart';
+import 'package:diti_database/src/domain/session_validator.dart';
 import 'package:diti_database/src/mappers/snapshot_serializer.dart';
 import 'package:diti_database/src/repositories/session_repository.dart';
 
@@ -14,6 +15,14 @@ class DriftSessionRepository implements SessionRepository {
 
   @override
   Future<void> recordSession(SessionRecord session) async {
+    final validation = SessionValidator.validate(session);
+    if (!validation.isValid) {
+      throw SessionValidationException(
+        'Cannot persist invalid session: ${validation.errors.map((e) => "${e.field}: ${e.message}").join(", ")}',
+        validation.errors,
+      );
+    }
+
     final sessionCompanion = SessionsCompanion(
       sessionId: Value(session.sessionId),
       routineId: Value(session.routineId),
