@@ -4,8 +4,10 @@ import '../../../core/di/repositories_provider.dart';
 import '../../../core/di/timer_engine_provider.dart';
 import '../domain/analytics_models.dart';
 import '../domain/analytics_timeframe.dart';
+import '../domain/draft_session.dart';
 import '../presentation/controllers/analytics_controller.dart';
 import '../presentation/controllers/history_feed_controller.dart';
+import '../presentation/controllers/session_verification_controller.dart';
 
 enum HistoryTab {
   analytics,
@@ -50,5 +52,20 @@ final historyFeedControllerProvider =
   return HistoryFeedController(
     sessionRepository: sessionRepo,
     initialFilter: filter,
+  );
+});
+
+final sessionVerificationControllerProvider =
+    StateNotifierProvider<SessionVerificationController, DraftSessionState>(
+        (ref) {
+  final sessionRepo = ref.watch(sessionRepositoryProvider);
+  final planRepo = ref.watch(planBlockRepositoryProvider);
+  return SessionVerificationController(
+    sessionRepository: sessionRepo,
+    planBlockRepository: planRepo,
+    onSessionSaved: () {
+      ref.read(historyFeedControllerProvider.notifier).load();
+      ref.read(analyticsControllerProvider.notifier).load();
+    },
   );
 });
