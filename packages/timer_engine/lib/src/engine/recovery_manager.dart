@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import '../clock/wall_clock.dart';
 import '../domain/enums.dart';
+import '../domain/phase_ledger_entry.dart';
 import '../domain/timer_event.dart';
 import '../domain/timer_run.dart';
 
@@ -48,8 +49,15 @@ class RecoveryManager {
 
     var currentRun = activeRun;
     final events = <TimerEvent>[];
+    final ledgerEntries = <PhaseLedgerEntry>[];
     final routine = activeRun.routineSnapshot;
     final numPhases = routine.phases.length;
+
+    // The reconstructed wall clock: the end of the last phase that ended is
+    // the start of the phase that comes next. The phases crossed while the
+    // app was dead are laid out forward from the phase the run was on.
+    var phaseEndUtc =
+        activeRun.phaseFirstStartedAtUtc ?? activeRun.phaseStartedAtUtc;
 
     while (true) {
       final currentPhase = routine.phases[currentRun.currentPhaseIndex];
@@ -147,12 +155,38 @@ class RecoveryManager {
         ));
       }
 
+      // The phase is over: it ran its whole length while the app was dead,
+      // so its active time moves into the ledger and the accumulator starts
+      // the next phase from zero.
+      final phaseStartUtc = phaseEndUtc;
+      final phaseEndCandidate =
+          phaseStartUtc.add(Duration(milliseconds: duration));
+      // The reconstruction can never place a phase's end after the moment
+      // recovery ran.
+      phaseEndUtc = phaseEndCandidate.isAfter(nowUtc) ? nowUtc : phaseEndCandidate;
+
+      ledgerEntries.add(PhaseLedgerEntry(
+        phaseId: currentPhase.id,
+        phaseName: currentPhase.name,
+        kind: currentPhase.kind,
+        phaseIndex: currentRun.currentPhaseIndex,
+        repeatIndex: currentRun.repeatIndex,
+        durationMs: duration,
+        outcome: PhaseStatus.finished,
+        startedAtUtc: phaseStartUtc,
+        endedAtUtc: phaseEndUtc,
+      ));
+
       currentRun = currentRun.copyWith(
         status: newStatus,
         phaseStatus: isCompleted ? PhaseStatus.finished : PhaseStatus.active,
         currentPhaseIndex: newPhaseIndex,
         repeatIndex: newRepeatIndex,
-        accumulatedMs: isCompleted ? duration : 0,
+        accumulatedMs: 0,
+        phaseLedger: [...activeRun.phaseLedger, ...ledgerEntries],
+        // The phase that is current now starts at the moment recovery ran;
+        // an ended run keeps the first start of the phase that just ended.
+        phaseFirstStartedAtUtc: isCompleted ? phaseStartUtc : nowUtc,
         phaseStartedAtUtc: nowUtc,
         phaseStartedMonotonicMs: () => newStatus == RunStatus.running ? nowMonoMs : null,
         stateVersion: currentRun.stateVersion + 1,
