@@ -8,6 +8,7 @@ import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/core/navigation/app_shell.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_feed_tile.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_verification_sheet.dart';
+import 'package:diti/src/features/history/presentation/widgets/summary_metric_cards.dart';
 import 'package:diti/src/features/history/providers/history_providers.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:timer_engine/timer_engine.dart';
@@ -93,8 +94,16 @@ void main() {
     await tester.pumpAndSettle();
 
     // 8. Verify the verified session is aggregated into Analytics view
-    expect(find.text('Total Focus'), findsOneWidget);
-    expect(find.text('30:00'), findsOneWidget);
+    final metricCards = find.byType(SummaryMetricCards);
+    expect(
+      find.descendant(of: metricCards, matching: find.text('Total')),
+      findsOneWidget,
+    );
+    // The session has a single focus phase, so its total and its focus time agree.
+    expect(
+      find.descendant(of: metricCards, matching: find.text('30:00')),
+      findsNWidgets(2),
+    );
 
     // Switch to History tab in SegmentedButton
     await tester.tap(

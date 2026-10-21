@@ -5,7 +5,7 @@ import 'package:diti/src/features/history/domain/analytics_timeframe.dart';
 import 'package:diti/src/features/history/presentation/widgets/summary_metric_cards.dart';
 
 void main() {
-  testWidgets('SummaryMetricCards renders total focus duration and completion metrics', (tester) async {
+  testWidgets('SummaryMetricCards renders total duration and completion metrics', (tester) async {
     final summary = AnalyticsSummary(
       timeframe: AnalyticsTimeframe.thisWeek,
       dateRange: DateTimeRange(
@@ -13,8 +13,8 @@ void main() {
         end: DateTime(2026, 10, 18),
       ),
       totalDurationMs: 90 * 60 * 1000, // 1h 30m -> 01:30:00
-      focusDurationMs: 90 * 60 * 1000,
-      restDurationMs: 0,
+      focusDurationMs: 60 * 60 * 1000, // 01:00:00
+      restDurationMs: 30 * 60 * 1000, // 30:00
       completedCount: 3,
       interruptedOrCancelledCount: 1,
       dailyBuckets: const [],
@@ -29,9 +29,106 @@ void main() {
       ),
     );
 
-    expect(find.text('Total Focus'), findsOneWidget);
+    expect(find.text('Total'), findsOneWidget);
     expect(find.text('01:30:00'), findsOneWidget);
+    expect(find.text('01:00:00'), findsOneWidget);
+    expect(find.text('30:00'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('3 (75%)'), findsOneWidget);
+  });
+
+  testWidgets('shows Total, Focus, Rest and Completed', (tester) async {
+    final summary = AnalyticsSummary(
+      timeframe: AnalyticsTimeframe.thisWeek,
+      dateRange: DateTimeRange(
+        start: DateTime(2026, 10, 12),
+        end: DateTime(2026, 10, 18),
+      ),
+      totalDurationMs: 30 * 60 * 1000, // 30:00
+      focusDurationMs: 25 * 60 * 1000, // 25:00
+      restDurationMs: 5 * 60 * 1000, // 05:00
+      completedCount: 1,
+      interruptedOrCancelledCount: 0,
+      dailyBuckets: const [],
+      activityBreakdowns: const [],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SummaryMetricCards(summary: summary),
+        ),
+      ),
+    );
+
+    expect(find.text('Total'), findsOneWidget);
+    expect(find.text('Focus'), findsOneWidget);
+    expect(find.text('Rest'), findsOneWidget);
+    expect(find.text('Completed'), findsOneWidget);
+
+    expect(find.text('30:00'), findsOneWidget);
+    expect(find.text('25:00'), findsOneWidget);
+    expect(find.text('05:00'), findsOneWidget);
+    expect(find.text('1 (100%)'), findsOneWidget);
+  });
+
+  testWidgets('never labels a duration that includes rest as focus', (tester) async {
+    final summary = AnalyticsSummary(
+      timeframe: AnalyticsTimeframe.thisWeek,
+      dateRange: DateTimeRange(
+        start: DateTime(2026, 10, 12),
+        end: DateTime(2026, 10, 18),
+      ),
+      totalDurationMs: 30 * 60 * 1000,
+      focusDurationMs: 25 * 60 * 1000,
+      restDurationMs: 5 * 60 * 1000,
+      completedCount: 1,
+      interruptedOrCancelledCount: 0,
+      dailyBuckets: const [],
+      activityBreakdowns: const [],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SummaryMetricCards(summary: summary),
+        ),
+      ),
+    );
+
+    // The total includes the rest time, so it must not be called "focus".
+    expect(find.text('Total Focus'), findsNothing);
+  });
+
+  testWidgets('lays out without overflowing on a narrow screen', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final summary = AnalyticsSummary(
+      timeframe: AnalyticsTimeframe.thisWeek,
+      dateRange: DateTimeRange(
+        start: DateTime(2026, 10, 12),
+        end: DateTime(2026, 10, 18),
+      ),
+      totalDurationMs: 30 * 60 * 1000,
+      focusDurationMs: 25 * 60 * 1000,
+      restDurationMs: 5 * 60 * 1000,
+      completedCount: 1,
+      interruptedOrCancelledCount: 0,
+      dailyBuckets: const [],
+      activityBreakdowns: const [],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SummaryMetricCards(summary: summary),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Completed'), findsOneWidget);
   });
 }

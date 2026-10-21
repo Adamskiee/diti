@@ -15,26 +15,54 @@ class SummaryMetricCards extends StatelessWidget {
     final theme = Theme.of(context);
     final completionPct = (summary.completionRate * 100).toInt();
 
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _buildMetricTile(
-            context,
-            icon: Icons.timer_outlined,
-            label: 'Total Focus',
-            value: DurationFormatter.formatMs(summary.totalDurationMs),
-            color: theme.colorScheme.primary,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildMetricTile(
+                context,
+                icon: Icons.timer_outlined,
+                label: 'Total',
+                value: DurationFormatter.formatMs(summary.totalDurationMs),
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildMetricTile(
+                context,
+                icon: Icons.bolt_outlined,
+                label: 'Focus',
+                value: DurationFormatter.formatMs(summary.focusDurationMs),
+                color: theme.colorScheme.tertiary,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildMetricTile(
-            context,
-            icon: Icons.check_circle_outline,
-            label: 'Completed',
-            value: '${summary.completedCount} ($completionPct%)',
-            color: const Color(0xFF006C50),
-          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildMetricTile(
+                context,
+                icon: Icons.self_improvement_outlined,
+                label: 'Rest',
+                value: DurationFormatter.formatMs(summary.restDurationMs),
+                color: theme.colorScheme.secondary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildMetricTile(
+                context,
+                icon: Icons.check_circle_outline,
+                label: 'Completed',
+                value: '${summary.completedCount} ($completionPct%)',
+                color: const Color(0xFF006C50),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -62,10 +90,13 @@ class SummaryMetricCards extends StatelessWidget {
               children: [
                 Icon(icon, size: 18, color: color),
                 const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
