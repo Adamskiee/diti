@@ -7,6 +7,7 @@ import 'package:diti/src/core/di/notification_providers.dart';
 import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/core/navigation/app_shell.dart';
+import 'package:diti/src/features/history/presentation/widgets/session_verification_sheet.dart';
 import 'package:diti/src/features/routines/data/starter_routines.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:timer_engine/timer_engine.dart';
@@ -128,6 +129,11 @@ void main() {
 
       // 9. Stop timer
       await container.read(activeTimerControllerProvider.notifier).stop();
+      await tester.pumpAndSettle();
+
+      // Verify SessionVerificationSheet is presented and dismiss by saving
+      expect(find.byType(SessionVerificationSheet), findsOneWidget);
+      await tester.tap(find.text('Save to Analytics'));
       await tester.pumpAndSettle();
 
       // Verify mini-player dismisses

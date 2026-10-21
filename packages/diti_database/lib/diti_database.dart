@@ -20,6 +20,7 @@ export 'src/daos/plan_blocks_dao.dart';
 
 // Domain models
 export 'src/domain/session_record.dart';
+export 'src/domain/session_validator.dart';
 export 'src/domain/plan_block.dart';
 
 // Mappers & Serializers

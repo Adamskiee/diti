@@ -6,6 +6,7 @@ import 'package:diti/src/core/di/notification_providers.dart';
 import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/core/navigation/app_shell.dart';
+import 'package:diti/src/features/history/presentation/widgets/session_verification_sheet.dart';
 import 'package:diti/src/features/plan/presentation/widgets/plan_block_card.dart';
 import 'package:diti/src/features/plan/providers/plan_providers.dart';
 import 'package:diti/src/features/routines/data/starter_routines.dart';
@@ -102,14 +103,21 @@ void main() {
     // 6. ActiveTimerScreen is open
     expect(find.text('Focus'), findsOneWidget);
     expect(find.text('25:00'), findsOneWidget);
-
-    // 7. Advance fake clock 25 minutes and finish phase
-    fakeClock.advance(const Duration(minutes: 25));
+    // 7. Advance fake clock into focus phase and finish run
+    fakeClock.advance(const Duration(minutes: 24));
     container.read(activeTimerControllerProvider.notifier).tick();
     await tester.pump();
 
     // Finish session early / complete run
     await container.read(activeTimerControllerProvider.notifier).finishRun();
+    await tester.pumpAndSettle();
+
+    // Verification sheet is presented; adjust duration to 25m and tap "Save to Analytics"
+    expect(find.byType(SessionVerificationSheet), findsOneWidget);
+    await tester.tap(find.text('+1m'));
+    await tester.pumpAndSettle();
+    expect(find.text('25:00'), findsOneWidget);
+    await tester.tap(find.text('Save to Analytics'));
     await tester.pumpAndSettle();
 
     // Tap Done on completion screen

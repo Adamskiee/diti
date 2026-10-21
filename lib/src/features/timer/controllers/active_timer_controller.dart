@@ -6,13 +6,15 @@ import 'package:uuid/uuid.dart';
 import '../../../core/di/repositories_provider.dart';
 import '../../../core/di/timer_engine_provider.dart';
 import '../../../core/utils/duration_formatter.dart';
+import '../../history/providers/history_providers.dart';
 import '../domain/timer_display_state.dart';
 
 class ActiveTimerController extends Notifier<TimerDisplayState> {
   Timer? _ticker;
   StreamSubscription<TimerRunState>? _engineSub;
   String? _activePlanBlockId;
-  Future<void>? _linkingSessionFuture;
+  Future<void>? _verificationFuture;
+  String? _handledVerificationRunId;
 
   @override
   TimerDisplayState build() {
@@ -41,7 +43,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     _syncState(runState);
     if (runState.status == RunStatus.completed ||
         runState.status == RunStatus.cancelled) {
-      unawaited(_checkAndLinkSession(runState).catchError((_) {}));
+      unawaited(_delegateVerification(runState));
     }
   }
 
@@ -135,59 +137,42 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     );
   }
 
-  Future<void> _checkAndLinkSession(TimerRunState runState) {
-    if (_linkingSessionFuture != null) {
-      return _linkingSessionFuture!;
+  Future<void> _delegateVerification(TimerRunState runState) {
+    if (_handledVerificationRunId == runState.runId &&
+        _verificationFuture != null) {
+      return _verificationFuture!;
     }
-    final blockId = _activePlanBlockId;
-    if (blockId == null) return Future.value();
+    _handledVerificationRunId = runState.runId;
+
+    final engine = ref.read(timerEngineProvider);
+    final routineSnapshot = engine.getActiveRun()?.routineSnapshot ??
+        Routine(
+          id: 'untracked',
+          name: state.phaseName.isEmpty ? 'Focus Session' : state.phaseName,
+          repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+          phases: [
+            RoutinePhase(
+              id: 'p1',
+              name: state.phaseName.isEmpty ? 'Focus' : state.phaseName,
+              transition: TransitionPolicy.manual,
+            ),
+          ],
+        );
+
+    final planBlockId = _activePlanBlockId;
     _activePlanBlockId = null;
 
-    final completer = Completer<void>();
-    _linkingSessionFuture = completer.future;
+    final future = ref
+        .read(sessionVerificationControllerProvider.notifier)
+        .prepareVerification(
+          runState: runState,
+          routineSnapshot: routineSnapshot,
+          planBlockId: planBlockId,
+        )
+        .catchError((_) {});
 
-    () async {
-      try {
-        final planRepo = ref.read(planBlockRepositoryProvider);
-        final sessionRepo = ref.read(sessionRepositoryProvider);
-
-        SessionRecord? session;
-        try {
-          session = await sessionRepo.getSession(runState.runId);
-        } catch (_) {}
-
-        if (session == null) {
-          try {
-            final blockSessions =
-                await sessionRepo.getSessionsForPlanBlock(blockId);
-            if (blockSessions.isNotEmpty) {
-              session = blockSessions.last;
-            }
-          } catch (_) {}
-        }
-
-        final actualDurationMs =
-            session?.totalDurationMs ?? runState.activeElapsedMs;
-        final sessionId = session?.sessionId ?? runState.runId;
-        final status = runState.status == RunStatus.completed
-            ? PlanBlockStatus.completed
-            : PlanBlockStatus.cancelled;
-
-        await planRepo.linkSession(
-          blockId: blockId,
-          sessionId: sessionId,
-          actualDurationMs: actualDurationMs,
-          status: status,
-        );
-        completer.complete();
-      } catch (e, st) {
-        completer.completeError(e, st);
-      } finally {
-        _linkingSessionFuture = null;
-      }
-    }();
-
-    return completer.future;
+    _verificationFuture = future;
+    return future;
   }
 
   Future<TimerCommandResult> startRoutine(
@@ -196,7 +181,8 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     String? customTitle,
   }) async {
     _activePlanBlockId = planBlockId;
-    _linkingSessionFuture = null;
+    _handledVerificationRunId = null;
+    _verificationFuture = null;
     PlanBlock? linkedBlock;
 
     if (planBlockId != null) {
@@ -320,7 +306,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
         _syncState(s);
         if (s.status == RunStatus.completed ||
             s.status == RunStatus.cancelled) {
-          await _checkAndLinkSession(s);
+          await _delegateVerification(s);
         }
       }
     }
@@ -339,7 +325,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
         _syncState(s);
         if (s.status == RunStatus.completed ||
             s.status == RunStatus.cancelled) {
-          await _checkAndLinkSession(s);
+          await _delegateVerification(s);
         }
       }
     }
@@ -356,7 +342,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        await _checkAndLinkSession(s);
+        await _delegateVerification(s);
       } else {
         final cancelledRunState = TimerRunState(
           runId: runId,
@@ -379,7 +365,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
           phaseName: state.phaseName,
         );
         _stopTicker();
-        await _checkAndLinkSession(cancelledRunState);
+        await _delegateVerification(cancelledRunState);
       }
     }
     return res;
