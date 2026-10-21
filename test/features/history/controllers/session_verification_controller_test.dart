@@ -172,6 +172,117 @@ void main() {
       expect(controller.state.draftDurationMs, equals(1000)); // Min clamped
     });
 
+    test('setDurationMs updates draftDurationMs clamped between min and max duration', () async {
+      final runState = TimerRunState(
+        runId: 'run-set-dur',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 60000,
+        stateVersion: 1,
+      );
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+      );
+
+      controller.setDurationMs(500); // Below 1,000ms
+      expect(controller.state.draftDurationMs, equals(SessionValidator.minDurationMs));
+
+      controller.setDurationMs(500000);
+      expect(controller.state.draftDurationMs, equals(500000));
+
+      controller.setDurationMs(100000000); // Above 86,400,000ms
+      expect(controller.state.draftDurationMs, equals(SessionValidator.maxDurationMs));
+    });
+
+    test('confirmSave with increased duration anchors endedAtUtc and saves successfully', () async {
+      when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
+
+      final fixedNow = DateTime.now().toUtc();
+      final runState = TimerRunState(
+        runId: 'run-increase',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 60000,
+        stateVersion: 1,
+      );
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+        nowUtc: fixedNow,
+      );
+
+      controller.adjustDuration(const Duration(minutes: 5)); // 60s + 300s = 360,000ms
+      final saved = await controller.confirmSave();
+
+      expect(saved, isTrue);
+      expect(controller.state.isVisible, isFalse);
+      verify(() => mockSessionRepo.recordSession(any(
+        that: isA<SessionRecord>()
+            .having((s) => s.endedAtUtc, 'endedAtUtc', fixedNow)
+            .having((s) => s.totalDurationMs, 'totalDurationMs', 360000)
+            .having((s) => s.startedAtUtc, 'startedAtUtc', fixedNow.subtract(const Duration(milliseconds: 360000))),
+      ))).called(1);
+    });
+
+    test('confirmSave with empty routine name fails validation and preserves sheet', () async {
+      final runState = TimerRunState(
+        runId: 'run-empty-name',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 60000,
+        stateVersion: 1,
+      );
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+      );
+
+      controller.setRoutineName('   ');
+      final result = await controller.confirmSave();
+
+      expect(result, isFalse);
+      expect(controller.state.isVisible, isTrue);
+      expect(controller.state.validationError, isNotNull);
+      expect(controller.state.validationError, isNotEmpty);
+      verifyNever(() => mockSessionRepo.recordSession(any()));
+    });
+
+    test('confirmSave sets validationError and resets isSaving when repository throws', () async {
+      when(() => mockSessionRepo.recordSession(any())).thenThrow(Exception('database write failed'));
+
+      final runState = TimerRunState(
+        runId: 'run-throw',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 60000,
+        stateVersion: 1,
+      );
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+      );
+
+      final result = await controller.confirmSave();
+
+      expect(result, isFalse);
+      expect(controller.state.isVisible, isTrue);
+      expect(controller.state.isSaving, isFalse);
+      expect(controller.state.validationError, contains('Failed to save session: Exception: database write failed'));
+    });
+
     test('confirmSave validates, persists to repository, links plan block, and closes sheet', () async {
       when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
       when(() => mockPlanRepo.linkSession(

@@ -91,14 +91,15 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
 
     final trimmedName = state.draftRoutineName.trim();
     final finalDuration = state.draftDurationMs;
-    final finalEnd = candidate.startedAtUtc.add(Duration(milliseconds: finalDuration));
+    final finalEnd = candidate.endedAtUtc;
+    final finalStart = candidate.endedAtUtc.subtract(Duration(milliseconds: finalDuration));
 
     final finalizedSession = SessionRecord(
       sessionId: candidate.sessionId,
       routineId: candidate.routineId,
       planBlockId: state.planBlockId,
       routineName: trimmedName,
-      startedAtUtc: candidate.startedAtUtc,
+      startedAtUtc: finalStart,
       endedAtUtc: finalEnd,
       totalDurationMs: finalDuration,
       outcome: candidate.outcome,
