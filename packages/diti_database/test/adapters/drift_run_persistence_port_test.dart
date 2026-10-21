@@ -68,6 +68,105 @@ void main() {
       expect(active, isNull);
     });
 
+    test('a run round-trips its ledger and timestamps', () async {
+      const routine = Routine(
+        id: 'r-ledger',
+        name: 'Ledger Work',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 60000, transition: TransitionPolicy.auto),
+          RoutinePhase(id: 'p2', name: 'Short Break', durationMs: 30000, transition: TransitionPolicy.auto),
+        ],
+      );
+
+      final run = TimerRun(
+        runId: 'run-ledger-1',
+        routineSnapshot: routine,
+        status: RunStatus.running,
+        phaseStatus: PhaseStatus.active,
+        currentPhaseIndex: 1,
+        repeatIndex: 0,
+        accumulatedMs: 60000,
+        phaseStartedAtUtc: DateTime.utc(2026, 10, 21, 9, 25),
+        stateVersion: 4,
+        phaseLedger: [
+          PhaseLedgerEntry(
+            phaseId: 'p1',
+            phaseName: 'Focus',
+            kind: PhaseKind.focus,
+            phaseIndex: 0,
+            repeatIndex: 0,
+            durationMs: 1500000,
+            outcome: PhaseStatus.finished,
+            startedAtUtc: DateTime.utc(2026, 10, 21, 9, 0),
+            endedAtUtc: DateTime.utc(2026, 10, 21, 9, 25),
+          ),
+          PhaseLedgerEntry(
+            phaseId: 'p2',
+            phaseName: 'Short Break',
+            kind: PhaseKind.rest,
+            phaseIndex: 1,
+            repeatIndex: 0,
+            durationMs: 300000,
+            outcome: PhaseStatus.active,
+            startedAtUtc: DateTime.utc(2026, 10, 21, 9, 25),
+            endedAtUtc: DateTime.utc(2026, 10, 21, 9, 30),
+          ),
+        ],
+        runStartedAtUtc: DateTime.utc(2026, 10, 21, 9, 0),
+        phaseFirstStartedAtUtc: DateTime.utc(2026, 10, 21, 9, 25),
+      );
+
+      await port.persistRunAndEvents(run, []);
+
+      final restored = await port.getLatestActiveRun();
+      expect(restored, isNotNull);
+      expect(restored!.phaseLedger.length, equals(2));
+      expect(restored.phaseLedger, equals(run.phaseLedger));
+      expect(restored.phaseLedger.first.kind, equals(PhaseKind.focus));
+      expect(restored.phaseLedger.last.kind, equals(PhaseKind.rest));
+      expect(restored.runStartedAtUtc, equals(DateTime.utc(2026, 10, 21, 9, 0)));
+      expect(
+        restored.phaseFirstStartedAtUtc,
+        equals(DateTime.utc(2026, 10, 21, 9, 25)),
+      );
+    });
+
+    test('a corrupt ledger degrades to empty without throwing', () async {
+      const routine = Routine(
+        id: 'r-corrupt',
+        name: 'Corrupt Work',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 60000, transition: TransitionPolicy.auto),
+        ],
+      );
+
+      final run = TimerRun(
+        runId: 'run-corrupt-1',
+        routineSnapshot: routine,
+        status: RunStatus.running,
+        phaseStatus: PhaseStatus.active,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        accumulatedMs: 0,
+        phaseStartedAtUtc: DateTime.utc(2026, 10, 21, 9, 0),
+        stateVersion: 1,
+      );
+
+      await port.persistRunAndEvents(run, []);
+
+      await db.customStatement(
+        "UPDATE timer_runs SET phase_ledger_json = 'not json' WHERE run_id = ?",
+        ['run-corrupt-1'],
+      );
+
+      // A corrupt ledger must never keep a run from being recovered.
+      final restored = await port.getLatestActiveRun();
+      expect(restored, isNotNull);
+      expect(restored!.phaseLedger, isEmpty);
+    });
+
     test('restores paused run with pausedAtUtc preserved', () async {
       const routine = Routine(
         id: 'r-paused',

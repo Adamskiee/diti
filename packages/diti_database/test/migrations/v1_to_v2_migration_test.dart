@@ -274,6 +274,16 @@ void main() {
       expect(runs.first.phaseLedgerJson, equals('[]'));
       expect(runs.first.runStartedAtUtc, isNull);
       expect(runs.first.phaseFirstStartedAtUtc, isNull);
+
+      // The three new columns must not have disturbed the columns the row
+      // already had.
+      expect(runs.first.status, equals('running'));
+      expect(runs.first.accumulatedMs, equals(300000));
+      expect(runs.first.stateVersion, equals(7));
+      expect(
+        runs.first.phaseStartedAtUtc.millisecondsSinceEpoch,
+        equals(1760000000 * 1000),
+      );
     });
   });
 
@@ -323,8 +333,45 @@ void main() {
       raw.close();
     });
 
+    test('the step survives a re-run after a crash before the version was written',
+        () async {
+      final raw = _openV1Database();
+
+      final first = DitiDatabase(
+        NativeDatabase.opened(raw, closeUnderlyingOnClose: false),
+      );
+      await first.customSelect('SELECT 1').get();
+      await first.close();
+
+      // A process kill between the migration's commit and drift's
+      // `PRAGMA user_version = 2` leaves the columns in place but the
+      // version at 1. The next launch re-runs the step, which must not die
+      // on "duplicate column name".
+      raw.userVersion = 1;
+
+      final second = DitiDatabase(
+        NativeDatabase.opened(raw, closeUnderlyingOnClose: false),
+      );
+      await second.customSelect('SELECT 1').get();
+
+      final phases = await second.select(second.routinePhases).get();
+      expect(phases.length, equals(5));
+      expect(
+        phases.firstWhere((p) => p.name == 'Short Break').kind,
+        equals('rest'),
+      );
+
+      await second.close();
+      raw.close();
+    });
+
     test('the migrated schema matches a freshly created version 2 schema',
         () async {
+      // This compares `PRAGMA table_info` for every table: the column
+      // names, types, not-null flags, defaults and key positions. It does
+      // not compare foreign-key clauses, indexes or the raw DDL text, so it
+      // is not a full schema assertion.
+      //
       // The schema a brand new database gets.
       final fresh = DitiDatabase.inMemory();
       await fresh.customSelect('SELECT 1').get();

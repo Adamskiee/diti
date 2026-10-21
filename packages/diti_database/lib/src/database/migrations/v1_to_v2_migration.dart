@@ -17,25 +17,75 @@ class V1ToV2Migration implements SchemaMigration {
 
   @override
   Future<void> migrate(Migrator m, DitiDatabase db) async {
-    await db.customStatement(
-      "ALTER TABLE routine_phases ADD COLUMN kind TEXT NOT NULL DEFAULT 'focus'",
+    // The migrator's own schema APIs are deliberately not used here: the
+    // step has to stay purely additive, and a drift table rebuild would
+    // drop the rows the step is meant to preserve.
+    final addedKind = await _addColumn(
+      db,
+      table: 'routine_phases',
+      column: 'kind',
+      definition: "TEXT NOT NULL DEFAULT 'focus'",
     );
-    await db.customStatement(
-      "ALTER TABLE timer_runs ADD COLUMN phase_ledger_json TEXT NOT NULL DEFAULT '[]'",
+    await _addColumn(
+      db,
+      table: 'timer_runs',
+      column: 'phase_ledger_json',
+      definition: "TEXT NOT NULL DEFAULT '[]'",
     );
-    await db.customStatement(
-      'ALTER TABLE timer_runs ADD COLUMN run_started_at_utc INTEGER',
+    await _addColumn(
+      db,
+      table: 'timer_runs',
+      column: 'run_started_at_utc',
+      definition: 'INTEGER',
     );
-    await db.customStatement(
-      'ALTER TABLE timer_runs ADD COLUMN phase_first_started_at_utc INTEGER',
+    await _addColumn(
+      db,
+      table: 'timer_runs',
+      column: 'phase_first_started_at_utc',
+      definition: 'INTEGER',
     );
-    await db.customStatement(
-      "ALTER TABLE session_events ADD COLUMN kind TEXT NOT NULL DEFAULT 'focus'",
+    await _addColumn(
+      db,
+      table: 'session_events',
+      column: 'kind',
+      definition: "TEXT NOT NULL DEFAULT 'focus'",
     );
 
-    // Backfill rest-sounding phase names using the one shared rule.
-    // PhaseKind.inferFromName is called directly rather than restating the
-    // rule in SQL, so the migration and the editor can never disagree.
+    // The backfill belongs to the column it fills: if the column was
+    // already there, an earlier run has done the work.
+    if (addedKind) {
+      await _backfillKinds(db);
+    }
+  }
+
+  /// Adds [column] to [table] unless the table already has that column.
+  ///
+  /// The step must survive a re-run: drift writes `PRAGMA user_version = 2`
+  /// only after this migration has been committed, so a process kill in
+  /// between leaves a database that has the columns but still claims to be
+  /// version 1. The next launch runs the step again, and without this
+  /// check it would die on "duplicate column name" and the app could not
+  /// open its database at all.
+  ///
+  /// Returns whether this call added the column.
+  Future<bool> _addColumn(
+    DitiDatabase db, {
+    required String table,
+    required String column,
+    required String definition,
+  }) async {
+    final columns = await db.customSelect('PRAGMA table_info($table)').get();
+    final exists = columns.any((row) => row.read<String>('name') == column);
+    if (exists) return false;
+
+    await db.customStatement('ALTER TABLE $table ADD COLUMN $column $definition');
+    return true;
+  }
+
+  /// Backfills rest-sounding phase names using the one shared rule.
+  /// PhaseKind.inferFromName is called directly rather than restating the
+  /// rule in SQL, so the migration and the editor can never disagree.
+  Future<void> _backfillKinds(DitiDatabase db) async {
     final rows = await db
         .customSelect('SELECT id, routine_id, name FROM routine_phases')
         .get();

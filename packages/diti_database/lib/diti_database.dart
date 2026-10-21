@@ -24,6 +24,7 @@ export 'src/domain/session_validator.dart';
 export 'src/domain/plan_block.dart';
 
 // Mappers & Serializers
+export 'src/mappers/phase_ledger_serializer.dart';
 export 'src/mappers/snapshot_serializer.dart';
 
 // Repositories & Adapters
@@ -39,3 +40,4 @@ export 'src/database/migrations/schema_migration.dart';
 export 'src/database/migrations/migration_registry.dart';
 export 'src/database/migrations/migration_runner.dart';
 export 'src/database/migrations/migration_exceptions.dart';
+export 'src/database/migrations/v1_to_v2_migration.dart';
