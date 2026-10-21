@@ -110,8 +110,10 @@ class _SessionVerificationSheetState
               const SizedBox(height: 20),
 
               // Phase Breakdown: what the total is made of.
-              _buildPhaseBreakdown(context, state.phaseBreakdown),
-              const SizedBox(height: 20),
+              if (state.phaseBreakdown.isNotEmpty) ...[
+                _buildPhaseBreakdown(context, state.phaseBreakdown),
+                const SizedBox(height: 20),
+              ],
 
               // Duration Display & Quick Adjustment
               Card(
