@@ -467,6 +467,170 @@ void main() {
       // Dialog is still visible because submission was ignored
       expect(find.text('Add Phase'), findsOneWidget);
     });
+
+    testWidgets('a new phase defaults its kind from its name', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PhaseEditDialog(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // The default name is 'Focus', so the phase starts out as focus.
+      expect(_selectedKind(tester), PhaseKind.focus);
+
+      await tester.enterText(
+        find.byKey(const Key('phase_name_field')),
+        'Short Break',
+      );
+      await tester.pumpAndSettle();
+
+      // The name says rest, so the kind follows it.
+      expect(_selectedKind(tester), PhaseKind.rest);
+    });
+
+    testWidgets('the kind can be overridden', (tester) async {
+      RoutinePhase? createdPhase;
+
+      const focusPhase = RoutinePhase(
+        id: 'p-focus',
+        name: 'Deep Work',
+        durationMs: 1500000,
+        transition: TransitionPolicy.auto,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () async {
+                  createdPhase = await showDialog<RoutinePhase>(
+                    context: context,
+                    builder: (ctx) => const PhaseEditDialog(phase: focusPhase),
+                  );
+                },
+                child: const Text('Open Dialog'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      expect(_selectedKind(tester), PhaseKind.focus);
+
+      await tester.tap(find.text('Rest'));
+      await tester.pumpAndSettle();
+
+      expect(_selectedKind(tester), PhaseKind.rest);
+
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      expect(createdPhase, isNotNull);
+      expect(createdPhase!.kind, PhaseKind.rest);
+    });
+
+    testWidgets('an existing phase keeps its stored kind', (tester) async {
+      const restPhase = RoutinePhase(
+        id: 'p-rest',
+        name: 'Focus',
+        durationMs: 1500000,
+        transition: TransitionPolicy.auto,
+        kind: PhaseKind.rest,
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PhaseEditDialog(phase: restPhase),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // The name would infer focus, but the stored kind wins.
+      expect(_selectedKind(tester), PhaseKind.rest);
+    });
+
+    testWidgets('a chosen kind is not re-derived from the name',
+        (tester) async {
+      RoutinePhase? createdPhase;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () async {
+                  createdPhase = await showDialog<RoutinePhase>(
+                    context: context,
+                    builder: (ctx) => const PhaseEditDialog(),
+                  );
+                },
+                child: const Text('Open Dialog'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Rest'));
+      await tester.pumpAndSettle();
+
+      // Once the user picked a kind, the name no longer decides it.
+      await tester.enterText(
+        find.byKey(const Key('phase_name_field')),
+        'Deep Work',
+      );
+      await tester.pumpAndSettle();
+
+      expect(_selectedKind(tester), PhaseKind.rest);
+
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      expect(createdPhase!.kind, PhaseKind.rest);
+    });
+
+    testWidgets('renaming an existing phase keeps its stored kind',
+        (tester) async {
+      const restPhase = RoutinePhase(
+        id: 'p-rest',
+        name: 'Focus',
+        durationMs: 1500000,
+        transition: TransitionPolicy.auto,
+        kind: PhaseKind.rest,
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PhaseEditDialog(phase: restPhase),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('phase_name_field')),
+        'Deep Work',
+      );
+      await tester.pumpAndSettle();
+
+      expect(_selectedKind(tester), PhaseKind.rest);
+    });
   });
 
   group('PhaseListTile', () {
@@ -526,5 +690,101 @@ void main() {
       expect(find.text('Free Writing'), findsOneWidget);
       expect(find.text('Open-ended · Manual'), findsOneWidget);
     });
+
+    testWidgets('shows a chip naming the kind of each phase', (tester) async {
+      const focusPhase = RoutinePhase(
+        id: 'phase-focus',
+        name: 'Deep Work',
+        durationMs: 1500000,
+        transition: TransitionPolicy.auto,
+        kind: PhaseKind.focus,
+      );
+      const restPhase = RoutinePhase(
+        id: 'phase-rest',
+        name: 'Short Break',
+        durationMs: 300000,
+        transition: TransitionPolicy.manual,
+        kind: PhaseKind.rest,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                PhaseListTile(
+                  phase: focusPhase,
+                  onEdit: () {},
+                  onDelete: () {},
+                ),
+                PhaseListTile(
+                  phase: restPhase,
+                  onEdit: () {},
+                  onDelete: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Focus'), findsOneWidget);
+      expect(find.text('Rest'), findsOneWidget);
+
+      // Focus wears the primary colour, rest the tertiary one - the same
+      // convention the rest of the app uses for the two kinds.
+      final theme = Theme.of(tester.element(find.byType(PhaseListTile).first));
+      expect(_chipLabelColor(tester, 'Focus'), theme.colorScheme.primary);
+      expect(_chipLabelColor(tester, 'Rest'), theme.colorScheme.tertiary);
+    });
+
+    testWidgets('lays out without overflowing on a narrow screen',
+        (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      const phase = RoutinePhase(
+        id: 'phase-open',
+        name: 'A long phase name',
+        durationMs: null,
+        transition: TransitionPolicy.manual,
+        kind: PhaseKind.rest,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PhaseListTile(
+              phase: phase,
+              onEdit: () {},
+              onDelete: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Rest'), findsOneWidget);
+    });
   });
+}
+
+/// The kind the phase dialog currently has selected.
+PhaseKind _selectedKind(WidgetTester tester) {
+  final button = tester.widget<SegmentedButton<PhaseKind>>(
+    find.byType(SegmentedButton<PhaseKind>),
+  );
+  return button.selected.single;
+}
+
+/// The colour of the label of the kind chip reading [label].
+Color? _chipLabelColor(WidgetTester tester, String label) {
+  final text = tester.widget<Text>(
+    find.descendant(
+      of: find.widgetWithText(Chip, label),
+      matching: find.byType(Text),
+    ),
+  );
+  return text.style?.color;
 }

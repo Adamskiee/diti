@@ -28,6 +28,7 @@ void main() {
         name: 'Study',
         durationMs: 1500000,
         transition: TransitionPolicy.auto,
+        kind: PhaseKind.focus,
       ),
     ],
   );
@@ -138,6 +139,7 @@ void main() {
             name: 'Different',
             durationMs: 99999,
             transition: TransitionPolicy.manual,
+            kind: PhaseKind.rest,
           ),
         ],
       );
@@ -146,6 +148,7 @@ void main() {
       final state = engine.getState(runId);
       expect(state!.currentPhase.id, equals('p1'));
       expect(state.currentPhase.name, equals('Study'));
+      expect(state.currentPhase.kind, equals(PhaseKind.focus));
     });
 
     test('T-016: Persistence failure surfaces error and rolls back in-memory mutation', () async {

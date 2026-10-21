@@ -16,6 +16,8 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
   late bool _isOpenEnded;
   late int _minutes;
   late TransitionPolicy _transition;
+  late PhaseKind _kind;
+  bool _kindTouched = false;
 
   @override
   void initState() {
@@ -26,6 +28,20 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
     _minutes = p?.durationMs != null ? (p!.durationMs! ~/ 60000) : 25;
     if (_minutes <= 0) _minutes = 1;
     _transition = p?.transition ?? TransitionPolicy.auto;
+    // A new phase starts out with the kind its name suggests. An existing
+    // phase keeps the kind it was stored with: the name heuristic only seeds
+    // a new phase, it never reclassifies one the user already tagged.
+    _kind = p?.kind ?? PhaseKind.inferFromName(_nameController.text);
+    _nameController.addListener(_onNameChanged);
+  }
+
+  /// Keeps the kind of a new phase in step with its name, until the user
+  /// picks a kind themselves.
+  void _onNameChanged() {
+    if (_kindTouched || widget.phase != null) return;
+    final inferred = PhaseKind.inferFromName(_nameController.text);
+    if (inferred == _kind) return;
+    setState(() => _kind = inferred);
   }
 
   @override
@@ -47,6 +63,31 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
               key: const Key('phase_name_field'),
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Phase Name'),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Kind',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<PhaseKind>(
+              segments: const [
+                ButtonSegment<PhaseKind>(
+                  value: PhaseKind.focus,
+                  label: Text('Focus'),
+                ),
+                ButtonSegment<PhaseKind>(
+                  value: PhaseKind.rest,
+                  label: Text('Rest'),
+                ),
+              ],
+              selected: {_kind},
+              onSelectionChanged: (val) {
+                setState(() {
+                  _kind = val.first;
+                  _kindTouched = true;
+                });
+              },
             ),
             const SizedBox(height: 16),
             SwitchListTile(
@@ -118,6 +159,7 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
               name: name,
               durationMs: _isOpenEnded ? null : _minutes * 60000,
               transition: _isOpenEnded ? TransitionPolicy.manual : _transition,
+              kind: _kind,
             );
             Navigator.pop(context, phase);
           },

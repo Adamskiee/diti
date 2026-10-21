@@ -18,6 +18,7 @@ class PhaseListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     Widget leading = const Icon(Icons.drag_handle);
     if (index != null) {
       leading = ReorderableDragStartListener(
@@ -30,8 +31,16 @@ class PhaseListTile extends StatelessWidget {
       key: key ?? ValueKey(phase.id),
       leading: leading,
       title: Text(phase.name),
-      subtitle: Text(
-        '${DurationFormatter.formatDurationSummary(phase.durationMs)} · ${phase.transition == TransitionPolicy.auto ? "Auto" : "Manual"}',
+      subtitle: Row(
+        children: [
+          Flexible(
+            child: Text(
+              '${DurationFormatter.formatDurationSummary(phase.durationMs)} · ${phase.transition == TransitionPolicy.auto ? "Auto" : "Manual"}',
+            ),
+          ),
+          const SizedBox(width: 8),
+          _kindChip(theme),
+        ],
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -48,6 +57,30 @@ class PhaseListTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// The kind of the phase, as a chip next to the phase's details. Focus
+  /// wears the primary colour and rest the tertiary one - the convention the
+  /// rest of the app uses for the two kinds.
+  Widget _kindChip(ThemeData theme) {
+    final isFocus = phase.kind == PhaseKind.focus;
+    final kindColor =
+        isFocus ? theme.colorScheme.primary : theme.colorScheme.tertiary;
+
+    return Chip(
+      label: Text(
+        isFocus ? 'Focus' : 'Rest',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: kindColor,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      backgroundColor: kindColor.withAlpha(30),
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }
