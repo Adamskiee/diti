@@ -25,6 +25,13 @@ void main() {
       expect(PhaseKind.inferFromName('Reading'), PhaseKind.focus);
       expect(PhaseKind.inferFromName(''), PhaseKind.focus);
     });
+
+    test('matches whole words, so a focus name containing a hint is focus', () {
+      expect(PhaseKind.inferFromName('Interest'), PhaseKind.focus);
+      expect(PhaseKind.inferFromName('Forest'), PhaseKind.focus);
+      expect(PhaseKind.inferFromName('Presentation'), PhaseKind.focus);
+      expect(PhaseKind.inferFromName('Restoration'), PhaseKind.focus);
+    });
   });
 
   group('RoutinePhase.kind', () {

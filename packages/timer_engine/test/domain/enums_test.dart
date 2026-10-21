@@ -69,6 +69,10 @@ void main() {
         TimerError.staleState,
         TimerError.persistenceFailure,
       ]);
+      expect(PhaseKind.values, [
+        PhaseKind.focus,
+        PhaseKind.rest,
+      ]);
     });
   });
 }

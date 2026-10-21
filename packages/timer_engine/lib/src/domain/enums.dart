@@ -35,15 +35,29 @@ enum PhaseKind {
   focus,
   rest;
 
-  /// Seeds a kind from a phase name. Shared by the editor, the migration and
-  /// the starter routines so the rule exists in exactly one place.
+  /// Seeds a kind from a phase name. Shared by the editor, the migration
+  /// and the starter routines so the rule exists in exactly one place.
+  ///
+  /// Whole-word matching, not substring: "Interest" and "Forest" contain
+  /// "rest" but are ordinary focus phases, and a false rest classification
+  /// silently under-reports the user's focus time.
   static PhaseKind inferFromName(String name) {
     const restHints = <String>[
-      'break', 'rest', 'pause', 'cooldown', 'recover', 'recovery', 'lunch', 'coffee',
+      'break',
+      'rest',
+      'pause',
+      'cooldown',
+      'recover',
+      'recovery',
+      'lunch',
+      'coffee',
     ];
-    final lower = name.toLowerCase();
-    for (final hint in restHints) {
-      if (lower.contains(hint)) return PhaseKind.rest;
+    final words = name
+        .toLowerCase()
+        .split(RegExp('[^a-z0-9]+'))
+        .where((word) => word.isNotEmpty);
+    for (final word in words) {
+      if (restHints.contains(word)) return PhaseKind.rest;
     }
     return PhaseKind.focus;
   }
