@@ -352,11 +352,15 @@ class _SessionVerificationSheetState
   /// One phase of the breakdown: its name, its kind and the active time it
   /// took. The duration is the phase's own active time — pauses are not part
   /// of it.
+  ///
+  /// A phase the user abandoned is marked as skipped: the time it took still
+  /// counts, but it must not read like a phase that ran to its end.
   Widget _buildPhaseRow(BuildContext context, PhaseLedgerEntry entry) {
     final theme = Theme.of(context);
     final isFocus = entry.kind == PhaseKind.focus;
     final kindColor =
         isFocus ? theme.colorScheme.primary : theme.colorScheme.tertiary;
+    final isSkipped = entry.outcome == PhaseStatus.skipped;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -384,6 +388,24 @@ class _SessionVerificationSheetState
             visualDensity: VisualDensity.compact,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
+          if (isSkipped) ...[
+            const SizedBox(width: 8),
+            Chip(
+              label: Text(
+                'Skipped',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              backgroundColor:
+                  theme.colorScheme.onSurfaceVariant.withAlpha(30),
+              padding: EdgeInsets.zero,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
           const SizedBox(width: 12),
           Text(
             DurationFormatter.formatMs(entry.durationMs),

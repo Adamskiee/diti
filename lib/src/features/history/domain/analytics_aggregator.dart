@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:intl/intl.dart';
-import 'package:timer_engine/timer_engine.dart';
 import 'analytics_models.dart';
 import 'analytics_timeframe.dart';
-
-/// A session's active time, split into the time spent in focus phases and
-/// the time spent in rest phases.
-typedef _FocusRest = ({int focusMs, int restMs});
+import 'session_split.dart';
 
 class AnalyticsAggregator {
   static const List<Color> _palette = [
@@ -71,7 +67,7 @@ class AnalyticsAggregator {
   }
 
   /// The focus and rest time of a group of sessions.
-  static _FocusRest _sumByKind(List<SessionRecord> sessions) {
+  static SessionFocusRest _sumByKind(List<SessionRecord> sessions) {
     int focusMs = 0;
     int restMs = 0;
     for (final s in sessions) {
@@ -87,21 +83,12 @@ class AnalyticsAggregator {
   /// A session recorded before the per-phase breakdown existed has no events:
   /// it has no breakdown to split, so its whole duration counts as focus time
   /// and none of it as rest time. History is never reinterpreted.
-  static _FocusRest _splitByKind(SessionRecord session) {
-    if (session.events.isEmpty) {
+  static SessionFocusRest _splitByKind(SessionRecord session) {
+    final split = splitSessionByKind(session.events);
+    if (split == null) {
       return (focusMs: session.totalDurationMs, restMs: 0);
     }
-
-    int focusMs = 0;
-    int restMs = 0;
-    for (final event in session.events) {
-      if (event.kind == PhaseKind.rest) {
-        restMs += event.durationMs;
-      } else {
-        focusMs += event.durationMs;
-      }
-    }
-    return (focusMs: focusMs, restMs: restMs);
+    return split;
   }
 
   static List<DailyBucket> _buildBuckets(

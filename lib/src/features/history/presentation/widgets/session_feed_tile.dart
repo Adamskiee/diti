@@ -3,6 +3,7 @@ import 'package:diti_database/diti_database.dart';
 import 'package:intl/intl.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../../../core/utils/duration_formatter.dart';
+import '../../domain/session_split.dart';
 
 class SessionFeedTile extends StatelessWidget {
   final SessionRecord session;
@@ -100,31 +101,25 @@ class SessionFeedTile extends StatelessWidget {
   /// - and a session recorded before the per-phase breakdown existed has no
   /// events at all, so it shows its total alone.
   Widget? _buildFocusRestSplit(ThemeData theme) {
-    final events = session.events;
-    if (!events.any((event) => event.kind == PhaseKind.rest)) return null;
-
-    var focusMs = 0;
-    var restMs = 0;
-    for (final event in events) {
-      if (event.kind == PhaseKind.rest) {
-        restMs += event.durationMs;
-      } else {
-        focusMs += event.durationMs;
-      }
+    final split = splitSessionByKind(session.events);
+    if (split == null) return null;
+    // A session that recorded no rest phase has no split worth showing.
+    if (!session.events.any((event) => event.kind == PhaseKind.rest)) {
+      return null;
     }
 
     return Text.rich(
       TextSpan(
         children: [
           TextSpan(
-            text: '${DurationFormatter.formatMs(focusMs)} focus',
+            text: '${DurationFormatter.formatMs(split.focusMs)} focus',
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.primary,
             ),
           ),
           const TextSpan(text: ' · '),
           TextSpan(
-            text: '${DurationFormatter.formatMs(restMs)} rest',
+            text: '${DurationFormatter.formatMs(split.restMs)} rest',
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.tertiary,
             ),

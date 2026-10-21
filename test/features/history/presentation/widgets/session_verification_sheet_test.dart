@@ -476,6 +476,49 @@ void main() {
       expect(find.text('05:00'), findsOneWidget);
     });
 
+    testWidgets('marks a skipped phase as skipped', (tester) async {
+      await controller.prepareVerification(
+        runState: TimerRunState(
+          runId: 'run-skipped',
+          status: RunStatus.completed,
+          phaseStatus: PhaseStatus.finished,
+          currentPhase: twoPhaseRoutine.phases.last,
+          currentPhaseIndex: 1,
+          repeatIndex: 0,
+          activeElapsedMs: 0,
+          stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _twoPhaseLedgerWithSkippedBreak(),
+          runStartedAtUtc: _runStart,
+        ),
+        routineSnapshot: twoPhaseRoutine,
+      );
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // The abandoned break carries the marker, the phase that ran to its
+      // end does not. Both keep the time they actually took.
+      final skippedRow = find.ancestor(
+        of: find.text('Short Break'),
+        matching: find.byType(Row),
+      );
+      expect(
+        find.descendant(of: skippedRow, matching: find.text('Skipped')),
+        findsOneWidget,
+      );
+      final finishedRow = find.ancestor(
+        of: find.text('Deep Work'),
+        matching: find.byType(Row),
+      );
+      expect(
+        find.descendant(of: finishedRow, matching: find.text('Skipped')),
+        findsNothing,
+      );
+      expect(find.text('20:00'), findsOneWidget);
+      expect(find.text('05:00'), findsOneWidget);
+    });
+
     testWidgets('the header reads Verify Session, not Verify Focus Session',
         (tester) async {
       await prepareTwoPhaseDraft();
@@ -570,6 +613,25 @@ List<PhaseLedgerEntry> _twoPhaseLedger() {
       repeatIndex: 0,
       durationMs: 5 * 60 * 1000,
       outcome: PhaseStatus.finished,
+      startedAtUtc: _runStart.add(const Duration(minutes: 20)),
+      endedAtUtc: _runStart.add(const Duration(minutes: 25)),
+    ),
+  ];
+}
+
+/// The same ledger, but the break was abandoned: it ran for five minutes and
+/// was then skipped. The time it took still counts.
+List<PhaseLedgerEntry> _twoPhaseLedgerWithSkippedBreak() {
+  return [
+    _twoPhaseLedger().first,
+    PhaseLedgerEntry(
+      phaseId: 'p2',
+      phaseName: 'Short Break',
+      kind: PhaseKind.rest,
+      phaseIndex: 1,
+      repeatIndex: 0,
+      durationMs: 5 * 60 * 1000,
+      outcome: PhaseStatus.skipped,
       startedAtUtc: _runStart.add(const Duration(minutes: 20)),
       endedAtUtc: _runStart.add(const Duration(minutes: 25)),
     ),

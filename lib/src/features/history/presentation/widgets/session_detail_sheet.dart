@@ -33,99 +33,119 @@ class SessionDetailSheet extends ConsumerWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        // The phase log holds one entry per phase the session ran, so the
-        // sheet scrolls rather than overflowing when the log is long.
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
+        // The sheet's chrome - the handle, the title, the detail rows and
+        // the action button - stays outside every scrollable, so dragging it
+        // down dismisses the sheet the way the handle promises. Only the
+        // phase log scrolls.
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    session.routineName.trim().isEmpty
+                        ? 'Quick Timer'
+                        : session.routineName,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+                    color: outcomeColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _formatOutcome(session.outcome),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: outcomeColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      session.routineName.trim().isEmpty
-                          ? 'Quick Timer'
-                          : session.routineName,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: outcomeColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _formatOutcome(session.outcome),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: outcomeColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildDetailRow(
-                'Duration',
-                DurationFormatter.formatMs(session.totalDurationMs),
-                isDuration: true,
-              ),
-              _buildDetailRow(
-                'Started',
-                DateFormat('MMM d, y · h:mm:ss a').format(localStart),
-              ),
-              _buildDetailRow(
-                'Ended',
-                DateFormat('MMM d, y · h:mm:ss a').format(localEnd),
-              ),
-              if (session.planBlockId != null)
-                _buildDetailRow('Linked Block', session.planBlockId!),
-              if (session.events.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(
-                  'Phase Log',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                // The phase log can swallow a drag, so the sheet carries an
+                // explicit close: dismissing it never depends on a gesture.
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
-                const SizedBox(height: 8),
-                ...session.events.map((event) => _buildPhaseRow(event, theme)),
               ],
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.error,
-                    side: BorderSide(
-                      color: theme.colorScheme.error.withValues(alpha: 0.5),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Delete Session'),
-                  onPressed: () => _confirmDelete(context, ref),
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Duration',
+              DurationFormatter.formatMs(session.totalDurationMs),
+              isDuration: true,
+            ),
+            _buildDetailRow(
+              'Started',
+              DateFormat('MMM d, y · h:mm:ss a').format(localStart),
+            ),
+            _buildDetailRow(
+              'Ended',
+              DateFormat('MMM d, y · h:mm:ss a').format(localEnd),
+            ),
+            if (session.planBlockId != null)
+              _buildDetailRow('Linked Block', session.planBlockId!),
+            if (session.events.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Phase Log',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // The log is the sheet's only scrollable region. It takes the
+              // space the chrome leaves it and scrolls on its own, so a long
+              // log never overflows the sheet.
+              Flexible(
+                fit: FlexFit.loose,
+                child: ListView.builder(
+                  key: const Key('phase_log'),
+                  primary: false,
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: session.events.length,
+                  itemBuilder: (context, index) =>
+                      _buildPhaseRow(session.events[index], theme),
                 ),
               ),
             ],
-          ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                  side: BorderSide(
+                    color: theme.colorScheme.error.withValues(alpha: 0.5),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Delete Session'),
+                onPressed: () => _confirmDelete(context, ref),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -136,12 +156,15 @@ class SessionDetailSheet extends ConsumerWidget {
   /// pauses are not part of it.
   ///
   /// The kind is the one the phase was recorded with, so a phase renamed
-  /// after the session keeps the kind it ran as.
+  /// after the session keeps the kind it ran as. A phase the user abandoned
+  /// is marked as skipped: the time it took still counts, but it must not
+  /// read like a phase that ran to its end.
   Widget _buildPhaseRow(SessionEventRecord event, ThemeData theme) {
     final phaseTitle = event.phaseName ?? event.eventType;
     final isFocus = event.kind == PhaseKind.focus;
     final kindColor =
         isFocus ? theme.colorScheme.primary : theme.colorScheme.tertiary;
+    final isSkipped = event.outcome == PhaseStatus.skipped.name;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -169,6 +192,24 @@ class SessionDetailSheet extends ConsumerWidget {
             visualDensity: VisualDensity.compact,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
+          if (isSkipped) ...[
+            const SizedBox(width: 8),
+            Chip(
+              label: Text(
+                'Skipped',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              backgroundColor:
+                  theme.colorScheme.onSurfaceVariant.withAlpha(30),
+              padding: EdgeInsets.zero,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
           const SizedBox(width: 12),
           Text(
             DurationFormatter.formatMs(event.durationMs),

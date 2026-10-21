@@ -126,14 +126,26 @@ void main() {
     expect(find.text('30:00'), findsOneWidget);
     expect(find.textContaining('25:00 focus'), findsOneWidget);
     expect(find.textContaining('05:00 rest'), findsOneWidget);
+
+    // The two parts wear the app's focus and rest colours.
+    final theme = Theme.of(tester.element(find.byType(SessionFeedTile)));
+    final split = tester.widget<Text>(
+      find.byWidgetPredicate((w) => w is Text && w.textSpan != null),
+    );
+    final spans = (split.textSpan! as TextSpan).children!.cast<TextSpan>();
+    expect(spans[0].style?.color, theme.colorScheme.primary);
+    expect(spans[2].style?.color, theme.colorScheme.tertiary);
   });
 
   testWidgets('a session with no breakdown shows only the total', (tester) async {
     // A session recorded before the per-phase breakdown existed has no
     // events, so it shows its total alone - there is no empty split.
+    // The routine is named so that neither word appears in it: the
+    // assertions below must fail because the split is missing, not because
+    // the name happens to spell it.
     final session = SessionRecord(
       sessionId: 's_test_4',
-      routineName: 'Deep Focus',
+      routineName: 'Morning Sprint',
       startedAtUtc: DateTime.utc(2026, 10, 16, 10, 0),
       endedAtUtc: DateTime.utc(2026, 10, 16, 10, 25),
       totalDurationMs: 25 * 60 * 1000,
