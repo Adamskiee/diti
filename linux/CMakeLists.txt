@@ -5,9 +5,6 @@ project(runner LANGUAGES CXX)
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "diti")
-# The unique GTK application identifier for this application. See:
-# https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.adilabs.diti")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -32,6 +29,16 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     STRING "Flutter build mode" FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
     "Debug" "Profile" "Release")
+endif()
+
+# The unique GTK application identifier and window title for this application.
+# See: https://wiki.gnome.org/HowDoI/ChooseApplicationID
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+  set(APPLICATION_ID "com.adilabs.diti.debug")
+  set(WINDOW_TITLE "Diti (Debug)")
+else()
+  set(APPLICATION_ID "com.adilabs.diti")
+  set(WINDOW_TITLE "Diti")
 endif()
 
 # Compilation settings that should be applied to most targets.
