@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:path/path.dart' as p;
@@ -9,20 +10,23 @@ import 'package:path_provider/path_provider.dart';
 /// Resolves the file path for the SQLite database.
 ///
 /// Places the database in [getApplicationDocumentsDirectory].
-/// Falls back to 'diti.db' when running in environments where [path_provider]
+/// Uses 'diti_debug.db' in debug mode and 'diti.db' in release mode.
+/// Falls back to the filename when running in environments where [path_provider]
 /// is unavailable (e.g. unit/widget tests).
 ///
-/// If an existing legacy database ('focus_flow.db') is found and 'diti.db'
+/// If an existing legacy database ('focus_flow.db') is found and the target database
 /// does not yet exist, it automatically migrates by copying the legacy database.
-Future<String> resolveDatabasePath() async {
+Future<String> resolveDatabasePath({bool? isDebug}) async {
+  final debug = isDebug ?? kDebugMode;
+  final dbFileName = debug ? 'diti_debug.db' : 'diti.db';
   String targetPath;
   String legacyPath;
   try {
     final dir = await getApplicationDocumentsDirectory();
-    targetPath = p.join(dir.path, 'diti.db');
+    targetPath = p.join(dir.path, dbFileName);
     legacyPath = p.join(dir.path, 'focus_flow.db');
   } catch (_) {
-    targetPath = 'diti.db';
+    targetPath = dbFileName;
     legacyPath = 'focus_flow.db';
   }
 

@@ -99,9 +99,15 @@ void main() {
       expect(fake.cancelledIds, contains(99));
     });
 
-    test('resolveDatabasePath resolves fallback in test environment and migrates legacy db', () async {
-      final path = await resolveDatabasePath();
-      expect(path, 'diti.db');
+    test('resolveDatabasePath resolves fallback in test environment and differentiates debug/release', () async {
+      final debugPath = await resolveDatabasePath(isDebug: true);
+      expect(debugPath, 'diti_debug.db');
+
+      final releasePath = await resolveDatabasePath(isDebug: false);
+      expect(releasePath, 'diti.db');
+
+      final defaultPath = await resolveDatabasePath();
+      expect(defaultPath, 'diti_debug.db');
     });
 
     test('resolveDatabasePath copies legacy focus_flow.db to diti.db if legacy exists', () async {
