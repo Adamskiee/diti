@@ -38,6 +38,7 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
       (max, b) => math.max(max, b.totalDurationMs),
     );
     final selectedBucket = _selectedBucket;
+    final hasRest = widget.buckets.any((b) => b.restDurationMs > 0);
 
     return Card(
       elevation: 0,
@@ -49,9 +50,11 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Flexible(
+                  flex: 3,
                   child: Text(
                     'Focus & Rest Activity',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -61,6 +64,7 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
                 ),
                 if (selectedBucket != null)
                   Flexible(
+                    flex: 2,
                     child: Text(
                       _selectionReadout(selectedBucket),
                       textAlign: TextAlign.end,
@@ -155,7 +159,7 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildLegend(),
+            _buildLegend(hasRest),
           ],
         ),
       ),
@@ -212,15 +216,20 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
     );
   }
 
-  Widget _buildLegend() {
+  /// The legend of the chart's two series. The rest series is left out when
+  /// no day has any rest time: a legend that advertises a series the chart
+  /// never draws is noise.
+  Widget _buildLegend(bool hasRest) {
     final theme = Theme.of(context);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildLegendEntry(theme.colorScheme.primary, 'Focus'),
-        const SizedBox(width: 16),
-        _buildLegendEntry(theme.colorScheme.tertiary, 'Rest'),
+        if (hasRest) ...[
+          const SizedBox(width: 16),
+          _buildLegendEntry(theme.colorScheme.tertiary, 'Rest'),
+        ],
       ],
     );
   }
@@ -250,15 +259,15 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
     );
   }
 
-  /// The readout of the selected bucket: focus and rest on their own, or the
-  /// total alone when the bucket has no rest time.
+  /// The readout of the selected bucket. Every number it shows is named: the
+  /// day's total, and its focus and rest parts when the day has rest time.
   String _selectionReadout(DailyBucket bucket) {
+    final total = DurationFormatter.formatMs(bucket.totalDurationMs);
     if (bucket.restDurationMs > 0) {
-      return '${bucket.dayLabel}: '
-          '${DurationFormatter.formatMs(bucket.focusDurationMs)} focus · '
-          '${DurationFormatter.formatMs(bucket.restDurationMs)} rest';
+      final focus = DurationFormatter.formatMs(bucket.focusDurationMs);
+      final rest = DurationFormatter.formatMs(bucket.restDurationMs);
+      return '${bucket.dayLabel}: $total total · $focus focus · $rest rest';
     }
-    return '${bucket.dayLabel}: '
-        '${DurationFormatter.formatMs(bucket.totalDurationMs)}';
+    return '${bucket.dayLabel}: $total total';
   }
 }

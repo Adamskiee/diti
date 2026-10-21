@@ -131,4 +131,42 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Completed'), findsOneWidget);
   });
+
+  testWidgets('the tiles follow the app\'s focus and rest colour convention', (tester) async {
+    final summary = AnalyticsSummary(
+      timeframe: AnalyticsTimeframe.thisWeek,
+      dateRange: DateTimeRange(
+        start: DateTime(2026, 10, 12),
+        end: DateTime(2026, 10, 18),
+      ),
+      totalDurationMs: 30 * 60 * 1000,
+      focusDurationMs: 25 * 60 * 1000,
+      restDurationMs: 5 * 60 * 1000,
+      completedCount: 1,
+      interruptedOrCancelledCount: 0,
+      dailyBuckets: const [],
+      activityBreakdowns: const [],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SummaryMetricCards(summary: summary),
+        ),
+      ),
+    );
+
+    // Focus is the primary colour and rest is the tertiary one, exactly as the
+    // phase chips on the verification sheet render them, so one colour never
+    // means two things on the same screen.
+    final theme = Theme.of(tester.element(find.byType(SummaryMetricCards)));
+    final totalIcon = tester.widget<Icon>(find.byIcon(Icons.timer_outlined));
+    final focusIcon = tester.widget<Icon>(find.byIcon(Icons.bolt_outlined));
+    final restIcon =
+        tester.widget<Icon>(find.byIcon(Icons.self_improvement_outlined));
+
+    expect(totalIcon.color, theme.colorScheme.secondary);
+    expect(focusIcon.color, theme.colorScheme.primary);
+    expect(restIcon.color, theme.colorScheme.tertiary);
+  });
 }
