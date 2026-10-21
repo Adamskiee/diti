@@ -88,9 +88,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 45000, // 45 seconds < 60s
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 45000, // 45 seconds < 60s
+        completedPhases: _focusLedger(45000),
+        runStartedAtUtc: _runStart,
       );
 
       await controller.prepareVerification(
@@ -114,9 +116,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 120000, // 2 minutes
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 120000, // 2 minutes
+        completedPhases: _focusLedger(120000),
+        runStartedAtUtc: _runStart,
       );
 
       await controller.prepareVerification(
@@ -138,9 +142,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 1500000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 1500000,
+        completedPhases: _focusLedger(1500000),
+        runStartedAtUtc: _runStart,
       );
 
       await controller.prepareVerification(
@@ -160,9 +166,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 60000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 60000,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
       );
       await controller.prepareVerification(
         runState: runState,
@@ -184,9 +192,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 60000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 60000,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
       );
       await controller.prepareVerification(
         runState: runState,
@@ -208,7 +218,6 @@ void main() {
       when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
 
       final fixedNow = DateTime.now().toUtc();
-      final runStart = fixedNow.subtract(const Duration(milliseconds: 60000));
       final runState = TimerRunState(
         runId: 'run-increase',
         status: RunStatus.completed,
@@ -216,10 +225,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 60000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 60000,
-        runStartedAtUtc: runStart,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
       );
       await controller.prepareVerification(
         runState: runState,
@@ -236,7 +246,7 @@ void main() {
         that: isA<SessionRecord>()
             .having((s) => s.endedAtUtc, 'endedAtUtc', fixedNow)
             .having((s) => s.totalDurationMs, 'totalDurationMs', 360000)
-            .having((s) => s.startedAtUtc, 'startedAtUtc', runStart),
+            .having((s) => s.startedAtUtc, 'startedAtUtc', _runStart),
       ))).called(1);
     });
 
@@ -248,9 +258,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 60000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 60000,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
       );
       await controller.prepareVerification(
         runState: runState,
@@ -277,9 +289,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 60000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 60000,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
       );
       await controller.prepareVerification(
         runState: runState,
@@ -310,9 +324,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 1500000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 1500000,
+        completedPhases: _focusLedger(1500000),
+        runStartedAtUtc: _runStart,
       );
       await controller.prepareVerification(
         runState: runState,
@@ -359,9 +375,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 1500000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 1500000,
+        completedPhases: _focusLedger(1500000),
+        runStartedAtUtc: _runStart,
       );
       await controller.prepareVerification(
         runState: runState,
@@ -389,9 +407,11 @@ void main() {
         currentPhase: testRoutine.phases.first,
         currentPhaseIndex: 0,
         repeatIndex: 0,
-        activeElapsedMs: 60000,
+        activeElapsedMs: 0,
         stateVersion: 1,
         totalActiveElapsedMs: 60000,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
       );
       await controller.prepareVerification(
         runState: runState,
@@ -457,6 +477,46 @@ void main() {
       expect(session.events[0].durationMs, 1500000);
       expect(session.events[1].durationMs, 300000);
       expect(controller.state.phaseBreakdown.length, 2);
+    });
+
+    test('the breakdown sums to the total straight after preparation',
+        () async {
+      await controller.prepareVerification(
+        runState: _multiPhaseRunState(),
+        routineSnapshot: testRoutine,
+      );
+
+      final breakdown = controller.state.phaseBreakdown;
+      expect(
+        breakdown.fold<int>(0, (sum, entry) => sum + entry.durationMs),
+        controller.state.draftDurationMs,
+      );
+      expect(
+        controller.state.draftDurationMs,
+        controller.state.candidateSession!.totalDurationMs,
+      );
+    });
+
+    test('a run whose breakdown is empty is discarded', () async {
+      final runState = TimerRunState(
+        runId: 'run-without-ledger',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 0,
+        stateVersion: 1,
+        totalActiveElapsedMs: 600000,
+      );
+
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+      );
+
+      expect(controller.state.candidateSession, isNull);
+      expect(controller.state.isVisible, isFalse);
     });
 
     test('the session start is the run real start, not end minus active time',
@@ -653,6 +713,79 @@ void main() {
       );
     });
 
+    test('adjusting by more than the phase holds moves the total by what fits',
+        () async {
+      final runState = TimerRunState(
+        runId: 'run-short-phases',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 0,
+        stateVersion: 1,
+        completedPhases: [
+          _ledgerEntry(
+            phaseId: 'p1',
+            phaseName: 'Focus Sprint',
+            kind: PhaseKind.focus,
+            durationMs: 180000,
+            startedAtUtc: DateTime.utc(2026, 10, 20, 10, 0),
+            endedAtUtc: DateTime.utc(2026, 10, 20, 10, 3),
+          ),
+          _ledgerEntry(
+            phaseId: 'p2',
+            phaseName: 'Break',
+            kind: PhaseKind.rest,
+            durationMs: 120000,
+            startedAtUtc: DateTime.utc(2026, 10, 20, 10, 3),
+            endedAtUtc: DateTime.utc(2026, 10, 20, 10, 5),
+          ),
+        ],
+        totalActiveElapsedMs: 300000,
+        runStartedAtUtc: DateTime.utc(2026, 10, 20, 10, 0),
+      );
+
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+      );
+
+      controller.adjustDuration(const Duration(minutes: -4));
+
+      // The focus phase holds 3 minutes, so it can only give up 3 of the 4
+      // minutes: the total moves by what the phase absorbed.
+      final breakdown = controller.state.phaseBreakdown;
+      expect(breakdown[0].durationMs, 0);
+      expect(breakdown[1].durationMs, 120000);
+      expect(controller.state.draftDurationMs, 120000);
+      expect(
+        breakdown.fold<int>(0, (sum, entry) => sum + entry.durationMs),
+        controller.state.draftDurationMs,
+      );
+    });
+
+    test('setDurationMs keeps the total equal to the sum of the phases',
+        () async {
+      await controller.prepareVerification(
+        runState: _multiPhaseRunState(),
+        routineSnapshot: testRoutine,
+      );
+
+      controller.setDurationMs(60000);
+
+      // The focus phase holds 25 minutes, so the total can only fall to the
+      // break's 5 minutes: the total moves by what the phase absorbed.
+      final breakdown = controller.state.phaseBreakdown;
+      expect(breakdown[0].durationMs, 0);
+      expect(breakdown[1].durationMs, 300000);
+      expect(controller.state.draftDurationMs, 300000);
+      expect(
+        breakdown.fold<int>(0, (sum, entry) => sum + entry.durationMs),
+        controller.state.draftDurationMs,
+      );
+    });
+
     test('confirmSave stores the adjusted breakdown in the session events',
         () async {
       when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
@@ -700,6 +833,24 @@ PhaseLedgerEntry _ledgerEntry({
     startedAtUtc: startedAtUtc,
     endedAtUtc: endedAtUtc,
   );
+}
+
+/// When the run behind the hand-built states started.
+final DateTime _runStart = DateTime.utc(2026, 10, 20, 10, 0);
+
+/// A ledger with a single focus phase that took [durationMs] — the ledger of
+/// an ended run, whose time lives in the ledger and not in the accumulator.
+List<PhaseLedgerEntry> _focusLedger(int durationMs) {
+  return [
+    _ledgerEntry(
+      phaseId: 'p1',
+      phaseName: 'Focus Sprint',
+      kind: PhaseKind.focus,
+      durationMs: durationMs,
+      startedAtUtc: _runStart,
+      endedAtUtc: _runStart.add(Duration(milliseconds: durationMs)),
+    ),
+  ];
 }
 
 /// A finished run of a focus phase and a break phase.

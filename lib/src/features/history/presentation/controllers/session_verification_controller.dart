@@ -32,14 +32,17 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     // that was running. Never the current phase alone — that would drop the
     // focus time of a run that was cancelled during its break.
     final totalDurationMs = runState.totalActiveElapsedMs;
+    final breakdown = List<PhaseLedgerEntry>.of(runState.completedPhases);
 
-    // Noise filter: prune cancelled micro-sessions < 60s, and every run
-    // without measurable time — such a session cannot be saved at all.
+    // Noise filter: prune cancelled micro-sessions < 60s, every run without
+    // measurable time — such a session cannot be saved at all — and every run
+    // whose ledger was lost. A session with a total but no phases would
+    // break the rule that the total is the sum of the phases.
     final isNoise = runState.status == RunStatus.cancelled &&
         totalDurationMs < minNoiseDurationMs;
     final hasNoMeasurableTime =
         totalDurationMs < SessionValidator.minDurationMs;
-    if (isNoise || hasNoMeasurableTime) {
+    if (isNoise || hasNoMeasurableTime || breakdown.isEmpty) {
       if (planBlockId != null) {
         await _revertPlanBlock(planBlockId);
       }
@@ -59,7 +62,6 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
         : SessionOutcome.cancelled;
 
     final sessionId = const Uuid().v4();
-    final breakdown = List<PhaseLedgerEntry>.of(runState.completedPhases);
 
     final candidate = SessionRecord(
       sessionId: sessionId,
@@ -86,89 +88,15 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
   }
 
   void adjustDuration(Duration delta) {
-    final current = state.draftDurationMs;
-    final target = (current + delta.inMilliseconds)
+    final target = (state.draftDurationMs + delta.inMilliseconds)
         .clamp(SessionValidator.minDurationMs, SessionValidator.maxDurationMs);
-    final applied = target - current;
-
-    final breakdown = state.phaseBreakdown;
-    if (breakdown.isEmpty) {
-      state = state.copyWith(draftDurationMs: target, clearValidationError: true);
-      return;
-    }
-
-    // The delta lands on the last focus phase, so the focus time the user
-    // sees is the one that moves. A session without a focus phase moves its
-    // last phase instead.
-    final index = _lastAdjustableIndex(breakdown);
-    final entry = breakdown[index];
-    final newDuration = math.max(0, entry.durationMs + applied);
-    // What the phase could not absorb is dropped, so the total moves by
-    // exactly what the phase took.
-    final absorbed = newDuration - entry.durationMs;
-
-    final updated = List<PhaseLedgerEntry>.of(breakdown);
-    updated[index] = _withDuration(entry, newDuration);
-
-    state = state.copyWith(
-      phaseBreakdown: updated,
-      draftDurationMs: current + absorbed,
-      clearValidationError: true,
-    );
-  }
-
-  /// The phase an adjustment lands on: the last focus phase, or the last
-  /// phase when the session has none.
-  int _lastAdjustableIndex(List<PhaseLedgerEntry> breakdown) {
-    for (var i = breakdown.length - 1; i >= 0; i--) {
-      if (breakdown[i].kind == PhaseKind.focus) return i;
-    }
-    return breakdown.length - 1;
-  }
-
-  PhaseLedgerEntry _withDuration(PhaseLedgerEntry entry, int durationMs) {
-    return PhaseLedgerEntry(
-      phaseId: entry.phaseId,
-      phaseName: entry.phaseName,
-      kind: entry.kind,
-      phaseIndex: entry.phaseIndex,
-      repeatIndex: entry.repeatIndex,
-      durationMs: durationMs,
-      outcome: entry.outcome,
-      startedAtUtc: entry.startedAtUtc,
-      endedAtUtc: entry.endedAtUtc,
-    );
-  }
-
-  /// The session events of a breakdown: one event per phase, carrying the
-  /// phase's kind and the active time it took.
-  List<SessionEventRecord> _eventsFor(
-    List<PhaseLedgerEntry> breakdown,
-    String sessionId,
-  ) {
-    return breakdown
-        .map((e) => SessionEventRecord(
-              eventId: const Uuid().v4(),
-              sessionId: sessionId,
-              eventType: e.outcome == PhaseStatus.skipped
-                  ? 'phase_skipped'
-                  : 'phase_finished',
-              occurredAtUtc: e.endedAtUtc,
-              phaseId: e.phaseId,
-              phaseName: e.phaseName,
-              durationMs: e.durationMs,
-              outcome: e.outcome.name,
-              kind: e.kind,
-            ))
-        .toList(growable: false);
+    _applyTotal(target);
   }
 
   void setDurationMs(int durationMs) {
-    final clamped = durationMs.clamp(
-      SessionValidator.minDurationMs,
-      SessionValidator.maxDurationMs,
-    );
-    state = state.copyWith(draftDurationMs: clamped, clearValidationError: true);
+    final target = durationMs
+        .clamp(SessionValidator.minDurationMs, SessionValidator.maxDurationMs);
+    _applyTotal(target);
   }
 
   void setRoutineName(String name) {
@@ -246,6 +174,84 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
       await _revertPlanBlock(blockId);
     }
     state = const DraftSessionState();
+  }
+
+  /// Moves the session's total to [target] and lets the last focus phase
+  /// absorb the difference, so the total and the breakdown always agree.
+  void _applyTotal(int target) {
+    final current = state.draftDurationMs;
+    final applied = target - current;
+
+    final breakdown = state.phaseBreakdown;
+    if (breakdown.isEmpty) {
+      state = state.copyWith(draftDurationMs: target, clearValidationError: true);
+      return;
+    }
+
+    // The delta lands on the last focus phase, so the focus time the user
+    // sees is the one that moves. A session without a focus phase moves its
+    // last phase instead.
+    final index = _lastAdjustableIndex(breakdown);
+    final entry = breakdown[index];
+    final newDuration = math.max(0, entry.durationMs + applied);
+    // What the phase could not absorb is dropped, so the total moves by
+    // exactly what the phase took.
+    final absorbed = newDuration - entry.durationMs;
+
+    final updated = List<PhaseLedgerEntry>.of(breakdown);
+    updated[index] = _withDuration(entry, newDuration);
+
+    state = state.copyWith(
+      phaseBreakdown: updated,
+      draftDurationMs: current + absorbed,
+      clearValidationError: true,
+    );
+  }
+
+  /// The phase an adjustment lands on: the last focus phase, or the last
+  /// phase when the session has none.
+  int _lastAdjustableIndex(List<PhaseLedgerEntry> breakdown) {
+    for (var i = breakdown.length - 1; i >= 0; i--) {
+      if (breakdown[i].kind == PhaseKind.focus) return i;
+    }
+    return breakdown.length - 1;
+  }
+
+  PhaseLedgerEntry _withDuration(PhaseLedgerEntry entry, int durationMs) {
+    return PhaseLedgerEntry(
+      phaseId: entry.phaseId,
+      phaseName: entry.phaseName,
+      kind: entry.kind,
+      phaseIndex: entry.phaseIndex,
+      repeatIndex: entry.repeatIndex,
+      durationMs: durationMs,
+      outcome: entry.outcome,
+      startedAtUtc: entry.startedAtUtc,
+      endedAtUtc: entry.endedAtUtc,
+    );
+  }
+
+  /// The session events of a breakdown: one event per phase, carrying the
+  /// phase's kind and the active time it took.
+  List<SessionEventRecord> _eventsFor(
+    List<PhaseLedgerEntry> breakdown,
+    String sessionId,
+  ) {
+    return breakdown
+        .map((e) => SessionEventRecord(
+              eventId: const Uuid().v4(),
+              sessionId: sessionId,
+              eventType: e.outcome == PhaseStatus.skipped
+                  ? 'phase_skipped'
+                  : 'phase_finished',
+              occurredAtUtc: e.endedAtUtc,
+              phaseId: e.phaseId,
+              phaseName: e.phaseName,
+              durationMs: e.durationMs,
+              outcome: e.outcome.name,
+              kind: e.kind,
+            ))
+        .toList(growable: false);
   }
 
   Future<void> _revertPlanBlock(String blockId) async {

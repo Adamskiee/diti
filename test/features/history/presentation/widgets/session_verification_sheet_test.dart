@@ -67,9 +67,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -96,9 +98,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -122,9 +126,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -149,9 +155,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -190,9 +198,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -217,9 +227,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -249,9 +261,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 60 * 1000,
+          completedPhases: _focusLedger(60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -277,9 +291,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -327,9 +343,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -371,9 +389,11 @@ void main() {
           currentPhase: testRoutine.phases.first,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: 25 * 60 * 1000,
+          activeElapsedMs: 0,
           stateVersion: 1,
           totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
         ),
         routineSnapshot: testRoutine,
       );
@@ -390,4 +410,25 @@ void main() {
       expect(controller.state.candidateSession, isNull);
     });
   });
+}
+
+/// When the run behind the hand-built states started.
+final DateTime _runStart = DateTime.utc(2026, 10, 20, 10, 0);
+
+/// A ledger with a single focus phase that took [durationMs] — the ledger of
+/// an ended run, whose time lives in the ledger and not in the accumulator.
+List<PhaseLedgerEntry> _focusLedger(int durationMs) {
+  return [
+    PhaseLedgerEntry(
+      phaseId: 'p1',
+      phaseName: 'Focus',
+      kind: PhaseKind.focus,
+      phaseIndex: 0,
+      repeatIndex: 0,
+      durationMs: durationMs,
+      outcome: PhaseStatus.finished,
+      startedAtUtc: _runStart,
+      endedAtUtc: _runStart.add(Duration(milliseconds: durationMs)),
+    ),
+  ];
 }
