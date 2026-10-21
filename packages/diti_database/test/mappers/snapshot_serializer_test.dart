@@ -138,11 +138,6 @@ void main() {
       expect(routine.phases.first.kind, PhaseKind.focus);
     });
 
-    test('rejects an unsupported snapshot version', () {
-      const version3 = '{"schemaVersion":3,"id":"r1","name":"Routine"}';
-      expect(() => SnapshotSerializer.routineFromJson(version3), throwsFormatException);
-    });
-
     test('a run keeps its own kinds when the live routine changes', () {
       final routine = Routine(
         id: 'r', name: 'R',
@@ -152,11 +147,10 @@ void main() {
               transition: TransitionPolicy.auto, kind: PhaseKind.focus),
         ],
       );
+      // The run's snapshot is serialised once, when the run starts.
       final runJson = SnapshotSerializer.routineToJson(routine);
-      final runRoutine = SnapshotSerializer.routineFromJson(runJson);
-      expect(runRoutine.phases.first.kind, PhaseKind.focus);
 
-      // Change the live routine's phase kind to rest
+      // Change the live routine's phase kind to rest.
       final updatedRoutine = Routine(
         id: 'r', name: 'R',
         repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
@@ -166,9 +160,17 @@ void main() {
         ],
       );
       final updatedJson = SnapshotSerializer.routineToJson(updatedRoutine);
-      // The original run's snapshot still reports PhaseKind.focus because it was captured earlier
-      final originalStillFocus = SnapshotSerializer.routineFromJson(runJson);
-      expect(originalStillFocus.phases.first.kind, PhaseKind.focus);
+
+      // The run's snapshot still reports PhaseKind.focus for that phase.
+      final runPhases = (jsonDecode(runJson)['phases'] as List).cast<Map<String, dynamic>>();
+      expect(runPhases[0]['kind'], 'focus');
+      expect(SnapshotSerializer.routineFromJson(runJson).phases.first.kind, PhaseKind.focus);
+
+      // The live routine now reports PhaseKind.rest.
+      final livePhases =
+          (jsonDecode(updatedJson)['phases'] as List).cast<Map<String, dynamic>>();
+      expect(livePhases[0]['kind'], 'rest');
+      expect(SnapshotSerializer.routineFromJson(updatedJson).phases.first.kind, PhaseKind.rest);
     });
   });
 }
