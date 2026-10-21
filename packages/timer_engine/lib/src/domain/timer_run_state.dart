@@ -1,4 +1,5 @@
 import 'enums.dart';
+import 'phase_ledger_entry.dart';
 import 'routine_phase.dart';
 
 class TimerRunState {
@@ -12,6 +13,16 @@ class TimerRunState {
   final int? remainingMs;
   final int stateVersion;
 
+  /// The phases that have ended, with the active time each of them took.
+  final List<PhaseLedgerEntry> completedPhases;
+
+  /// The active time of the whole run: the phases that ended plus the phase
+  /// that is running now.
+  final int totalActiveElapsedMs;
+
+  /// When the run really started, ignoring pauses and phase changes.
+  final DateTime? runStartedAtUtc;
+
   const TimerRunState({
     required this.runId,
     required this.status,
@@ -22,6 +33,9 @@ class TimerRunState {
     required this.activeElapsedMs,
     this.remainingMs,
     required this.stateVersion,
+    this.completedPhases = const [],
+    this.totalActiveElapsedMs = 0,
+    this.runStartedAtUtc,
   });
 
   int get currentRepetition => repeatIndex + 1;
@@ -37,6 +51,9 @@ class TimerRunState {
     int? activeElapsedMs,
     int? Function()? remainingMs,
     int? stateVersion,
+    List<PhaseLedgerEntry>? completedPhases,
+    int? totalActiveElapsedMs,
+    DateTime? runStartedAtUtc,
   }) {
     return TimerRunState(
       runId: runId ?? this.runId,
@@ -48,7 +65,18 @@ class TimerRunState {
       activeElapsedMs: activeElapsedMs ?? this.activeElapsedMs,
       remainingMs: remainingMs != null ? remainingMs() : this.remainingMs,
       stateVersion: stateVersion ?? this.stateVersion,
+      completedPhases: completedPhases ?? this.completedPhases,
+      totalActiveElapsedMs: totalActiveElapsedMs ?? this.totalActiveElapsedMs,
+      runStartedAtUtc: runStartedAtUtc ?? this.runStartedAtUtc,
     );
+  }
+
+  bool _sameCompletedPhases(List<PhaseLedgerEntry> other) {
+    if (completedPhases.length != other.length) return false;
+    for (var i = 0; i < completedPhases.length; i++) {
+      if (completedPhases[i] != other[i]) return false;
+    }
+    return true;
   }
 
   @override
@@ -64,7 +92,10 @@ class TimerRunState {
           repeatIndex == other.repeatIndex &&
           activeElapsedMs == other.activeElapsedMs &&
           remainingMs == other.remainingMs &&
-          stateVersion == other.stateVersion;
+          stateVersion == other.stateVersion &&
+          _sameCompletedPhases(other.completedPhases) &&
+          totalActiveElapsedMs == other.totalActiveElapsedMs &&
+          runStartedAtUtc == other.runStartedAtUtc;
 
   @override
   int get hashCode => Object.hash(
@@ -77,5 +108,8 @@ class TimerRunState {
         activeElapsedMs,
         remainingMs,
         stateVersion,
+        Object.hashAll(completedPhases),
+        totalActiveElapsedMs,
+        runStartedAtUtc,
       );
 }

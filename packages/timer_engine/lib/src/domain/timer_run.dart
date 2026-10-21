@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'enums.dart';
+import 'phase_ledger_entry.dart';
 import 'routine.dart';
 import 'routine_phase.dart';
 import 'timer_run_state.dart';
@@ -18,6 +19,18 @@ class TimerRun {
   final int stateVersion;
   final String? lastEventId;
 
+  /// The phases that have ended, in the order they ended, with the active
+  /// time each of them actually took.
+  final List<PhaseLedgerEntry> phaseLedger;
+
+  /// When the run really started, ignoring pauses and phase changes.
+  final DateTime? runStartedAtUtc;
+
+  /// When the phase that is currently running first started running. It
+  /// survives pauses and resumes, so a phase that is paused and resumed is
+  /// still measured from its first start.
+  final DateTime? phaseFirstStartedAtUtc;
+
   TimerRun({
     required this.runId,
     required this.routineSnapshot,
@@ -31,13 +44,28 @@ class TimerRun {
     DateTime? pausedAtUtc,
     required this.stateVersion,
     this.lastEventId,
+    this.phaseLedger = const [],
+    DateTime? runStartedAtUtc,
+    DateTime? phaseFirstStartedAtUtc,
   })  : phaseStartedAtUtc =
             phaseStartedAtUtc.isUtc ? phaseStartedAtUtc : phaseStartedAtUtc.toUtc(),
         pausedAtUtc = pausedAtUtc == null
             ? null
-            : (pausedAtUtc.isUtc ? pausedAtUtc : pausedAtUtc.toUtc());
+            : (pausedAtUtc.isUtc ? pausedAtUtc : pausedAtUtc.toUtc()),
+        runStartedAtUtc = runStartedAtUtc == null
+            ? null
+            : (runStartedAtUtc.isUtc ? runStartedAtUtc : runStartedAtUtc.toUtc()),
+        phaseFirstStartedAtUtc = phaseFirstStartedAtUtc == null
+            ? null
+            : (phaseFirstStartedAtUtc.isUtc
+                ? phaseFirstStartedAtUtc
+                : phaseFirstStartedAtUtc.toUtc());
 
   RoutinePhase get currentPhase => routineSnapshot.phases[currentPhaseIndex];
+
+  /// The active time of every phase that has ended.
+  int get ledgerTotalMs =>
+      phaseLedger.fold(0, (sum, entry) => sum + entry.durationMs);
 
   TimerRunState calculateState({required int currentMonotonicMs}) {
     int activeMs = accumulatedMs;
@@ -62,6 +90,9 @@ class TimerRun {
       activeElapsedMs: activeMs,
       remainingMs: remaining,
       stateVersion: stateVersion,
+      completedPhases: phaseLedger,
+      totalActiveElapsedMs: ledgerTotalMs + activeMs,
+      runStartedAtUtc: runStartedAtUtc,
     );
   }
 
@@ -78,6 +109,9 @@ class TimerRun {
     DateTime? Function()? pausedAtUtc,
     int? stateVersion,
     String? Function()? lastEventId,
+    List<PhaseLedgerEntry>? phaseLedger,
+    DateTime? runStartedAtUtc,
+    DateTime? phaseFirstStartedAtUtc,
   }) {
     return TimerRun(
       runId: runId ?? this.runId,
@@ -94,7 +128,19 @@ class TimerRun {
       pausedAtUtc: pausedAtUtc != null ? pausedAtUtc() : this.pausedAtUtc,
       stateVersion: stateVersion ?? this.stateVersion,
       lastEventId: lastEventId != null ? lastEventId() : this.lastEventId,
+      phaseLedger: phaseLedger ?? this.phaseLedger,
+      runStartedAtUtc: runStartedAtUtc ?? this.runStartedAtUtc,
+      phaseFirstStartedAtUtc:
+          phaseFirstStartedAtUtc ?? this.phaseFirstStartedAtUtc,
     );
+  }
+
+  bool _sameLedger(List<PhaseLedgerEntry> other) {
+    if (phaseLedger.length != other.length) return false;
+    for (var i = 0; i < phaseLedger.length; i++) {
+      if (phaseLedger[i] != other[i]) return false;
+    }
+    return true;
   }
 
   @override
@@ -113,7 +159,10 @@ class TimerRun {
           phaseStartedMonotonicMs == other.phaseStartedMonotonicMs &&
           pausedAtUtc == other.pausedAtUtc &&
           stateVersion == other.stateVersion &&
-          lastEventId == other.lastEventId;
+          lastEventId == other.lastEventId &&
+          _sameLedger(other.phaseLedger) &&
+          runStartedAtUtc == other.runStartedAtUtc &&
+          phaseFirstStartedAtUtc == other.phaseFirstStartedAtUtc;
 
   @override
   int get hashCode => Object.hash(
@@ -129,5 +178,8 @@ class TimerRun {
         pausedAtUtc,
         stateVersion,
         lastEventId,
+        Object.hashAll(phaseLedger),
+        runStartedAtUtc,
+        phaseFirstStartedAtUtc,
       );
 }

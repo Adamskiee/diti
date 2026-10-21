@@ -14,6 +14,7 @@ export 'src/domain/enums.dart';
 export 'src/domain/repeat_rule.dart';
 export 'src/domain/routine_phase.dart';
 export 'src/domain/routine.dart';
+export 'src/domain/phase_ledger_entry.dart';
 export 'src/domain/timer_run.dart';
 export 'src/domain/timer_run_state.dart';
 export 'src/domain/timer_event.dart';
