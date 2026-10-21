@@ -116,7 +116,7 @@ void main() {
     expect(find.byType(SessionVerificationSheet), findsOneWidget);
     await tester.tap(find.text('+1m'));
     await tester.pumpAndSettle();
-    expect(find.text('25:00'), findsOneWidget);
+    expect(totalDurationText(tester), '25:00');
     await tester.tap(find.text('Save to Analytics'));
     await tester.pumpAndSettle();
 
@@ -145,4 +145,11 @@ void main() {
     await db.close();
     container.dispose();
   });
+}
+
+/// The number on the sheet's duration card — the session's total time.
+String totalDurationText(WidgetTester tester) {
+  final text =
+      tester.widget<Text>(find.byKey(const Key('total_duration_value')));
+  return text.data ?? '';
 }

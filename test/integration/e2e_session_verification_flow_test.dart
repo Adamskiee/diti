@@ -72,14 +72,14 @@ void main() {
 
     // 3. Verify SessionVerificationSheet is presented
     expect(find.byType(SessionVerificationSheet), findsOneWidget);
-    expect(find.text('Verify Focus Session'), findsOneWidget);
-    expect(find.text('25:00'), findsOneWidget);
+    expect(find.text('Verify Session'), findsOneWidget);
+    expect(totalDurationText(tester), '25:00');
 
     // 4. Edit title and adjust duration
     await tester.enterText(find.byType(TextFormField), 'Verified Sprint');
     await tester.tap(find.text('+5m'));
     await tester.pumpAndSettle();
-    expect(find.text('30:00'), findsOneWidget);
+    expect(totalDurationText(tester), '30:00');
 
     // 5. Tap Save to Analytics
     await tester.tap(find.text('Save to Analytics'));
@@ -113,4 +113,11 @@ void main() {
     await db.close();
     container.dispose();
   });
+}
+
+/// The number on the sheet's duration card — the session's total time.
+String totalDurationText(WidgetTester tester) {
+  final text =
+      tester.widget<Text>(find.byKey(const Key('total_duration_value')));
+  return text.data ?? '';
 }
