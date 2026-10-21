@@ -58,12 +58,15 @@ class _SessionVerificationSheetState
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Verify Focus Session',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'Verify Focus Session',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Chip(
                     avatar: Icon(
                       isCompleted ? Icons.check_circle : Icons.cancel,
