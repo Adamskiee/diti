@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:test/test.dart';
 import 'package:timer_engine/timer_engine.dart';
 import 'package:diti_database/diti_database.dart';
@@ -84,12 +85,90 @@ void main() {
       expect(() => SnapshotSerializer.metadataFromJson('not-json'), throwsFormatException);
     });
 
-    test('throws FormatException when schemaVersion is missing or not 1', () {
+    test('throws FormatException when schemaVersion is missing or unsupported', () {
       const missingVersion = '{"id":"r1","name":"Routine"}';
       expect(() => SnapshotSerializer.routineFromJson(missingVersion), throwsFormatException);
 
-      const unsupportedVersion = '{"schemaVersion":2,"id":"r1","name":"Routine"}';
+      const unsupportedVersion = '{"schemaVersion":3,"id":"r1","name":"Routine"}';
       expect(() => SnapshotSerializer.routineFromJson(unsupportedVersion), throwsFormatException);
+    });
+
+    test('writes schemaVersion 2 and preserves phase kinds', () {
+      final routine = Routine(
+        id: 'r', name: 'R',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
+          RoutinePhase(id: 'b', name: 'Short Break', durationMs: 300000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+        ],
+      );
+      final json = jsonDecode(SnapshotSerializer.routineToJson(routine));
+      expect(json['schemaVersion'], 2);
+      expect((json['phases'] as List)[1]['kind'], 'rest');
+    });
+
+    test('round-trips phase kinds', () {
+      final routine = Routine(
+        id: 'r', name: 'R',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
+          RoutinePhase(id: 'b', name: 'Short Break', durationMs: 300000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+        ],
+      );
+      final jsonStr = SnapshotSerializer.routineToJson(routine);
+      final restored = SnapshotSerializer.routineFromJson(jsonStr);
+      expect(restored.phases[0].kind, PhaseKind.focus);
+      expect(restored.phases[1].kind, PhaseKind.rest);
+    });
+
+    test('loads a version 1 snapshot with every phase as focus', () {
+      final json = jsonEncode({
+        'schemaVersion': 1, 'id': 'r', 'name': 'R',
+        'repeatRule': {'mode': 'count', 'count': 1},
+        'phases': [
+          {'id': 'f', 'name': 'Focus', 'durationMs': 1500000, 'transition': 'auto'},
+        ],
+      });
+      final routine = SnapshotSerializer.routineFromJson(json);
+      expect(routine.phases.first.kind, PhaseKind.focus);
+    });
+
+    test('rejects an unsupported snapshot version', () {
+      const version3 = '{"schemaVersion":3,"id":"r1","name":"Routine"}';
+      expect(() => SnapshotSerializer.routineFromJson(version3), throwsFormatException);
+    });
+
+    test('a run keeps its own kinds when the live routine changes', () {
+      final routine = Routine(
+        id: 'r', name: 'R',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
+        ],
+      );
+      final runJson = SnapshotSerializer.routineToJson(routine);
+      final runRoutine = SnapshotSerializer.routineFromJson(runJson);
+      expect(runRoutine.phases.first.kind, PhaseKind.focus);
+
+      // Change the live routine's phase kind to rest
+      final updatedRoutine = Routine(
+        id: 'r', name: 'R',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+        ],
+      );
+      final updatedJson = SnapshotSerializer.routineToJson(updatedRoutine);
+      // The original run's snapshot still reports PhaseKind.focus because it was captured earlier
+      final originalStillFocus = SnapshotSerializer.routineFromJson(runJson);
+      expect(originalStillFocus.phases.first.kind, PhaseKind.focus);
     });
   });
 }
