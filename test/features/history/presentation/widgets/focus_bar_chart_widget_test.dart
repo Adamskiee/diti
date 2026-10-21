@@ -10,12 +10,16 @@ void main() {
         date: DateTime(2026, 10, 12),
         dayLabel: 'Mon',
         totalDurationMs: 60 * 60 * 1000,
+        focusDurationMs: 60 * 60 * 1000,
+        restDurationMs: 0,
         sessionCount: 1,
       ),
       DailyBucket(
         date: DateTime(2026, 10, 13),
         dayLabel: 'Tue',
         totalDurationMs: 0,
+        focusDurationMs: 0,
+        restDurationMs: 0,
         sessionCount: 0,
       ),
     ];
@@ -40,12 +44,16 @@ void main() {
         date: DateTime(2026, 10, 12),
         dayLabel: 'Mon',
         totalDurationMs: 3600000,
+        focusDurationMs: 3600000,
+        restDurationMs: 0,
         sessionCount: 1,
       ),
       DailyBucket(
         date: DateTime(2026, 10, 13),
         dayLabel: 'Tue',
         totalDurationMs: 1800000,
+        focusDurationMs: 1800000,
+        restDurationMs: 0,
         sessionCount: 1,
       ),
     ];

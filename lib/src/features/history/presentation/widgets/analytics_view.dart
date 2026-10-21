@@ -22,7 +22,7 @@ class AnalyticsView extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error calculating analytics: $err')),
             data: (summary) {
-              if (summary.totalFocusDurationMs == 0 &&
+              if (summary.totalDurationMs == 0 &&
                   summary.completedCount == 0 &&
                   summary.interruptedOrCancelledCount == 0) {
                 final theme = Theme.of(context);

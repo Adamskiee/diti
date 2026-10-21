@@ -12,7 +12,9 @@ void main() {
         start: DateTime(2026, 10, 12),
         end: DateTime(2026, 10, 18),
       ),
-      totalFocusDurationMs: 90 * 60 * 1000, // 1h 30m -> 01:30:00
+      totalDurationMs: 90 * 60 * 1000, // 1h 30m -> 01:30:00
+      focusDurationMs: 90 * 60 * 1000,
+      restDurationMs: 0,
       completedCount: 3,
       interruptedOrCancelledCount: 1,
       dailyBuckets: const [],

@@ -22,7 +22,7 @@ class SummaryMetricCards extends StatelessWidget {
             context,
             icon: Icons.timer_outlined,
             label: 'Total Focus',
-            value: DurationFormatter.formatMs(summary.totalFocusDurationMs),
+            value: DurationFormatter.formatMs(summary.totalDurationMs),
             color: theme.colorScheme.primary,
           ),
         ),
