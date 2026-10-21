@@ -68,8 +68,10 @@ class _FocusBarChartWidgetState extends State<FocusBarChartWidget> {
                     child: Text(
                       _selectionReadout(selectedBucket),
                       textAlign: TextAlign.end,
+                      // The readout names the total, the focus and the rest, so
+                      // it wears the default surface colour like the title:
+                      // no single concept's colour may paint it.
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),

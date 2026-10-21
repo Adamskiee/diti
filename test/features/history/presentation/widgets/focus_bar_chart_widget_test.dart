@@ -143,6 +143,42 @@ void main() {
     expect(find.byKey(const ValueKey('rest-segment')), findsNothing);
   });
 
+  testWidgets('the readout is not painted in the focus colour', (tester) async {
+    final buckets = [
+      DailyBucket(
+        date: DateTime(2026, 10, 12),
+        dayLabel: 'Mon',
+        totalDurationMs: 30 * 60 * 1000,
+        focusDurationMs: 25 * 60 * 1000,
+        restDurationMs: 5 * 60 * 1000,
+        sessionCount: 1,
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusBarChartWidget(buckets: buckets),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Mon'));
+    await tester.pump();
+
+    // The readout names the total, the focus and the rest, so no single
+    // concept's colour may paint it: it wears the default surface colour,
+    // like the chart title, and never the focus colour.
+    final theme = Theme.of(tester.element(find.byType(FocusBarChartWidget)));
+    final readoutStyle =
+        tester.widget<Text>(find.textContaining('30:00 total')).style;
+    final titleStyle =
+        tester.widget<Text>(find.text('Focus & Rest Activity')).style;
+
+    expect(readoutStyle?.color, isNot(theme.colorScheme.primary));
+    expect(readoutStyle?.color, titleStyle?.color);
+  });
+
   testWidgets('the readout names every number and always shows the total', (tester) async {
     final buckets = [
       DailyBucket(
