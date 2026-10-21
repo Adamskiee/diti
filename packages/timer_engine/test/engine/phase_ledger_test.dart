@@ -6,6 +6,11 @@ import 'package:timer_engine/src/domain/routine.dart';
 import 'package:timer_engine/src/domain/routine_phase.dart';
 import 'package:timer_engine/src/domain/timer_run.dart';
 import 'package:timer_engine/src/domain/timer_run_state.dart';
+import 'package:timer_engine/src/engine/timer_engine_impl.dart';
+import '../fakes/fake_clock.dart';
+import '../fakes/in_memory_notification_port.dart';
+import '../fakes/in_memory_persistence_port.dart';
+import '../fakes/in_memory_routine_repository.dart';
 
 void main() {
   final start = DateTime.utc(2026, 10, 21, 9, 0);
@@ -196,6 +201,274 @@ void main() {
     expect(one.hashCode, equals(same.hashCode));
     expect(one, isNot(equals(state(completedPhases: const [], totalActiveElapsedMs: 60000))));
     expect(one, isNot(equals(state(completedPhases: [entry(durationMs: 60000)], totalActiveElapsedMs: 70000))));
+  });
+
+  group('The engine appends one ledger entry per phase that ends', () {
+    late FakeClock clock;
+    late InMemoryRoutineRepository routineRepo;
+    late InMemoryPersistencePort persistence;
+    late InMemoryNotificationPort notifications;
+    late TimerEngineImpl engine;
+
+    const pomodoro = Routine(
+      id: 'pomodoro',
+      name: 'Pomodoro',
+      repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+      phases: [
+        RoutinePhase(
+          id: 'focus',
+          name: 'Focus',
+          durationMs: 1500000,
+          transition: TransitionPolicy.auto,
+          kind: PhaseKind.focus,
+        ),
+        RoutinePhase(
+          id: 'break',
+          name: 'Break',
+          durationMs: 300000,
+          transition: TransitionPolicy.auto,
+          kind: PhaseKind.rest,
+        ),
+      ],
+    );
+
+    setUp(() async {
+      clock = FakeClock();
+      routineRepo = InMemoryRoutineRepository();
+      persistence = InMemoryPersistencePort();
+      notifications = InMemoryNotificationPort();
+      await routineRepo.saveRoutine(pomodoro);
+
+      engine = TimerEngineImpl(
+        monotonicClock: clock,
+        wallClock: clock,
+        routineRepository: routineRepo,
+        persistencePort: persistence,
+        notificationPort: notifications,
+      );
+    });
+
+    /// Advances the clock and lets the boundary callback settle.
+    ///
+    /// The clock is advanced one phase at a time because a boundary
+    /// schedules the next one relative to the moment it settles: a single
+    /// jump past two boundaries would leave the second phase running.
+    Future<void> advancePhase(Duration duration) async {
+      clock.advance(duration);
+      await pumpEventQueue();
+    }
+
+    test('a completed multi-phase run records every phase and reports the sum',
+        () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+
+      await advancePhase(const Duration(minutes: 25));
+      await advancePhase(const Duration(minutes: 5));
+
+      final state = engine.getState(runId)!;
+      expect(state.status, equals(RunStatus.completed));
+      expect(state.completedPhases, hasLength(2));
+
+      final focus = state.completedPhases[0];
+      expect(focus.phaseId, equals('focus'));
+      expect(focus.phaseName, equals('Focus'));
+      expect(focus.kind, equals(PhaseKind.focus));
+      expect(focus.durationMs, equals(1500000));
+      expect(focus.outcome, equals(PhaseStatus.finished));
+
+      final rest = state.completedPhases[1];
+      expect(rest.phaseId, equals('break'));
+      expect(rest.kind, equals(PhaseKind.rest));
+      expect(rest.durationMs, equals(300000));
+      expect(rest.outcome, equals(PhaseStatus.finished));
+
+      final ledgerTotal = state.completedPhases
+          .fold<int>(0, (total, entry) => total + entry.durationMs);
+      expect(ledgerTotal, equals(1800000));
+      expect(state.totalActiveElapsedMs, equals(ledgerTotal));
+    });
+
+    test('a phase finished early records its actual elapsed time', () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+
+      clock.advance(const Duration(minutes: 10));
+      final result = await engine.finishPhase(runId);
+      expect(result.success, isTrue);
+
+      final state = engine.getState(runId)!;
+      expect(state.completedPhases, hasLength(1));
+      final entry = state.completedPhases.single;
+      expect(entry.durationMs, equals(600000));
+      expect(entry.outcome, equals(PhaseStatus.finished));
+      expect(state.totalActiveElapsedMs, equals(600000));
+    });
+
+    test('a skipped phase records outcome skipped and its actual elapsed time',
+        () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+
+      clock.advance(const Duration(minutes: 3));
+      final result = await engine.skipPhase(runId);
+      expect(result.success, isTrue);
+
+      final state = engine.getState(runId)!;
+      expect(state.completedPhases, hasLength(1));
+      final entry = state.completedPhases.single;
+      expect(entry.outcome, equals(PhaseStatus.skipped));
+      expect(entry.durationMs, equals(180000));
+    });
+
+    test('a cancelled run records the in-progress phase as its own final entry',
+        () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+
+      clock.advance(const Duration(minutes: 7));
+      final result = await engine.stop(runId);
+      expect(result.success, isTrue);
+
+      final state = engine.getState(runId)!;
+      expect(state.status, equals(RunStatus.cancelled));
+      expect(state.completedPhases, hasLength(1));
+      final entry = state.completedPhases.single;
+      expect(entry.durationMs, equals(420000));
+      expect(entry.outcome, equals(PhaseStatus.finished));
+      expect(state.totalActiveElapsedMs, equals(420000));
+    });
+
+    test('a phase that runs past its configured length records the overrun',
+        () async {
+      await routineRepo.saveRoutine(Routine(
+        id: 'manual',
+        name: 'Manual',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(
+            id: 'reading',
+            name: 'Reading',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+            kind: PhaseKind.focus,
+          ),
+        ],
+      ));
+      await engine.start('manual');
+      final runId = engine.activeRunId!;
+
+      clock.advance(const Duration(minutes: 27));
+      await pumpEventQueue();
+      final awaiting = engine.getState(runId)!;
+      expect(awaiting.phaseStatus, equals(PhaseStatus.awaitingAction));
+
+      final result = await engine.finishPhase(runId);
+      expect(result.success, isTrue);
+
+      final state = engine.getState(runId)!;
+      expect(state.completedPhases, hasLength(1));
+      // 27 minutes of actual time, not the configured 25.
+      expect(state.completedPhases.single.durationMs, equals(1620000));
+      expect(state.totalActiveElapsedMs, equals(1620000));
+    });
+
+    test('the accumulator is zero when a phase ends', () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+
+      clock.advance(const Duration(minutes: 10));
+      await engine.finishPhase(runId);
+
+      final persisted = persistence.activeRun!;
+      expect(persisted.accumulatedMs, equals(0));
+      expect(persisted.ledgerTotalMs, equals(600000));
+      expect(persisted.phaseLedger, hasLength(1));
+    });
+
+    test('elapsed() reports the run total, not the last phase', () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+
+      await advancePhase(const Duration(minutes: 25));
+      await advancePhase(const Duration(minutes: 5));
+
+      expect(await engine.elapsed(runId), equals(const Duration(minutes: 30)));
+    });
+
+    test('the run records its true start and the phase its first start',
+        () async {
+      await engine.start('pomodoro');
+
+      final persisted = persistence.activeRun!;
+      expect(persisted.runStartedAtUtc, equals(clock.utcNow));
+      expect(persisted.phaseFirstStartedAtUtc, equals(clock.utcNow));
+    });
+
+    test('a pause and a resume keep the phase first start', () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+      final startedAt = clock.utcNow;
+
+      clock.advance(const Duration(minutes: 3));
+      await engine.pause(runId);
+      clock.advance(const Duration(minutes: 20));
+      await engine.resume(runId);
+
+      final persisted = persistence.activeRun!;
+      expect(persisted.runStartedAtUtc, equals(startedAt));
+      expect(persisted.phaseFirstStartedAtUtc, equals(startedAt));
+    });
+
+    test('paused time is excluded from the phase and from the run total',
+        () async {
+      await engine.start('pomodoro');
+      final runId = engine.activeRunId!;
+
+      clock.advance(const Duration(minutes: 10));
+      await engine.pause(runId);
+      clock.advance(const Duration(minutes: 30));
+      await engine.resume(runId);
+      clock.advance(const Duration(minutes: 5));
+      await engine.finishPhase(runId);
+
+      final state = engine.getState(runId)!;
+      expect(state.completedPhases, hasLength(1));
+      expect(state.completedPhases.single.durationMs, equals(900000));
+      expect(state.totalActiveElapsedMs, equals(900000));
+    });
+
+    test('a forever-repeating routine produces one entry per phase occurrence',
+        () async {
+      await routineRepo.saveRoutine(Routine(
+        id: 'forever',
+        name: 'Forever',
+        repeatRule: const RepeatRule(mode: RepeatMode.forever),
+        phases: pomodoro.phases,
+      ));
+      await engine.start('forever');
+      final runId = engine.activeRunId!;
+
+      await advancePhase(const Duration(minutes: 25));
+      await advancePhase(const Duration(minutes: 5));
+      await advancePhase(const Duration(minutes: 25));
+      await advancePhase(const Duration(minutes: 5));
+
+      final state = engine.getState(runId)!;
+      expect(state.completedPhases, hasLength(4));
+      expect(
+        state.completedPhases.map((entry) => entry.phaseId).toList(),
+        equals(['focus', 'break', 'focus', 'break']),
+      );
+      expect(
+        state.completedPhases.map((entry) => entry.repeatIndex).toList(),
+        equals([0, 0, 1, 1]),
+      );
+      expect(
+        state.completedPhases.map((entry) => entry.durationMs).toList(),
+        equals([1500000, 300000, 1500000, 300000]),
+      );
+    });
   });
 }
 
