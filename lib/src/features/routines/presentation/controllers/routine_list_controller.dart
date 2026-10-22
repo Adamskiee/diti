@@ -33,6 +33,9 @@ class RoutineListController extends AsyncNotifier<List<Routine>> {
           name: p.name,
           durationMs: p.durationMs,
           transition: p.transition,
+          // The copy is a new routine, but its phases keep the kinds they
+          // were tagged with: a duplicated break is still a break.
+          kind: p.kind,
         );
       }).toList();
 

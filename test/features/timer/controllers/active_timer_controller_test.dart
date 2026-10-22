@@ -788,6 +788,130 @@ void main() {
     });
 
     test(
+        'a custom activity routine seeds its kind from the activity name',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+
+      // A custom activity is a routine the app synthesises, so its kind is
+      // seeded from the name - the same rule the editor follows for a new
+      // phase.
+      final res = await controller.startRoutine('Coffee Break');
+      expect(res.success, isTrue);
+
+      final repo = container.read(routineRepositoryProvider);
+      final custom =
+          (await repo.getAllRoutines()).firstWhere((r) => r.name == 'Coffee Break');
+      expect(custom.phases.single.kind, PhaseKind.rest);
+    });
+
+    test(
+        'a custom activity whose name says nothing about resting is a focus phase',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+
+      final res = await controller.startRoutine('Email cleanup');
+      expect(res.success, isTrue);
+
+      final repo = container.read(routineRepositoryProvider);
+      final custom = (await repo.getAllRoutines())
+          .firstWhere((r) => r.name == 'Email cleanup');
+      expect(custom.phases.single.kind, PhaseKind.focus);
+    });
+
+    test(
+        'the stop fallback seeds the kind of a forgotten run from the phase name',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const routine = Routine(
+        id: 'r_forgotten_break',
+        name: 'Forgotten Break',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Coffee Break',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+
+      // The engine holds the run until it is stopped and forgets it then: the
+      // timer controller has to build the run state by hand, and the routine
+      // snapshot by hand as well.
+      final engine = _ForgetfulEngine(
+        TimerRunState(
+          runId: 'run-forgotten-break',
+          status: RunStatus.running,
+          phaseStatus: PhaseStatus.active,
+          currentPhase: routine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 600000,
+          stateVersion: 1,
+          totalActiveElapsedMs: 600000,
+          runStartedAtUtc: DateTime.utc(2026, 10, 16, 8, 50),
+        ),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+          timerEngineProvider.overrideWithValue(engine),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      await controller.stop();
+
+      final verification = container.read(sessionVerificationControllerProvider);
+      final session = verification.candidateSession!;
+
+      // The phase the run ended on is a break, so the time it took is rest
+      // time - both in the phase log and in the synthesised snapshot.
+      expect(session.events.single.kind, PhaseKind.rest);
+      expect(session.routineSnapshot.phases.single.kind, PhaseKind.rest);
+    });
+
+    test(
         'the stop fallback builds a saveable session when the engine forgets the run',
         () async {
       final db = createInMemoryTestDatabase();

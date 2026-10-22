@@ -560,6 +560,63 @@ void main() {
       expect(_selectedKind(tester), PhaseKind.rest);
     });
 
+    testWidgets('saving an untouched existing phase keeps its stored kind',
+        (tester) async {
+      RoutinePhase? savedPhase;
+
+      const restPhase = RoutinePhase(
+        id: 'p-rest',
+        name: 'Short Break',
+        durationMs: 300000,
+        transition: TransitionPolicy.auto,
+        kind: PhaseKind.rest,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () async {
+                  savedPhase = await showDialog<RoutinePhase>(
+                    context: context,
+                    builder: (ctx) => const PhaseEditDialog(phase: restPhase),
+                  );
+                },
+                child: const Text('Open Dialog'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      expect(savedPhase, isNotNull);
+      expect(savedPhase!.kind, PhaseKind.rest);
+    });
+
+    testWidgets('the kind segments wear the app\'s focus and rest colours',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PhaseEditDialog(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final theme = Theme.of(tester.element(find.byType(SegmentedButton<PhaseKind>)));
+      expect(_segmentLabelColor(tester, 'Focus'), theme.colorScheme.primary);
+      expect(_segmentLabelColor(tester, 'Rest'), theme.colorScheme.tertiary);
+    });
+
     testWidgets('a chosen kind is not re-derived from the name',
         (tester) async {
       RoutinePhase? createdPhase;
@@ -784,6 +841,17 @@ Color? _chipLabelColor(WidgetTester tester, String label) {
     find.descendant(
       of: find.widgetWithText(Chip, label),
       matching: find.byType(Text),
+    ),
+  );
+  return text.style?.color;
+}
+
+/// The colour of the label of the kind segment reading [label].
+Color? _segmentLabelColor(WidgetTester tester, String label) {
+  final text = tester.widget<Text>(
+    find.descendant(
+      of: find.byType(SegmentedButton<PhaseKind>),
+      matching: find.text(label),
     ),
   );
   return text.style?.color;

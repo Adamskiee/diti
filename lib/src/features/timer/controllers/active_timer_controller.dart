@@ -165,16 +165,21 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     _handledVerificationRunId = runState.runId;
 
     final engine = ref.read(timerEngineProvider);
+    final phaseName = state.phaseName;
+    final untrackedPhaseName = phaseName.isEmpty ? 'Focus' : phaseName;
     final routineSnapshot = engine.getActiveRun()?.routineSnapshot ??
         Routine(
           id: 'untracked',
-          name: state.phaseName.isEmpty ? 'Focus Session' : state.phaseName,
+          name: phaseName.isEmpty ? 'Focus Session' : phaseName,
           repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
           phases: [
             RoutinePhase(
               id: 'p1',
-              name: state.phaseName.isEmpty ? 'Focus' : state.phaseName,
+              name: untrackedPhaseName,
               transition: TransitionPolicy.manual,
+              // The phase is synthesised, so its kind is seeded from its name -
+              // the same rule the editor follows for a new phase.
+              kind: PhaseKind.inferFromName(untrackedPhaseName),
             ),
           ],
         );
@@ -242,6 +247,10 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
               name: activityName,
               durationMs: linkedBlock?.plannedDurationMs ?? 1500000,
               transition: TransitionPolicy.manual,
+              // A custom activity is a routine the app synthesises, so its
+              // kind is seeded from the name: "Email cleanup" is focus,
+              // "Coffee Break" is rest.
+              kind: PhaseKind.inferFromName(activityName),
             ),
           ],
         );

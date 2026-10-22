@@ -52,6 +52,7 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AlertDialog(
       title: Text(widget.phase == null ? 'Add Phase' : 'Edit Phase'),
       content: SingleChildScrollView(
@@ -65,20 +66,35 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
               decoration: const InputDecoration(labelText: 'Phase Name'),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Kind',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             SegmentedButton<PhaseKind>(
-              segments: const [
+              // Each segment wears the colour its kind carries in the rest of
+              // the app, so the toggle previews it: focus is the primary
+              // colour, rest the tertiary one.
+              segments: [
                 ButtonSegment<PhaseKind>(
                   value: PhaseKind.focus,
-                  label: Text('Focus'),
+                  label: Text(
+                    'Focus',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
                 ),
                 ButtonSegment<PhaseKind>(
                   value: PhaseKind.rest,
-                  label: Text('Rest'),
+                  label: Text(
+                    'Rest',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.tertiary,
+                    ),
+                  ),
                 ),
               ],
               selected: {_kind},

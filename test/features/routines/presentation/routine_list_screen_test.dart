@@ -378,6 +378,55 @@ void main() {
       await db.close();
     });
 
+    test('a duplicated routine keeps the kinds of its phases', () async {
+      final db = createInMemoryTestDatabase();
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+        ],
+      );
+
+      const routine = Routine(
+        id: 'r-kinds',
+        name: 'Kinds Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'kp1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+            kind: PhaseKind.focus,
+          ),
+          RoutinePhase(
+            id: 'kp2',
+            name: 'Short Break',
+            durationMs: 300000,
+            transition: TransitionPolicy.auto,
+            kind: PhaseKind.rest,
+          ),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(routine);
+
+      final controller =
+          container.read(routineListControllerProvider.notifier);
+      await controller.duplicateRoutine(routine);
+
+      final duplicated = (await container.read(routineListControllerProvider.future))
+          .firstWhere((r) => r.name == 'Kinds Routine (Copy)');
+
+      // The copy is a new routine, but its phases keep the kinds they were
+      // tagged with: a duplicated break is still a break.
+      expect(duplicated.phases.length, 2);
+      expect(duplicated.phases[0].kind, PhaseKind.focus);
+      expect(duplicated.phases[1].kind, PhaseKind.rest);
+
+      container.dispose();
+      await db.close();
+    });
+
     test('sets error state when duplicateRoutine or deleteRoutine encounters database failure',
         () async {
       final container = ProviderContainer(
