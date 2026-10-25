@@ -15,6 +15,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
   String? _activePlanBlockId;
   Future<void>? _verificationFuture;
   String? _handledVerificationRunId;
+  final Set<String> _completedVerificationRunIds = <String>{};
 
   @override
   TimerDisplayState build() {
@@ -158,11 +159,15 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
   }
 
   Future<void> _delegateVerification(TimerRunState runState) {
+    if (_completedVerificationRunIds.contains(runState.runId)) {
+      return Future.value();
+    }
     if (_handledVerificationRunId == runState.runId &&
         _verificationFuture != null) {
       return _verificationFuture!;
     }
     _handledVerificationRunId = runState.runId;
+    _completedVerificationRunIds.add(runState.runId);
 
     final engine = ref.read(timerEngineProvider);
     final phaseName = state.phaseName;

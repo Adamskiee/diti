@@ -37,8 +37,10 @@ class HistoryFeedController
       // Sort descending by start time
       _allSessions.sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
 
+      if (!mounted) return;
       _applyFilter();
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }

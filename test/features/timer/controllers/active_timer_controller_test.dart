@@ -788,6 +788,59 @@ void main() {
     });
 
     test(
+        'stopping or finishing does not re-delegate verification for an already handled runId',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_multi_stop',
+        name: 'Multi Stop Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      await controller.startRoutine('r_multi_stop');
+
+      fakeClock.advance(const Duration(seconds: 15));
+      await controller.stop();
+
+      expect(container.read(sessionVerificationControllerProvider).isVisible, isTrue);
+
+      // Save the draft session
+      final saved = await container
+          .read(sessionVerificationControllerProvider.notifier)
+          .confirmSave();
+      expect(saved, isTrue);
+      expect(container.read(sessionVerificationControllerProvider).isVisible, isFalse);
+
+      // Calling stop again for the same run does not re-delegate or re-open verification
+      await controller.stop();
+      expect(container.read(sessionVerificationControllerProvider).isVisible, isFalse);
+    });
+
+    test(
         'a custom activity routine seeds its kind from the activity name',
         () async {
       final db = createInMemoryTestDatabase();

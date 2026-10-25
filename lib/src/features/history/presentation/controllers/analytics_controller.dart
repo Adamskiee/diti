@@ -68,8 +68,10 @@ class AnalyticsController extends StateNotifier<AsyncValue<AnalyticsSummary>> {
         now: now,
       );
 
+      if (!mounted) return;
       state = AsyncValue.data(summary);
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }

@@ -809,6 +809,48 @@ void main() {
             .having((s) => s.events[1].kind, 'rest event kind', PhaseKind.rest),
       ))).called(1);
     });
+    test('confirmSave prevents re-verifying the same runId again', () async {
+      when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
+
+      await controller.prepareVerification(
+        runState: _multiPhaseRunState(),
+        routineSnapshot: testRoutine,
+      );
+
+      final saved = await controller.confirmSave();
+      expect(saved, isTrue);
+      expect(controller.state.isVisible, isFalse);
+
+      // Attempt to re-verify the same runId
+      await controller.prepareVerification(
+        runState: _multiPhaseRunState(),
+        routineSnapshot: testRoutine,
+      );
+
+      // Should remain invisible / not re-opened
+      expect(controller.state.isVisible, isFalse);
+      expect(controller.state.candidateSession, isNull);
+    });
+
+    test('discard prevents re-verifying the same runId again', () async {
+      await controller.prepareVerification(
+        runState: _multiPhaseRunState(),
+        routineSnapshot: testRoutine,
+      );
+
+      await controller.discard();
+      expect(controller.state.isVisible, isFalse);
+
+      // Attempt to re-verify the same runId
+      await controller.prepareVerification(
+        runState: _multiPhaseRunState(),
+        routineSnapshot: testRoutine,
+      );
+
+      // Should remain invisible / not re-opened
+      expect(controller.state.isVisible, isFalse);
+      expect(controller.state.candidateSession, isNull);
+    });
   });
 }
 

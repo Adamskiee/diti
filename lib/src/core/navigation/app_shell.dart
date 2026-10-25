@@ -23,6 +23,7 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver {
   AppTab _currentTab = AppTab.routines;
+  bool _isVerificationSheetOpen = false;
 
   @override
   void initState() {
@@ -58,14 +59,19 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     ref.listen<DraftSessionState>(
       sessionVerificationControllerProvider,
       (prev, next) {
-        if (next.isVisible && (prev == null || !prev.isVisible)) {
+        if (next.isVisible &&
+            (prev == null || !prev.isVisible) &&
+            !_isVerificationSheetOpen) {
+          _isVerificationSheetOpen = true;
           showModalBottomSheet<void>(
             context: context,
             isDismissible: false,
             enableDrag: false,
             isScrollControlled: true,
             builder: (ctx) => const SessionVerificationSheet(),
-          );
+          ).whenComplete(() {
+            _isVerificationSheetOpen = false;
+          });
         }
       },
     );

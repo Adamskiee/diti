@@ -10,6 +10,8 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
   final SessionRepository _sessionRepository;
   final PlanBlockRepository _planBlockRepository;
   final void Function()? _onSessionSaved;
+  String? _currentRunId;
+  final Set<String> _handledRunIds = <String>{};
 
   SessionVerificationController({
     required SessionRepository sessionRepository,
@@ -26,6 +28,10 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     String? planBlockId,
     DateTime? nowUtc,
   }) async {
+    if (_handledRunIds.contains(runState.runId) || state.isSaving) {
+      return;
+    }
+    _currentRunId = runState.runId;
     // The run's total active time: every phase that ended plus the phase
     // that was running. Never the current phase alone — that would drop the
     // focus time of a run that was cancelled during its break.
@@ -152,6 +158,9 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
         );
       }
 
+      if (_currentRunId != null) {
+        _handledRunIds.add(_currentRunId!);
+      }
       _onSessionSaved?.call();
       state = const DraftSessionState();
       return true;
@@ -168,6 +177,9 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     final blockId = state.planBlockId;
     if (blockId != null) {
       await _revertPlanBlock(blockId);
+    }
+    if (_currentRunId != null) {
+      _handledRunIds.add(_currentRunId!);
     }
     state = const DraftSessionState();
   }

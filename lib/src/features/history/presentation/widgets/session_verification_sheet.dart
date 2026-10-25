@@ -16,6 +16,7 @@ class SessionVerificationSheet extends ConsumerStatefulWidget {
 class _SessionVerificationSheetState
     extends ConsumerState<SessionVerificationSheet> {
   late final TextEditingController _titleController;
+  bool _isSaved = false;
 
   @override
   void initState() {
@@ -45,7 +46,7 @@ class _SessionVerificationSheetState
     return PopScope(
       canPop: !state.isSaving,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
+        if (didPop && !_isSaved) {
           controller.discard();
         }
       },
@@ -292,6 +293,7 @@ class _SessionVerificationSheetState
                           : () async {
                               final success = await controller.confirmSave();
                               if (success && context.mounted) {
+                                _isSaved = true;
                                 Navigator.of(context).maybePop();
                               }
                             },
