@@ -67,7 +67,7 @@ void main() {
       );
     });
 
-    test('noise filter: cancelled run < 60s is discarded silently, plan block reverted', () async {
+    test('cancelled run < 1s is discarded silently, plan block reverted', () async {
       when(() => mockPlanRepo.getBlockById('block-123')).thenAnswer(
         (_) async => PlanBlock(
           id: 'block-123',
@@ -90,8 +90,8 @@ void main() {
         repeatIndex: 0,
         activeElapsedMs: 0,
         stateVersion: 1,
-        totalActiveElapsedMs: 45000, // 45 seconds < 60s
-        completedPhases: _focusLedger(45000),
+        totalActiveElapsedMs: 500, // 500ms < 1s (SessionValidator.minDurationMs)
+        completedPhases: _focusLedger(500),
         runStartedAtUtc: _runStart,
       );
 
@@ -108,9 +108,9 @@ void main() {
       verifyNever(() => mockSessionRepo.recordSession(any()));
     });
 
-    test('cancelled run >= 60s opens verification sheet', () async {
+    test('cancelled run with measurable time >= 1s opens verification sheet', () async {
       final runState = TimerRunState(
-        runId: 'run-long-cancel',
+        runId: 'run-short-cancel',
         status: RunStatus.cancelled,
         phaseStatus: PhaseStatus.active,
         currentPhase: testRoutine.phases.first,
@@ -118,8 +118,8 @@ void main() {
         repeatIndex: 0,
         activeElapsedMs: 0,
         stateVersion: 1,
-        totalActiveElapsedMs: 120000, // 2 minutes
-        completedPhases: _focusLedger(120000),
+        totalActiveElapsedMs: 45000, // 45 seconds >= 1s
+        completedPhases: _focusLedger(45000),
         runStartedAtUtc: _runStart,
       );
 
@@ -129,7 +129,7 @@ void main() {
       );
 
       expect(controller.state.isVisible, isTrue);
-      expect(controller.state.draftDurationMs, equals(120000));
+      expect(controller.state.draftDurationMs, equals(45000));
       expect(controller.state.draftRoutineName, equals('Flow Focus'));
       expect(controller.state.candidateSession?.outcome, equals(SessionOutcome.cancelled));
     });

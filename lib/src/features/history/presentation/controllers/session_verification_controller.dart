@@ -20,8 +20,6 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
         _onSessionSaved = onSessionSaved,
         super(const DraftSessionState());
 
-  static const int minNoiseDurationMs = 60000; // 60 seconds
-
   Future<void> prepareVerification({
     required TimerRunState runState,
     required Routine routineSnapshot,
@@ -34,15 +32,13 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     final totalDurationMs = runState.totalActiveElapsedMs;
     final breakdown = List<PhaseLedgerEntry>.of(runState.completedPhases);
 
-    // Noise filter: prune cancelled micro-sessions < 60s, every run without
-    // measurable time — such a session cannot be saved at all — and every run
-    // whose ledger was lost. A session with a total but no phases would
-    // break the rule that the total is the sum of the phases.
-    final isNoise = runState.status == RunStatus.cancelled &&
-        totalDurationMs < minNoiseDurationMs;
+    // Prune runs without measurable time (< 1s) — such a session cannot be
+    // saved at all — and every run whose ledger was lost. A session with a
+    // total but no phases would break the rule that the total is the sum of
+    // the phases.
     final hasNoMeasurableTime =
         totalDurationMs < SessionValidator.minDurationMs;
-    if (isNoise || hasNoMeasurableTime || breakdown.isEmpty) {
+    if (hasNoMeasurableTime || breakdown.isEmpty) {
       if (planBlockId != null) {
         await _revertPlanBlock(planBlockId);
       }
