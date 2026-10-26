@@ -1,6 +1,6 @@
 name: diti_notifications
 description: Local notifications scheduling adapter and background lifecycle handler for Diti.
-version: 2.0.0
+version: 2.1.0
 publish_to: none
 
 environment:
