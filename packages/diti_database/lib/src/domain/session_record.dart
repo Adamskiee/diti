@@ -1,4 +1,5 @@
 import 'package:timer_engine/timer_engine.dart';
+import 'session_app_usage_record.dart';
 
 enum SessionOutcome {
   completed,
@@ -44,6 +45,7 @@ class SessionRecord {
   final SessionOutcome outcome;
   final Routine routineSnapshot;
   final List<SessionEventRecord> events;
+  final List<SessionAppUsageRecord> appUsages;
 
   SessionRecord({
     required this.sessionId,
@@ -56,6 +58,7 @@ class SessionRecord {
     required this.outcome,
     required this.routineSnapshot,
     this.events = const [],
+    this.appUsages = const [],
   })  : startedAtUtc = startedAtUtc.isUtc ? startedAtUtc : startedAtUtc.toUtc(),
         endedAtUtc = endedAtUtc.isUtc ? endedAtUtc : endedAtUtc.toUtc();
 }
