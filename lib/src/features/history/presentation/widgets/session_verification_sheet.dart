@@ -4,6 +4,7 @@ import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../../../core/utils/duration_formatter.dart';
 import '../../providers/history_providers.dart';
+import 'session_app_breakdown_card.dart';
 
 class SessionVerificationSheet extends ConsumerStatefulWidget {
   const SessionVerificationSheet({super.key});
@@ -113,6 +114,15 @@ class _SessionVerificationSheetState
               // Phase Breakdown: what the total is made of.
               if (state.phaseBreakdown.isNotEmpty) ...[
                 _buildPhaseBreakdown(context, state.phaseBreakdown),
+                const SizedBox(height: 20),
+              ],
+
+              // Tracked App Activity Breakdown
+              if (state.appUsages.isNotEmpty) ...[
+                SessionAppBreakdownCard(
+                  usages: state.appUsages,
+                  totalDurationMs: state.draftDurationMs,
+                ),
                 const SizedBox(height: 20),
               ],
 

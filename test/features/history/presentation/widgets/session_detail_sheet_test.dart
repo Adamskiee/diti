@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:diti/src/features/history/presentation/widgets/session_app_breakdown_card.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_detail_sheet.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
@@ -381,6 +382,80 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Delete Session Record?'), findsNothing);
+  });
+
+  testWidgets(
+      'SessionDetailSheet displays tracked activity card when appUsages are present',
+      (tester) async {
+    final session = SessionRecord(
+      sessionId: 's_test_apps',
+      routineName: 'Deep Focus',
+      startedAtUtc: DateTime.utc(2026, 10, 16, 10, 0),
+      endedAtUtc: DateTime.utc(2026, 10, 16, 10, 30),
+      totalDurationMs: 30 * 60 * 1000,
+      outcome: SessionOutcome.completed,
+      routineSnapshot: routine,
+      appUsages: const [
+        SessionAppUsageRecord(
+          id: 'u1',
+          sessionId: 's_test_apps',
+          appName: 'Terminal',
+          category: 'Terminal',
+          durationMs: 20 * 60 * 1000,
+        ),
+        SessionAppUsageRecord(
+          id: 'u2',
+          sessionId: 's_test_apps',
+          appName: 'Google Chrome',
+          category: 'YouTube',
+          sampleTitle: 'YouTube',
+          durationMs: 10 * 60 * 1000,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: SessionDetailSheet(session: session),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(SessionAppBreakdownCard), findsOneWidget);
+    expect(find.text('Tracked Activity'), findsOneWidget);
+    expect(find.text('Terminal'), findsOneWidget);
+    expect(find.text('YouTube'), findsOneWidget);
+  });
+
+  testWidgets(
+      'SessionDetailSheet displays no tracked activity card when appUsages is empty',
+      (tester) async {
+    final session = SessionRecord(
+      sessionId: 's_test_no_apps',
+      routineName: 'Deep Focus',
+      startedAtUtc: DateTime.utc(2026, 10, 16, 10, 0),
+      endedAtUtc: DateTime.utc(2026, 10, 16, 10, 30),
+      totalDurationMs: 30 * 60 * 1000,
+      outcome: SessionOutcome.completed,
+      routineSnapshot: routine,
+      appUsages: const [],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: SessionDetailSheet(session: session),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(SessionAppBreakdownCard), findsNothing);
+    expect(find.text('Tracked Activity'), findsNothing);
   });
 }
 

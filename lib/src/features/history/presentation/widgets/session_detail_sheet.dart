@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
+import 'package:diti_tracker/diti_tracker.dart';
 import 'package:intl/intl.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../../../core/utils/duration_formatter.dart';
 import '../../providers/history_providers.dart';
+import 'session_app_breakdown_card.dart';
 
 class SessionDetailSheet extends ConsumerWidget {
   final SessionRecord session;
@@ -104,6 +106,22 @@ class SessionDetailSheet extends ConsumerWidget {
             ),
             if (session.planBlockId != null)
               _buildDetailRow('Linked Block', session.planBlockId!),
+            if (session.appUsages.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              SessionAppBreakdownCard(
+                usages: session.appUsages
+                    .map(
+                      (u) => AppUsageSummary(
+                        appName: u.appName,
+                        category: u.category,
+                        sampleTitle: u.sampleTitle,
+                        durationMs: u.durationMs,
+                      ),
+                    )
+                    .toList(),
+                totalDurationMs: session.totalDurationMs,
+              ),
+            ],
             if (session.events.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(

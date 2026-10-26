@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:diti_database/diti_database.dart';
+import 'package:diti_tracker/diti_tracker.dart';
 import 'package:timer_engine/timer_engine.dart';
 import 'package:diti/src/features/history/presentation/controllers/session_verification_controller.dart';
+import 'package:diti/src/features/history/presentation/widgets/session_app_breakdown_card.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_verification_sheet.dart';
 import 'package:diti/src/features/history/providers/history_providers.dart';
 
@@ -565,6 +567,75 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('phase_breakdown')), findsNothing);
+    });
+
+    testWidgets(
+        'renders tracked activity breakdown card when appUsages are present',
+        (tester) async {
+      await controller.prepareVerification(
+        runState: TimerRunState(
+          runId: 'run-w-apps',
+          status: RunStatus.completed,
+          phaseStatus: PhaseStatus.finished,
+          currentPhase: testRoutine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 0,
+          stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
+        ),
+        routineSnapshot: testRoutine,
+        appUsages: const [
+          AppUsageSummary(
+            appName: 'Terminal',
+            category: 'Terminal',
+            durationMs: 15 * 60 * 1000,
+          ),
+          AppUsageSummary(
+            appName: 'Google Chrome',
+            category: 'YouTube',
+            sampleTitle: 'YouTube',
+            durationMs: 10 * 60 * 1000,
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SessionAppBreakdownCard), findsOneWidget);
+      expect(find.text('Tracked Activity'), findsOneWidget);
+      expect(find.text('Terminal'), findsOneWidget);
+      expect(find.text('YouTube'), findsOneWidget);
+    });
+
+    testWidgets('renders no tracked activity card when appUsages is empty',
+        (tester) async {
+      await controller.prepareVerification(
+        runState: TimerRunState(
+          runId: 'run-no-apps',
+          status: RunStatus.completed,
+          phaseStatus: PhaseStatus.finished,
+          currentPhase: testRoutine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 0,
+          stateVersion: 1,
+          totalActiveElapsedMs: 25 * 60 * 1000,
+          completedPhases: _focusLedger(25 * 60 * 1000),
+          runStartedAtUtc: _runStart,
+        ),
+        routineSnapshot: testRoutine,
+        appUsages: const [],
+      );
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SessionAppBreakdownCard), findsNothing);
+      expect(find.text('Tracked Activity'), findsNothing);
     });
   });
 }
