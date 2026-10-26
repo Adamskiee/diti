@@ -5,6 +5,7 @@ import 'package:timer_engine/timer_engine.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/di/repositories_provider.dart';
 import '../../../core/di/timer_engine_provider.dart';
+import '../../../core/di/tracker_provider.dart';
 import '../../../core/utils/duration_formatter.dart';
 import '../../history/providers/history_providers.dart';
 import '../domain/timer_display_state.dart';
@@ -20,11 +21,13 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
   @override
   TimerDisplayState build() {
     final engine = ref.watch(timerEngineProvider);
+    final tracker = ref.watch(sessionAppTrackerProvider);
     _engineSub?.cancel();
     _engineSub = engine.stateStream.listen(_onEngineState);
     ref.onDispose(() {
       _ticker?.cancel();
       _engineSub?.cancel();
+      tracker.stopSession();
     });
 
     final currentRunId = engine.activeRunId;
@@ -160,7 +163,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
 
   Future<void> _delegateVerification(TimerRunState runState) {
     if (_completedVerificationRunIds.contains(runState.runId)) {
-      return Future.value();
+      return _verificationFuture ?? Future.value();
     }
     if (_handledVerificationRunId == runState.runId &&
         _verificationFuture != null) {
@@ -192,14 +195,22 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     final planBlockId = _activePlanBlockId;
     _activePlanBlockId = null;
 
-    final future = ref
-        .read(sessionVerificationControllerProvider.notifier)
-        .prepareVerification(
-          runState: runState,
-          routineSnapshot: routineSnapshot,
-          planBlockId: planBlockId,
-        )
-        .catchError((_) {});
+    final verificationController =
+        ref.read(sessionVerificationControllerProvider.notifier);
+
+    // Synchronously prepare verification so isVisible is immediately true
+    // for callers/tests reading state right after engine completion.
+    unawaited(verificationController.prepareVerification(
+      runState: runState,
+      routineSnapshot: routineSnapshot,
+      planBlockId: planBlockId,
+    ));
+
+    final future = () async {
+      final tracker = ref.read(sessionAppTrackerProvider);
+      final appUsages = await tracker.stopSession();
+      verificationController.setAppUsages(appUsages);
+    }().catchError((_) {});
 
     _verificationFuture = future;
     return future;
@@ -267,6 +278,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     final engine = ref.read(timerEngineProvider);
     final res = await engine.start(resolvedRoutineId);
     if (res.success && engine.activeRunId != null) {
+      ref.read(sessionAppTrackerProvider).startSession(engine.activeRunId!);
       final s = engine.getState(engine.activeRunId!);
       if (s != null) {
         _syncState(s);
@@ -290,6 +302,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     }
     final res = await ref.read(timerEngineProvider).pause(runId);
     if (res.success) {
+      ref.read(sessionAppTrackerProvider).pauseSession();
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
@@ -305,6 +318,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     }
     final res = await ref.read(timerEngineProvider).resume(runId);
     if (res.success) {
+      ref.read(sessionAppTrackerProvider).resumeSession();
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
@@ -323,6 +337,9 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
+        if (s.status == RunStatus.completed || s.status == RunStatus.cancelled) {
+          await _delegateVerification(s);
+        }
       }
     }
     return res;
@@ -338,6 +355,9 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
+        if (s.status == RunStatus.completed || s.status == RunStatus.cancelled) {
+          await _delegateVerification(s);
+        }
       }
     }
     return res;
@@ -353,6 +373,9 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
+        if (s.status == RunStatus.completed) {
+          await _delegateVerification(s);
+        }
       }
     }
     return res;
@@ -368,6 +391,9 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
+        if (s.status == RunStatus.cancelled) {
+          await _delegateVerification(s);
+        }
       } else {
         // The engine no longer holds the run: the state is built by hand, so
         // it has to carry the time the phase had run. Without it the session

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:diti_database/diti_database.dart';
+import 'package:diti_tracker/diti_tracker.dart';
 import 'package:timer_engine/timer_engine.dart';
 import 'package:diti/src/features/history/presentation/controllers/session_verification_controller.dart';
 
@@ -850,6 +851,91 @@ void main() {
       // Should remain invisible / not re-opened
       expect(controller.state.isVisible, isFalse);
       expect(controller.state.candidateSession, isNull);
+    });
+
+    test('prepareVerification populates state.appUsages', () async {
+      final runState = TimerRunState(
+        runId: 'run-app-usages',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 0,
+        stateVersion: 1,
+        totalActiveElapsedMs: 60000,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
+      );
+
+      final appUsages = [
+        const AppUsageSummary(
+          appName: 'VS Code',
+          category: 'Development',
+          sampleTitle: 'editor.dart',
+          durationMs: 40000,
+        ),
+        const AppUsageSummary(
+          appName: 'Terminal',
+          category: 'Development',
+          sampleTitle: 'bash',
+          durationMs: 20000,
+        ),
+      ];
+
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+        appUsages: appUsages,
+      );
+
+      expect(controller.state.appUsages, equals(appUsages));
+    });
+
+    test('confirmSave maps state.appUsages to SessionAppUsageRecord and persists to SessionRepository', () async {
+      when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
+
+      final runState = TimerRunState(
+        runId: 'run-save-usages',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 0,
+        stateVersion: 1,
+        totalActiveElapsedMs: 60000,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
+      );
+
+      final appUsages = [
+        const AppUsageSummary(
+          appName: 'VS Code',
+          category: 'Development',
+          sampleTitle: 'editor.dart',
+          durationMs: 40000,
+        ),
+      ];
+
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+        appUsages: appUsages,
+      );
+
+      final saved = await controller.confirmSave();
+
+      expect(saved, isTrue);
+      final captured = verify(() => mockSessionRepo.recordSession(captureAny())).captured;
+      final savedRecord = captured.single as SessionRecord;
+      expect(savedRecord.appUsages.length, equals(1));
+      expect(savedRecord.appUsages[0].appName, equals('VS Code'));
+      expect(savedRecord.appUsages[0].category, equals('Development'));
+      expect(savedRecord.appUsages[0].sampleTitle, equals('editor.dart'));
+      expect(savedRecord.appUsages[0].durationMs, equals(40000));
+      expect(savedRecord.appUsages[0].sessionId, equals(savedRecord.sessionId));
+      expect(savedRecord.appUsages[0].id, isNotEmpty);
     });
   });
 }

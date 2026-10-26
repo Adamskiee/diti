@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
+import 'package:diti_tracker/diti_tracker.dart';
 import 'package:timer_engine/timer_engine.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/draft_session.dart';
@@ -27,6 +28,7 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     required Routine routineSnapshot,
     String? planBlockId,
     DateTime? nowUtc,
+    List<AppUsageSummary> appUsages = const [],
   }) async {
     if (_handledRunIds.contains(runState.runId) || state.isSaving) {
       return;
@@ -77,6 +79,16 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
       outcome: outcome,
       routineSnapshot: routineSnapshot,
       events: _eventsFor(breakdown, sessionId),
+      appUsages: appUsages
+          .map((u) => SessionAppUsageRecord(
+                id: const Uuid().v4(),
+                sessionId: sessionId,
+                appName: u.appName,
+                category: u.category,
+                sampleTitle: u.sampleTitle,
+                durationMs: u.durationMs,
+              ))
+          .toList(growable: false),
     );
 
     state = DraftSessionState(
@@ -87,6 +99,39 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
       isVisible: true,
       isSaving: false,
       phaseBreakdown: breakdown,
+      appUsages: appUsages,
+    );
+  }
+
+  void setAppUsages(List<AppUsageSummary> appUsages) {
+    final candidate = state.candidateSession;
+    final updatedCandidate = candidate != null
+        ? SessionRecord(
+            sessionId: candidate.sessionId,
+            routineId: candidate.routineId,
+            planBlockId: candidate.planBlockId,
+            routineName: candidate.routineName,
+            startedAtUtc: candidate.startedAtUtc,
+            endedAtUtc: candidate.endedAtUtc,
+            totalDurationMs: candidate.totalDurationMs,
+            outcome: candidate.outcome,
+            routineSnapshot: candidate.routineSnapshot,
+            events: candidate.events,
+            appUsages: appUsages
+                .map((u) => SessionAppUsageRecord(
+                      id: const Uuid().v4(),
+                      sessionId: candidate.sessionId,
+                      appName: u.appName,
+                      category: u.category,
+                      sampleTitle: u.sampleTitle,
+                      durationMs: u.durationMs,
+                    ))
+                .toList(growable: false),
+          )
+        : null;
+    state = state.copyWith(
+      appUsages: appUsages,
+      candidateSession: updatedCandidate ?? candidate,
     );
   }
 
@@ -120,6 +165,16 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     // The stored events carry the adjusted breakdown, so the stored total
     // and the stored breakdown agree.
     final events = _eventsFor(state.phaseBreakdown, candidate.sessionId);
+    final appUsageRecords = state.appUsages
+        .map((u) => SessionAppUsageRecord(
+              id: const Uuid().v4(),
+              sessionId: candidate.sessionId,
+              appName: u.appName,
+              category: u.category,
+              sampleTitle: u.sampleTitle,
+              durationMs: u.durationMs,
+            ))
+        .toList(growable: false);
 
     final finalizedSession = SessionRecord(
       sessionId: candidate.sessionId,
@@ -132,6 +187,7 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
       outcome: candidate.outcome,
       routineSnapshot: candidate.routineSnapshot,
       events: events,
+      appUsages: appUsageRecords,
     );
 
     final validation = SessionValidator.validate(finalizedSession);

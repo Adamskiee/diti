@@ -17,6 +17,8 @@ dependencies:
     path: packages/diti_database
   diti_notifications:
     path: packages/diti_notifications
+  diti_tracker:
+    path: packages/diti_tracker
   uuid: ^4.5.1
   intl: ^0.20.2
   path_provider: ^2.1.5

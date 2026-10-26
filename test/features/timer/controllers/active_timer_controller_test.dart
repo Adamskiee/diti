@@ -1,15 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:diti_tracker/diti_tracker.dart';
 import 'package:diti/src/core/di/database_provider.dart';
 import 'package:diti/src/core/di/notification_providers.dart';
 import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
+import 'package:diti/src/core/di/tracker_provider.dart';
 import 'package:diti/src/features/history/providers/history_providers.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:diti/src/features/timer/domain/timer_display_state.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../../helpers/test_fakes.dart';
+
+class MockSessionAppTracker extends Mock implements SessionAppTracker {}
 
 void main() {
   group('ActiveTimerController', () {
@@ -1042,6 +1047,80 @@ void main() {
       expect(saved, isTrue);
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+
+    test('wires SessionAppTracker lifecycle on start, pause, resume, and stop', () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+      final mockTracker = MockSessionAppTracker();
+
+      const sampleUsages = [
+        AppUsageSummary(
+          appName: 'VS Code',
+          category: 'Development',
+          sampleTitle: 'main.dart',
+          durationMs: 50000,
+        ),
+      ];
+
+      when(() => mockTracker.startSession(any())).thenReturn(null);
+      when(() => mockTracker.pauseSession()).thenReturn(null);
+      when(() => mockTracker.resumeSession()).thenReturn(null);
+      when(() => mockTracker.stopSession()).thenAnswer((_) async => sampleUsages);
+
+      const testRoutine = Routine(
+        id: 'r1',
+        name: 'Pomodoro',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+          sessionAppTrackerProvider.overrideWithValue(mockTracker),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      final controller = container.read(activeTimerControllerProvider.notifier);
+
+      // 1. Start routine
+      await controller.startRoutine('r1');
+      verify(() => mockTracker.startSession(any())).called(1);
+
+      // 2. Pause routine
+      await controller.pause();
+      verify(() => mockTracker.pauseSession()).called(1);
+
+      // 3. Resume routine
+      await controller.resume();
+      verify(() => mockTracker.resumeSession()).called(1);
+
+      // Advance clock so active duration >= 1s min duration
+      fakeClock.advance(const Duration(seconds: 10));
+
+      // 4. Stop routine
+      await controller.stop();
+      verify(() => mockTracker.stopSession()).called(1);
+
+      // Verify that SessionVerificationController received the app usages
+      final verificationState = container.read(sessionVerificationControllerProvider);
+      expect(verificationState.isVisible, isTrue);
+      expect(verificationState.appUsages, equals(sampleUsages));
     });
   });
 }
