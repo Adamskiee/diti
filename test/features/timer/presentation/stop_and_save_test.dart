@@ -102,4 +102,89 @@ void main() {
     container.dispose();
     await db.close();
   });
+
+  testWidgets('Test Open Flow forever loop stop and save', (tester) async {
+    final navObserver = TestNavObserver();
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final db = createInMemoryTestDatabase();
+    final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+    final fakeClient = FakeNotificationClient();
+
+    final container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        monotonicClockProvider.overrideWithValue(fakeClock),
+        wallClockProvider.overrideWithValue(fakeClock),
+        notificationClientProvider.overrideWithValue(fakeClient),
+      ],
+    );
+
+    const openFlowForever = Routine(
+      id: 'open-flow-forever',
+      name: 'Open Flow',
+      repeatRule: RepeatRule(mode: RepeatMode.forever, count: 1),
+      phases: [
+        RoutinePhase(
+          id: 'p1',
+          name: 'Flow Session',
+          durationMs: null,
+          transition: TransitionPolicy.manual,
+          kind: PhaseKind.focus,
+        ),
+        RoutinePhase(
+          id: 'p2',
+          name: 'Cooldown',
+          durationMs: 300000,
+          transition: TransitionPolicy.manual,
+          kind: PhaseKind.rest,
+        ),
+      ],
+    );
+
+    await container.read(routineRepositoryProvider).saveRoutine(openFlowForever);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          navigatorObservers: [navObserver],
+          home: const AppShell(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Start Open Flow
+    final startButton = find.widgetWithText(FilledButton, 'Start').first;
+    await tester.tap(startButton);
+    await tester.pumpAndSettle();
+
+    // Advance 5 seconds
+    fakeClock.advance(const Duration(seconds: 5));
+    container.read(activeTimerControllerProvider.notifier).tick();
+    await tester.pump();
+
+    // Tap stop button
+    await tester.tap(find.byKey(const Key('timer_stop_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SessionVerificationSheet), findsOneWidget);
+
+    // Tap Save to Analytics
+    await tester.tap(find.text('Save to Analytics'));
+    await tester.pumpAndSettle();
+
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SessionVerificationSheet), findsNothing);
+
+    container.dispose();
+    await db.close();
+  });
 }

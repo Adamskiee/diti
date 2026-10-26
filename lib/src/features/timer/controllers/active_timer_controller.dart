@@ -338,10 +338,6 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        if (s.status == RunStatus.completed ||
-            s.status == RunStatus.cancelled) {
-          await _delegateVerification(s);
-        }
       }
     }
     return res;
@@ -357,10 +353,6 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        if (s.status == RunStatus.completed ||
-            s.status == RunStatus.cancelled) {
-          await _delegateVerification(s);
-        }
       }
     }
     return res;
@@ -376,7 +368,6 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        await _delegateVerification(s);
       } else {
         // The engine no longer holds the run: the state is built by hand, so
         // it has to carry the time the phase had run. Without it the session

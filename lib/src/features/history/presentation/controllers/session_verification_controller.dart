@@ -31,6 +31,7 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     if (_handledRunIds.contains(runState.runId) || state.isSaving) {
       return;
     }
+    _handledRunIds.add(runState.runId);
     _currentRunId = runState.runId;
     // The run's total active time: every phase that ended plus the phase
     // that was running. Never the current phase alone — that would drop the

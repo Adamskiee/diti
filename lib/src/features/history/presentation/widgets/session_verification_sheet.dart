@@ -259,9 +259,10 @@ class _SessionVerificationSheetState
                                   : true;
 
                               if (shouldDiscard) {
+                                _isSaved = true;
                                 await controller.discard();
                                 if (context.mounted) {
-                                  Navigator.of(context).maybePop();
+                                  Navigator.of(context).pop();
                                 }
                               }
                             },
@@ -294,7 +295,7 @@ class _SessionVerificationSheetState
                               final success = await controller.confirmSave();
                               if (success && context.mounted) {
                                 _isSaved = true;
-                                Navigator.of(context).maybePop();
+                                Navigator.of(context).pop();
                               }
                             },
                     ),
