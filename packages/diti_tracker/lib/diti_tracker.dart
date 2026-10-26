@@ -7,3 +7,4 @@ export 'src/ports/app_tracker_port.dart';
 export 'src/ports/process_runner.dart';
 export 'src/platforms/linux_x11_app_tracker.dart';
 export 'src/platforms/noop_app_tracker.dart';
+export 'src/services/session_app_tracker.dart';
