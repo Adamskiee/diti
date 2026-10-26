@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
+import 'package:timer_engine/timer_engine.dart';
 import '../../../../core/utils/duration_formatter.dart';
 import '../../providers/history_providers.dart';
 
@@ -15,6 +16,7 @@ class SessionVerificationSheet extends ConsumerStatefulWidget {
 class _SessionVerificationSheetState
     extends ConsumerState<SessionVerificationSheet> {
   late final TextEditingController _titleController;
+  bool _isSaved = false;
 
   @override
   void initState() {
@@ -44,7 +46,7 @@ class _SessionVerificationSheetState
     return PopScope(
       canPop: !state.isSaving,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
+        if (didPop && !_isSaved) {
           controller.discard();
         }
       },
@@ -67,7 +69,7 @@ class _SessionVerificationSheetState
                 children: [
                   Expanded(
                     child: Text(
-                      'Verify Focus Session',
+                      'Verify Session',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -108,6 +110,12 @@ class _SessionVerificationSheetState
               ),
               const SizedBox(height: 20),
 
+              // Phase Breakdown: what the total is made of.
+              if (state.phaseBreakdown.isNotEmpty) ...[
+                _buildPhaseBreakdown(context, state.phaseBreakdown),
+                const SizedBox(height: 20),
+              ],
+
               // Duration Display & Quick Adjustment
               Card(
                 elevation: 0,
@@ -123,7 +131,7 @@ class _SessionVerificationSheetState
                   child: Column(
                     children: [
                       Text(
-                        'Total Focus Time',
+                        'Total Time',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -131,6 +139,7 @@ class _SessionVerificationSheetState
                       const SizedBox(height: 8),
                       Text(
                         DurationFormatter.formatMs(state.draftDurationMs),
+                        key: const Key('total_duration_value'),
                         style: theme.textTheme.displaySmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           fontFeatures: const [FontFeature.tabularFigures()],
@@ -250,9 +259,10 @@ class _SessionVerificationSheetState
                                   : true;
 
                               if (shouldDiscard) {
+                                _isSaved = true;
                                 await controller.discard();
                                 if (context.mounted) {
-                                  Navigator.of(context).maybePop();
+                                  Navigator.of(context).pop();
                                 }
                               }
                             },
@@ -284,7 +294,8 @@ class _SessionVerificationSheetState
                           : () async {
                               final success = await controller.confirmSave();
                               if (success && context.mounted) {
-                                Navigator.of(context).maybePop();
+                                _isSaved = true;
+                                Navigator.of(context).pop();
                               }
                             },
                     ),
@@ -297,5 +308,117 @@ class _SessionVerificationSheetState
       ),
     ),
   );
-}
+  }
+
+  /// The phases the run recorded, one row per phase: the phase's name, the
+  /// kind of phase it was and the active time it took. Nothing is rendered
+  /// when the session has no phases.
+  Widget _buildPhaseBreakdown(
+    BuildContext context,
+    List<PhaseLedgerEntry> breakdown,
+  ) {
+    if (breakdown.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+
+    return Card(
+      key: const Key('phase_breakdown'),
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest.withAlpha(120),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Phase Breakdown',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...breakdown.map((entry) => _buildPhaseRow(context, entry)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// One phase of the breakdown: its name, its kind and the active time it
+  /// took. The duration is the phase's own active time — pauses are not part
+  /// of it.
+  ///
+  /// A phase the user abandoned is marked as skipped: the time it took still
+  /// counts, but it must not read like a phase that ran to its end.
+  Widget _buildPhaseRow(BuildContext context, PhaseLedgerEntry entry) {
+    final theme = Theme.of(context);
+    final isFocus = entry.kind == PhaseKind.focus;
+    final kindColor =
+        isFocus ? theme.colorScheme.primary : theme.colorScheme.tertiary;
+    final isSkipped = entry.outcome == PhaseStatus.skipped;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              entry.phaseName,
+              style: theme.textTheme.bodyMedium,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Chip(
+            label: Text(
+              isFocus ? 'Focus' : 'Rest',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: kindColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: kindColor.withAlpha(30),
+            padding: EdgeInsets.zero,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          if (isSkipped) ...[
+            const SizedBox(width: 8),
+            Chip(
+              label: Text(
+                'Skipped',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              backgroundColor:
+                  theme.colorScheme.onSurfaceVariant.withAlpha(30),
+              padding: EdgeInsets.zero,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
+          const SizedBox(width: 12),
+          Text(
+            DurationFormatter.formatMs(entry.durationMs),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

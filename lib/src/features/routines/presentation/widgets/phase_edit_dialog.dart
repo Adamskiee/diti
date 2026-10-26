@@ -16,6 +16,8 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
   late bool _isOpenEnded;
   late int _minutes;
   late TransitionPolicy _transition;
+  late PhaseKind _kind;
+  bool _kindTouched = false;
 
   @override
   void initState() {
@@ -26,6 +28,20 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
     _minutes = p?.durationMs != null ? (p!.durationMs! ~/ 60000) : 25;
     if (_minutes <= 0) _minutes = 1;
     _transition = p?.transition ?? TransitionPolicy.auto;
+    // A new phase starts out with the kind its name suggests. An existing
+    // phase keeps the kind it was stored with: the name heuristic only seeds
+    // a new phase, it never reclassifies one the user already tagged.
+    _kind = p?.kind ?? PhaseKind.inferFromName(_nameController.text);
+    _nameController.addListener(_onNameChanged);
+  }
+
+  /// Keeps the kind of a new phase in step with its name, until the user
+  /// picks a kind themselves.
+  void _onNameChanged() {
+    if (_kindTouched || widget.phase != null) return;
+    final inferred = PhaseKind.inferFromName(_nameController.text);
+    if (inferred == _kind) return;
+    setState(() => _kind = inferred);
   }
 
   @override
@@ -36,6 +52,7 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AlertDialog(
       title: Text(widget.phase == null ? 'Add Phase' : 'Edit Phase'),
       content: SingleChildScrollView(
@@ -47,6 +64,46 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
               key: const Key('phase_name_field'),
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Phase Name'),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Kind',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<PhaseKind>(
+              // Each segment wears the colour its kind carries in the rest of
+              // the app, so the toggle previews it: focus is the primary
+              // colour, rest the tertiary one.
+              segments: [
+                ButtonSegment<PhaseKind>(
+                  value: PhaseKind.focus,
+                  label: Text(
+                    'Focus',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                ButtonSegment<PhaseKind>(
+                  value: PhaseKind.rest,
+                  label: Text(
+                    'Rest',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.tertiary,
+                    ),
+                  ),
+                ),
+              ],
+              selected: {_kind},
+              onSelectionChanged: (val) {
+                setState(() {
+                  _kind = val.first;
+                  _kindTouched = true;
+                });
+              },
             ),
             const SizedBox(height: 16),
             SwitchListTile(
@@ -118,6 +175,7 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
               name: name,
               durationMs: _isOpenEnded ? null : _minutes * 60000,
               transition: _isOpenEnded ? TransitionPolicy.manual : _transition,
+              kind: _kind,
             );
             Navigator.pop(context, phase);
           },

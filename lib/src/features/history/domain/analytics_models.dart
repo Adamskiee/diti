@@ -4,13 +4,23 @@ import 'analytics_timeframe.dart';
 class DailyBucket {
   final DateTime date;
   final String dayLabel;
+
+  /// All the active time of the bucket: focus time plus rest time.
   final int totalDurationMs;
+
+  /// The part of [totalDurationMs] spent in focus phases.
+  final int focusDurationMs;
+
+  /// The part of [totalDurationMs] spent in rest phases.
+  final int restDurationMs;
   final int sessionCount;
 
   const DailyBucket({
     required this.date,
     required this.dayLabel,
     required this.totalDurationMs,
+    required this.focusDurationMs,
+    required this.restDurationMs,
     required this.sessionCount,
   });
 }
@@ -46,7 +56,15 @@ class PlanVersusActualMetrics {
 class AnalyticsSummary {
   final AnalyticsTimeframe timeframe;
   final DateTimeRange dateRange;
-  final int totalFocusDurationMs;
+
+  /// All the active time of the timeframe: focus time plus rest time.
+  final int totalDurationMs;
+
+  /// The part of [totalDurationMs] spent in focus phases.
+  final int focusDurationMs;
+
+  /// The part of [totalDurationMs] spent in rest phases.
+  final int restDurationMs;
   final int completedCount;
   final int interruptedOrCancelledCount;
   final List<DailyBucket> dailyBuckets;
@@ -56,7 +74,9 @@ class AnalyticsSummary {
   const AnalyticsSummary({
     required this.timeframe,
     required this.dateRange,
-    required this.totalFocusDurationMs,
+    required this.totalDurationMs,
+    required this.focusDurationMs,
+    required this.restDurationMs,
     required this.completedCount,
     required this.interruptedOrCancelledCount,
     required this.dailyBuckets,

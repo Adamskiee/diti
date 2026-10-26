@@ -15,6 +15,7 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
   String? _activePlanBlockId;
   Future<void>? _verificationFuture;
   String? _handledVerificationRunId;
+  final Set<String> _completedVerificationRunIds = <String>{};
 
   @override
   TimerDisplayState build() {
@@ -83,18 +84,25 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
   TimerDisplayState _mapFromRunState(TimerRunState s) {
     final duration = s.currentPhase.durationMs;
     final isCountdown = duration != null;
+    final isEnded =
+        s.status == RunStatus.completed || s.status == RunStatus.cancelled;
+    // An ended run keeps the time of the phase that just ended in the
+    // ledger, not in the accumulator, so the dial is read from there.
+    final phaseElapsedMs = isEnded && s.completedPhases.isNotEmpty
+        ? s.completedPhases.last.durationMs
+        : s.activeElapsedMs;
 
     final int remainingMs;
     final int elapsedMs;
     final double progress;
 
     if (isCountdown) {
-      remainingMs = s.remainingMs ?? (duration - s.activeElapsedMs);
-      elapsedMs = s.activeElapsedMs;
+      remainingMs = _remainingMs(s, duration, phaseElapsedMs);
+      elapsedMs = phaseElapsedMs;
       progress = duration > 0 ? (remainingMs / duration).clamp(0.0, 1.0) : 0.0;
     } else {
       remainingMs = 0;
-      elapsedMs = s.activeElapsedMs;
+      elapsedMs = phaseElapsedMs;
       progress = 1.0;
     }
 
@@ -137,24 +145,46 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     );
   }
 
+  /// The time the dial counts down.
+  ///
+  /// An ended run keeps the time of the phase that just ended in the ledger,
+  /// not in the accumulator: a finished phase has nothing left to run, a
+  /// cancelled one shows what was left of it.
+  int _remainingMs(TimerRunState s, int duration, int phaseElapsedMs) {
+    if (s.status == RunStatus.completed) return 0;
+    if (s.status == RunStatus.cancelled) {
+      return duration > phaseElapsedMs ? duration - phaseElapsedMs : 0;
+    }
+    return s.remainingMs ?? (duration - s.activeElapsedMs);
+  }
+
   Future<void> _delegateVerification(TimerRunState runState) {
+    if (_completedVerificationRunIds.contains(runState.runId)) {
+      return Future.value();
+    }
     if (_handledVerificationRunId == runState.runId &&
         _verificationFuture != null) {
       return _verificationFuture!;
     }
     _handledVerificationRunId = runState.runId;
+    _completedVerificationRunIds.add(runState.runId);
 
     final engine = ref.read(timerEngineProvider);
+    final phaseName = state.phaseName;
+    final untrackedPhaseName = phaseName.isEmpty ? 'Focus' : phaseName;
     final routineSnapshot = engine.getActiveRun()?.routineSnapshot ??
         Routine(
           id: 'untracked',
-          name: state.phaseName.isEmpty ? 'Focus Session' : state.phaseName,
+          name: phaseName.isEmpty ? 'Focus Session' : phaseName,
           repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
           phases: [
             RoutinePhase(
               id: 'p1',
-              name: state.phaseName.isEmpty ? 'Focus' : state.phaseName,
+              name: untrackedPhaseName,
               transition: TransitionPolicy.manual,
+              // The phase is synthesised, so its kind is seeded from its name -
+              // the same rule the editor follows for a new phase.
+              kind: PhaseKind.inferFromName(untrackedPhaseName),
             ),
           ],
         );
@@ -222,6 +252,10 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
               name: activityName,
               durationMs: linkedBlock?.plannedDurationMs ?? 1500000,
               transition: TransitionPolicy.manual,
+              // A custom activity is a routine the app synthesises, so its
+              // kind is seeded from the name: "Email cleanup" is focus,
+              // "Coffee Break" is rest.
+              kind: PhaseKind.inferFromName(activityName),
             ),
           ],
         );
@@ -304,10 +338,6 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        if (s.status == RunStatus.completed ||
-            s.status == RunStatus.cancelled) {
-          await _delegateVerification(s);
-        }
       }
     }
     return res;
@@ -323,10 +353,6 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        if (s.status == RunStatus.completed ||
-            s.status == RunStatus.cancelled) {
-          await _delegateVerification(s);
-        }
       }
     }
     return res;
@@ -342,21 +368,47 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        await _delegateVerification(s);
       } else {
+        // The engine no longer holds the run: the state is built by hand, so
+        // it has to carry the time the phase had run. Without it the session
+        // would come out empty and be discarded by the noise filter.
+        final phase = RoutinePhase(
+          id: 'unknown',
+          name: state.phaseName,
+          transition: TransitionPolicy.manual,
+          // The phase is gone, but its name still says what kind of time it
+          // was: the engine's own rule for that.
+          kind: PhaseKind.inferFromName(state.phaseName),
+        );
+        final elapsedMs = state.displayElapsedMs;
+        final nowUtc = ref.read(wallClockProvider).utcNow;
+        // The run's start is not known any more, so it is reconstructed from
+        // the time the phase had run.
+        final startedAtUtc = nowUtc.subtract(Duration(milliseconds: elapsedMs));
         final cancelledRunState = TimerRunState(
           runId: runId,
           status: RunStatus.cancelled,
           phaseStatus: PhaseStatus.active,
-          currentPhase: RoutinePhase(
-            id: 'unknown',
-            name: state.phaseName,
-            transition: TransitionPolicy.manual,
-          ),
+          currentPhase: phase,
           currentPhaseIndex: 0,
           repeatIndex: 0,
-          activeElapsedMs: state.displayElapsedMs,
+          activeElapsedMs: elapsedMs,
           stateVersion: 0,
+          completedPhases: [
+            PhaseLedgerEntry(
+              phaseId: phase.id,
+              phaseName: phase.name,
+              kind: phase.kind,
+              phaseIndex: 0,
+              repeatIndex: 0,
+              durationMs: elapsedMs,
+              outcome: PhaseStatus.finished,
+              startedAtUtc: startedAtUtc,
+              endedAtUtc: nowUtc,
+            ),
+          ],
+          totalActiveElapsedMs: elapsedMs,
+          runStartedAtUtc: startedAtUtc,
         );
         state = TimerDisplayState(
           runId: runId,

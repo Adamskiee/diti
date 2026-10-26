@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:test/test.dart';
 import 'package:timer_engine/timer_engine.dart';
 import 'package:diti_database/diti_database.dart';
@@ -84,12 +85,92 @@ void main() {
       expect(() => SnapshotSerializer.metadataFromJson('not-json'), throwsFormatException);
     });
 
-    test('throws FormatException when schemaVersion is missing or not 1', () {
+    test('throws FormatException when schemaVersion is missing or unsupported', () {
       const missingVersion = '{"id":"r1","name":"Routine"}';
       expect(() => SnapshotSerializer.routineFromJson(missingVersion), throwsFormatException);
 
-      const unsupportedVersion = '{"schemaVersion":2,"id":"r1","name":"Routine"}';
+      const unsupportedVersion = '{"schemaVersion":3,"id":"r1","name":"Routine"}';
       expect(() => SnapshotSerializer.routineFromJson(unsupportedVersion), throwsFormatException);
+    });
+
+    test('writes schemaVersion 2 and preserves phase kinds', () {
+      final routine = Routine(
+        id: 'r', name: 'R',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
+          RoutinePhase(id: 'b', name: 'Short Break', durationMs: 300000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+        ],
+      );
+      final json = jsonDecode(SnapshotSerializer.routineToJson(routine));
+      expect(json['schemaVersion'], 2);
+      expect((json['phases'] as List)[1]['kind'], 'rest');
+    });
+
+    test('round-trips phase kinds', () {
+      final routine = Routine(
+        id: 'r', name: 'R',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
+          RoutinePhase(id: 'b', name: 'Short Break', durationMs: 300000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+        ],
+      );
+      final jsonStr = SnapshotSerializer.routineToJson(routine);
+      final restored = SnapshotSerializer.routineFromJson(jsonStr);
+      expect(restored.phases[0].kind, PhaseKind.focus);
+      expect(restored.phases[1].kind, PhaseKind.rest);
+    });
+
+    test('loads a version 1 snapshot with every phase as focus', () {
+      final json = jsonEncode({
+        'schemaVersion': 1, 'id': 'r', 'name': 'R',
+        'repeatRule': {'mode': 'count', 'count': 1},
+        'phases': [
+          {'id': 'f', 'name': 'Focus', 'durationMs': 1500000, 'transition': 'auto'},
+        ],
+      });
+      final routine = SnapshotSerializer.routineFromJson(json);
+      expect(routine.phases.first.kind, PhaseKind.focus);
+    });
+
+    test('a run keeps its own kinds when the live routine changes', () {
+      final routine = Routine(
+        id: 'r', name: 'R',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
+        ],
+      );
+      // The run's snapshot is serialised once, when the run starts.
+      final runJson = SnapshotSerializer.routineToJson(routine);
+
+      // Change the live routine's phase kind to rest.
+      final updatedRoutine = Routine(
+        id: 'r', name: 'R',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
+              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+        ],
+      );
+      final updatedJson = SnapshotSerializer.routineToJson(updatedRoutine);
+
+      // The run's snapshot still reports PhaseKind.focus for that phase.
+      final runPhases = (jsonDecode(runJson)['phases'] as List).cast<Map<String, dynamic>>();
+      expect(runPhases[0]['kind'], 'focus');
+      expect(SnapshotSerializer.routineFromJson(runJson).phases.first.kind, PhaseKind.focus);
+
+      // The live routine now reports PhaseKind.rest.
+      final livePhases =
+          (jsonDecode(updatedJson)['phases'] as List).cast<Map<String, dynamic>>();
+      expect(livePhases[0]['kind'], 'rest');
+      expect(SnapshotSerializer.routineFromJson(updatedJson).phases.first.kind, PhaseKind.rest);
     });
   });
 }

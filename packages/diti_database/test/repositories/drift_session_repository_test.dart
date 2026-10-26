@@ -76,6 +76,51 @@ void main() {
       expect(forBlock.first.sessionId, equals('session-123'));
     });
 
+    test('session events round-trip their kind', () async {
+      final session = SessionRecord(
+        sessionId: 'session-kinds',
+        routineId: 'r-sess',
+        routineName: 'Work Block',
+        startedAtUtc: DateTime.utc(2026, 10, 13, 9, 0),
+        endedAtUtc: DateTime.utc(2026, 10, 13, 9, 30),
+        totalDurationMs: 1800000,
+        outcome: SessionOutcome.completed,
+        routineSnapshot: routine,
+        events: [
+          SessionEventRecord(
+            eventId: 'ev-kind-focus',
+            sessionId: 'session-kinds',
+            eventType: 'phaseFinished',
+            occurredAtUtc: DateTime.utc(2026, 10, 13, 9, 25),
+            phaseId: 'p1',
+            phaseName: 'Focus',
+            durationMs: 1500000,
+            outcome: 'completed',
+            kind: PhaseKind.focus,
+          ),
+          SessionEventRecord(
+            eventId: 'ev-kind-rest',
+            sessionId: 'session-kinds',
+            eventType: 'phaseFinished',
+            occurredAtUtc: DateTime.utc(2026, 10, 13, 9, 30),
+            phaseId: 'p2',
+            phaseName: 'Short Break',
+            durationMs: 300000,
+            outcome: 'completed',
+            kind: PhaseKind.rest,
+          ),
+        ],
+      );
+
+      await repository.recordSession(session);
+
+      final fetched = await repository.getSession('session-kinds');
+      expect(fetched, isNotNull);
+      expect(fetched!.events.length, equals(2));
+      expect(fetched.events[0].kind, equals(PhaseKind.focus));
+      expect(fetched.events[1].kind, equals(PhaseKind.rest));
+    });
+
     test('returns null for non-existent session', () async {
       final fetched = await repository.getSession('non-existent');
       expect(fetched, isNull);

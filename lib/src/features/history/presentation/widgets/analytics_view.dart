@@ -22,7 +22,7 @@ class AnalyticsView extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error calculating analytics: $err')),
             data: (summary) {
-              if (summary.totalFocusDurationMs == 0 &&
+              if (summary.totalDurationMs == 0 &&
                   summary.completedCount == 0 &&
                   summary.interruptedOrCancelledCount == 0) {
                 final theme = Theme.of(context);
@@ -39,14 +39,14 @@ class AnalyticsView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No focus data recorded yet',
+                          'No activity recorded yet',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Complete your first focus session to view daily focus hours, activity breakdowns, and performance analytics.',
+                          'Complete your first session to view daily focus and rest hours, activity breakdowns, and performance analytics.',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,

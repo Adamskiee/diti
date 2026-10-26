@@ -11,12 +11,14 @@ const List<Routine> starterRoutines = [
         name: 'Focus',
         durationMs: 1500000, // 25 min
         transition: TransitionPolicy.auto,
+        kind: PhaseKind.focus,
       ),
       RoutinePhase(
         id: 'pomodoro-break',
         name: 'Short Break',
         durationMs: 300000, // 5 min
         transition: TransitionPolicy.auto,
+        kind: PhaseKind.rest,
       ),
     ],
   ),
@@ -30,12 +32,14 @@ const List<Routine> starterRoutines = [
         name: 'Deep Focus',
         durationMs: 3000000, // 50 min
         transition: TransitionPolicy.auto,
+        kind: PhaseKind.focus,
       ),
       RoutinePhase(
         id: 'deep-work-rest',
         name: 'Rest & Stretch',
         durationMs: 600000, // 10 min
         transition: TransitionPolicy.manual,
+        kind: PhaseKind.rest,
       ),
     ],
   ),
@@ -49,12 +53,14 @@ const List<Routine> starterRoutines = [
         name: 'Flow Session',
         durationMs: null, // open-ended
         transition: TransitionPolicy.manual,
+        kind: PhaseKind.focus,
       ),
       RoutinePhase(
         id: 'open-flow-cooldown',
         name: 'Cooldown',
         durationMs: 300000, // 5 min
         transition: TransitionPolicy.manual,
+        kind: PhaseKind.rest,
       ),
     ],
   ),

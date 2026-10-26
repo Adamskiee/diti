@@ -8,6 +8,7 @@ import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/core/navigation/app_shell.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_feed_tile.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_verification_sheet.dart';
+import 'package:diti/src/features/history/presentation/widgets/summary_metric_cards.dart';
 import 'package:diti/src/features/history/providers/history_providers.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:timer_engine/timer_engine.dart';
@@ -72,14 +73,14 @@ void main() {
 
     // 3. Verify SessionVerificationSheet is presented
     expect(find.byType(SessionVerificationSheet), findsOneWidget);
-    expect(find.text('Verify Focus Session'), findsOneWidget);
-    expect(find.text('25:00'), findsOneWidget);
+    expect(find.text('Verify Session'), findsOneWidget);
+    expect(totalDurationText(tester), '25:00');
 
     // 4. Edit title and adjust duration
     await tester.enterText(find.byType(TextFormField), 'Verified Sprint');
     await tester.tap(find.text('+5m'));
     await tester.pumpAndSettle();
-    expect(find.text('30:00'), findsOneWidget);
+    expect(totalDurationText(tester), '30:00');
 
     // 5. Tap Save to Analytics
     await tester.tap(find.text('Save to Analytics'));
@@ -93,8 +94,16 @@ void main() {
     await tester.pumpAndSettle();
 
     // 8. Verify the verified session is aggregated into Analytics view
-    expect(find.text('Total Focus'), findsOneWidget);
-    expect(find.text('30:00'), findsOneWidget);
+    final metricCards = find.byType(SummaryMetricCards);
+    expect(
+      find.descendant(of: metricCards, matching: find.text('Total')),
+      findsOneWidget,
+    );
+    // The session has a single focus phase, so its total and its focus time agree.
+    expect(
+      find.descendant(of: metricCards, matching: find.text('30:00')),
+      findsNWidgets(2),
+    );
 
     // Switch to History tab in SegmentedButton
     await tester.tap(
@@ -113,4 +122,11 @@ void main() {
     await db.close();
     container.dispose();
   });
+}
+
+/// The number on the sheet's duration card — the session's total time.
+String totalDurationText(WidgetTester tester) {
+  final text =
+      tester.widget<Text>(find.byKey(const Key('total_duration_value')));
+  return text.data ?? '';
 }

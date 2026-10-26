@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:timer_engine/timer_engine.dart';
 import 'package:diti_database/src/database/diti_database.dart'
     hide Routine, RoutinePhase, TimerRun, TimerEvent;
 import 'package:diti_database/src/daos/sessions_dao.dart';
@@ -45,6 +46,7 @@ class DriftSessionRepository implements SessionRepository {
         phaseName: Value(e.phaseName),
         durationMs: Value(e.durationMs),
         outcome: Value(e.outcome),
+        kind: Value(e.kind.name),
       );
     }).toList(growable: false);
 
@@ -70,6 +72,7 @@ class DriftSessionRepository implements SessionRepository {
         phaseName: e.phaseName,
         durationMs: e.durationMs,
         outcome: e.outcome,
+        kind: e.kind == PhaseKind.rest.name ? PhaseKind.rest : PhaseKind.focus,
       );
     }).toList(growable: false);
 

@@ -57,6 +57,20 @@ void main() {
       expect(openFlow.phases[1].durationMs, 300000); // 5 min
       expect(openFlow.phases[1].transition, TransitionPolicy.manual);
     });
+
+    test('the starter routines tag their phases', () {
+      final pomodoro = starterRoutines.firstWhere((r) => r.id == 'pomodoro-default');
+      expect(pomodoro.phases[0].kind, PhaseKind.focus);
+      expect(pomodoro.phases[1].kind, PhaseKind.rest);
+
+      final deepWork = starterRoutines.firstWhere((r) => r.id == 'deep-work-default');
+      expect(deepWork.phases[0].kind, PhaseKind.focus);
+      expect(deepWork.phases[1].kind, PhaseKind.rest);
+
+      final openFlow = starterRoutines.firstWhere((r) => r.id == 'open-flow-default');
+      expect(openFlow.phases[0].kind, PhaseKind.focus);
+      expect(openFlow.phases[1].kind, PhaseKind.rest);
+    });
   });
 
   group('seedStarterRoutines', () {

@@ -7,6 +7,7 @@ import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/core/navigation/app_shell.dart';
 import 'package:diti/src/features/history/presentation/widgets/session_detail_sheet.dart';
+import 'package:diti/src/features/history/presentation/widgets/summary_metric_cards.dart';
 import 'package:diti/src/features/history/providers/history_providers.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
@@ -76,8 +77,20 @@ void main() {
 
     // 4. Verify Analytics view loaded with metrics
     expect(find.text('Analytics'), findsOneWidget);
-    expect(find.text('Focus Activity'), findsOneWidget);
-    expect(find.text('Total Focus'), findsOneWidget);
+    expect(find.text('Focus & Rest Activity'), findsOneWidget);
+    final metricCards = find.byType(SummaryMetricCards);
+    expect(
+      find.descendant(of: metricCards, matching: find.text('Total')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: metricCards, matching: find.text('Focus')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: metricCards, matching: find.text('Rest')),
+      findsOneWidget,
+    );
 
     // 5. Switch to History feed via SegmentedButton in AppBar
     await tester.tap(

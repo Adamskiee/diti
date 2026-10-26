@@ -5,6 +5,7 @@ import '../clock/monotonic_clock.dart';
 import '../clock/wall_clock.dart';
 import '../domain/command_result.dart';
 import '../domain/enums.dart';
+import '../domain/phase_ledger_entry.dart';
 import '../domain/timer_event.dart';
 import '../domain/timer_run.dart';
 import '../domain/timer_run_state.dart';
@@ -61,7 +62,7 @@ class TimerEngineImpl implements TimerEngine {
   Future<Duration> elapsed(String runId) async {
     final state = getState(runId);
     if (state == null) return Duration.zero;
-    return Duration(milliseconds: state.activeElapsedMs);
+    return Duration(milliseconds: state.totalActiveElapsedMs);
   }
 
   @override
@@ -117,6 +118,8 @@ class TimerEngineImpl implements TimerEngine {
       phaseStartedMonotonicMs: nowMono,
       stateVersion: 1,
       lastEventId: event.eventId,
+      runStartedAtUtc: nowUtc,
+      phaseFirstStartedAtUtc: nowUtc,
     );
 
     try {
@@ -289,18 +292,29 @@ class TimerEngineImpl implements TimerEngine {
     final segmentElapsed = _activeRun!.status == RunStatus.running
         ? math.max(0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono))
         : 0;
-    final newAccumulated = _activeRun!.accumulatedMs + segmentElapsed;
+    final actualPhaseElapsed = _activeRun!.accumulatedMs + segmentElapsed;
+
+    // The run ends here: the phase that was in progress becomes the last
+    // ledger entry and the accumulator is emptied with it.
+    final ledgerEntry = _ledgerEntryFor(
+      _activeRun!,
+      durationMs: actualPhaseElapsed,
+      outcome: PhaseStatus.finished,
+      endedAtUtc: nowUtc,
+    );
 
     final event = TimerEvent(
       eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
       runId: runId,
       type: TimerEventType.runCancelled,
       occurredAtUtc: nowUtc,
+      durationMs: _activeRun!.ledgerTotalMs + actualPhaseElapsed,
     );
 
     final updatedRun = _activeRun!.copyWith(
       status: RunStatus.cancelled,
-      accumulatedMs: newAccumulated,
+      accumulatedMs: 0,
+      phaseLedger: [..._activeRun!.phaseLedger, ledgerEntry],
       phaseStartedMonotonicMs: () => null,
       stateVersion: _activeRun!.stateVersion + 1,
       lastEventId: () => event.eventId,
@@ -383,6 +397,29 @@ class TimerEngineImpl implements TimerEngine {
     });
   }
 
+  /// Builds the ledger entry for the phase that is ending.
+  ///
+  /// Every path that ends a phase goes through here, so a field added to
+  /// [PhaseLedgerEntry] cannot be applied to only some of them.
+  PhaseLedgerEntry _ledgerEntryFor(
+    TimerRun run, {
+    required int durationMs,
+    required PhaseStatus outcome,
+    required DateTime endedAtUtc,
+  }) {
+    return PhaseLedgerEntry(
+      phaseId: run.currentPhase.id,
+      phaseName: run.currentPhase.name,
+      kind: run.currentPhase.kind,
+      phaseIndex: run.currentPhaseIndex,
+      repeatIndex: run.repeatIndex,
+      durationMs: durationMs,
+      outcome: outcome,
+      startedAtUtc: run.phaseFirstStartedAtUtc ?? endedAtUtc,
+      endedAtUtc: endedAtUtc,
+    );
+  }
+
   Future<bool> _advancePhase(String runId, {required TimerEventType phaseOutcome}) async {
     final run = _activeRun;
     if (run == null || run.runId != runId) return false;
@@ -418,10 +455,18 @@ class TimerEngineImpl implements TimerEngine {
         ? math.max(0, nowMono - (run.phaseStartedMonotonicMs ?? nowMono))
         : 0;
     final actualPhaseElapsed = run.accumulatedMs + segmentElapsed;
-    final phaseDuration =
-        run.currentPhase.durationMs ?? actualPhaseElapsed;
 
-    final newAccumulatedMs = isCompleted ? phaseDuration : 0;
+    // The phase ends here: its active time moves into the ledger and the
+    // accumulator starts the next phase from zero.
+    final ledgerEntry = _ledgerEntryFor(
+      run,
+      durationMs: actualPhaseElapsed,
+      outcome: phaseOutcome == TimerEventType.phaseSkipped
+          ? PhaseStatus.skipped
+          : PhaseStatus.finished,
+      endedAtUtc: nowUtc,
+    );
+    const newAccumulatedMs = 0;
 
     final List<TimerEvent> events;
     final String lastEventId;
@@ -432,14 +477,14 @@ class TimerEngineImpl implements TimerEngine {
         runId: runId,
         type: phaseOutcome,
         occurredAtUtc: nowUtc,
-        durationMs: phaseDuration,
+        durationMs: actualPhaseElapsed,
       );
       final runCompletedEvent = TimerEvent(
         eventId: 'evt-run-${nowUtc.millisecondsSinceEpoch}',
         runId: runId,
         type: TimerEventType.runCompleted,
         occurredAtUtc: nowUtc,
-        durationMs: newAccumulatedMs,
+        durationMs: run.ledgerTotalMs + actualPhaseElapsed,
       );
       events = [phaseEvent, runCompletedEvent];
       lastEventId = runCompletedEvent.eventId;
@@ -449,7 +494,7 @@ class TimerEngineImpl implements TimerEngine {
         runId: runId,
         type: phaseOutcome,
         occurredAtUtc: nowUtc,
-        durationMs: phaseDuration,
+        durationMs: actualPhaseElapsed,
       );
       events = [phaseEvent];
       lastEventId = phaseEvent.eventId;
@@ -461,6 +506,10 @@ class TimerEngineImpl implements TimerEngine {
       currentPhaseIndex: newPhaseIndex,
       repeatIndex: newRepeatIndex,
       accumulatedMs: newAccumulatedMs,
+      phaseLedger: [...run.phaseLedger, ledgerEntry],
+      // The next phase's first start, written only when the run continues:
+      // an ended run keeps the last phase's first start.
+      phaseFirstStartedAtUtc: newStatus == RunStatus.running ? nowUtc : null,
       phaseStartedAtUtc: nowUtc,
       phaseStartedMonotonicMs: () => newStatus == RunStatus.running ? nowMono : null,
       pausedAtUtc: () => null,
@@ -576,20 +625,30 @@ class TimerEngineImpl implements TimerEngine {
     final segmentElapsed = _activeRun!.status == RunStatus.running
         ? math.max(0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono))
         : 0;
-    final newAccumulated = _activeRun!.accumulatedMs + segmentElapsed;
+    final actualPhaseElapsed = _activeRun!.accumulatedMs + segmentElapsed;
+
+    // The run ends here: the phase that was in progress becomes the last
+    // ledger entry and the accumulator is emptied with it.
+    final ledgerEntry = _ledgerEntryFor(
+      _activeRun!,
+      durationMs: actualPhaseElapsed,
+      outcome: PhaseStatus.finished,
+      endedAtUtc: nowUtc,
+    );
 
     final event = TimerEvent(
       eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
       runId: runId,
       type: TimerEventType.runCompleted,
       occurredAtUtc: nowUtc,
-      durationMs: newAccumulated,
+      durationMs: _activeRun!.ledgerTotalMs + actualPhaseElapsed,
     );
 
     final updatedRun = _activeRun!.copyWith(
       status: RunStatus.completed,
       phaseStatus: PhaseStatus.finished,
-      accumulatedMs: newAccumulated,
+      accumulatedMs: 0,
+      phaseLedger: [..._activeRun!.phaseLedger, ledgerEntry],
       phaseStartedMonotonicMs: () => null,
       stateVersion: _activeRun!.stateVersion + 1,
       lastEventId: () => event.eventId,

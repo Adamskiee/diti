@@ -3,6 +3,7 @@ import 'package:diti_database/diti_database.dart';
 import 'package:intl/intl.dart';
 import 'analytics_models.dart';
 import 'analytics_timeframe.dart';
+import 'session_split.dart';
 
 class AnalyticsAggregator {
   static const List<Color> _palette = [
@@ -28,12 +29,10 @@ class AnalyticsAggregator {
       return !startLocal.isBefore(range.start) && startLocal.isBefore(range.end);
     }).toList();
 
-    int totalFocusMs = 0;
     int completed = 0;
     int interruptedOrCancelled = 0;
 
     for (final s in filteredSessions) {
-      totalFocusMs += s.totalDurationMs;
       if (s.outcome == SessionOutcome.completed) {
         completed++;
       } else {
@@ -41,11 +40,14 @@ class AnalyticsAggregator {
       }
     }
 
+    final totals = _sumByKind(filteredSessions);
+    final totalMs = totals.focusMs + totals.restMs;
+
     // 2. Generate daily buckets
     final buckets = _buildBuckets(timeframe, range, filteredSessions);
 
     // 3. Compute activity breakdowns
-    final breakdowns = _buildBreakdowns(filteredSessions, totalFocusMs);
+    final breakdowns = _buildBreakdowns(filteredSessions, totalMs);
 
     // 4. Compute plan vs actual
     final planVsActual = _buildPlanVsActual(filteredSessions, planBlocks);
@@ -53,13 +55,40 @@ class AnalyticsAggregator {
     return AnalyticsSummary(
       timeframe: timeframe,
       dateRange: range,
-      totalFocusDurationMs: totalFocusMs,
+      totalDurationMs: totalMs,
+      focusDurationMs: totals.focusMs,
+      restDurationMs: totals.restMs,
       completedCount: completed,
       interruptedOrCancelledCount: interruptedOrCancelled,
       dailyBuckets: buckets,
       activityBreakdowns: breakdowns,
       planVersusActual: planVsActual,
     );
+  }
+
+  /// The focus and rest time of a group of sessions.
+  static SessionFocusRest _sumByKind(List<SessionRecord> sessions) {
+    int focusMs = 0;
+    int restMs = 0;
+    for (final s in sessions) {
+      final split = _splitByKind(s);
+      focusMs += split.focusMs;
+      restMs += split.restMs;
+    }
+    return (focusMs: focusMs, restMs: restMs);
+  }
+
+  /// A session's focus and rest time, taken from its phase events.
+  ///
+  /// A session recorded before the per-phase breakdown existed has no events:
+  /// it has no breakdown to split, so its whole duration counts as focus time
+  /// and none of it as rest time. History is never reinterpreted.
+  static SessionFocusRest _splitByKind(SessionRecord session) {
+    final split = splitSessionByKind(session.events);
+    if (split == null) {
+      return (focusMs: session.totalDurationMs, restMs: 0);
+    }
+    return split;
   }
 
   static List<DailyBucket> _buildBuckets(
@@ -81,14 +110,16 @@ class AnalyticsAggregator {
       while (cursor.isBefore(range.end)) {
         final key = DateFormat('yyyy-MM-dd HH').format(cursor);
         final hourSessions = grouped[key] ?? [];
-        final hourDuration = hourSessions.fold<int>(0, (sum, s) => sum + s.totalDurationMs);
+        final hourSplit = _sumByKind(hourSessions);
         final label = DateFormat('ha').format(cursor).toLowerCase();
 
         buckets.add(
           DailyBucket(
             date: cursor,
             dayLabel: label,
-            totalDurationMs: hourDuration,
+            totalDurationMs: hourSplit.focusMs + hourSplit.restMs,
+            focusDurationMs: hourSplit.focusMs,
+            restDurationMs: hourSplit.restMs,
             sessionCount: hourSessions.length,
           ),
         );
@@ -112,7 +143,7 @@ class AnalyticsAggregator {
     while (cursor.isBefore(range.end)) {
       final key = DateFormat('yyyy-MM-dd').format(cursor);
       final daySessions = grouped[key] ?? [];
-      final dayDuration = daySessions.fold<int>(0, (sum, s) => sum + s.totalDurationMs);
+      final daySplit = _sumByKind(daySessions);
 
       final String label = timeframe == AnalyticsTimeframe.thisWeek
           ? DateFormat('E').format(cursor)
@@ -122,7 +153,9 @@ class AnalyticsAggregator {
         DailyBucket(
           date: cursor,
           dayLabel: label,
-          totalDurationMs: dayDuration,
+          totalDurationMs: daySplit.focusMs + daySplit.restMs,
+          focusDurationMs: daySplit.focusMs,
+          restDurationMs: daySplit.restMs,
           sessionCount: daySessions.length,
         ),
       );
@@ -133,11 +166,13 @@ class AnalyticsAggregator {
     return buckets;
   }
 
+  /// The time each routine took, as a share of the total time. The breakdown
+  /// stays per-routine and unsplit: it does not separate focus from rest.
   static List<ActivityBreakdown> _buildBreakdowns(
     List<SessionRecord> sessions,
-    int totalFocusMs,
+    int totalMs,
   ) {
-    if (totalFocusMs == 0 || sessions.isEmpty) return const [];
+    if (totalMs == 0 || sessions.isEmpty) return const [];
 
     final Map<String, int> durationByRoutine = {};
     for (final s in sessions) {
@@ -152,7 +187,7 @@ class AnalyticsAggregator {
     for (int i = 0; i < sortedEntries.length; i++) {
       final entry = sortedEntries[i];
       final color = _palette[i % _palette.length];
-      final percentage = entry.value / totalFocusMs;
+      final percentage = entry.value / totalMs;
       breakdowns.add(
         ActivityBreakdown(
           routineName: entry.key,

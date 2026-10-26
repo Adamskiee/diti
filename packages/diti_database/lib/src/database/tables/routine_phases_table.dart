@@ -8,6 +8,7 @@ class RoutinePhases extends Table {
   TextColumn get name => text()();
   IntColumn get durationMs => integer().nullable()();
   TextColumn get transitionPolicy => text()(); // 'auto' | 'manual'
+  TextColumn get kind => text().withDefault(const Constant('focus'))(); // 'focus' | 'rest'
 
   @override
   Set<Column> get primaryKey => {routineId, id};

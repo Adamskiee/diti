@@ -606,7 +606,9 @@ void main() {
       final updatedBlock =
           await container.read(planBlockRepositoryProvider).getBlockById('block_custom');
       expect(updatedBlock?.status, PlanBlockStatus.completed);
-      expect(updatedBlock?.actualDurationMs, 1800000);
+      // The phase really ran 35 minutes, so that is the session's time: the
+      // configured 30 minutes are not what the user spent.
+      expect(updatedBlock?.actualDurationMs, 2100000);
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
       container.dispose();
@@ -774,6 +776,9 @@ void main() {
 
       // Start routine and advance to completion
       await container.read(activeTimerControllerProvider.notifier).startRoutine('r1');
+      // The run has to have run for a while: a run without measurable time
+      // produces no session at all.
+      fakeClock.advance(const Duration(minutes: 5));
       final engine = container.read(timerEngineProvider);
       await engine.finishRun(engine.activeRunId!);
 
@@ -781,6 +786,328 @@ void main() {
       expect(verificationState.isVisible, isTrue);
       expect(verificationState.candidateSession?.outcome, equals(SessionOutcome.completed));
     });
+
+    test(
+        'stopping or finishing does not re-delegate verification for an already handled runId',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_multi_stop',
+        name: 'Multi Stop Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      await controller.startRoutine('r_multi_stop');
+
+      fakeClock.advance(const Duration(seconds: 15));
+      await controller.stop();
+
+      expect(container.read(sessionVerificationControllerProvider).isVisible, isTrue);
+
+      // Save the draft session
+      final saved = await container
+          .read(sessionVerificationControllerProvider.notifier)
+          .confirmSave();
+      expect(saved, isTrue);
+      expect(container.read(sessionVerificationControllerProvider).isVisible, isFalse);
+
+      // Calling stop again for the same run does not re-delegate or re-open verification
+      await controller.stop();
+      expect(container.read(sessionVerificationControllerProvider).isVisible, isFalse);
+    });
+
+    test(
+        'a custom activity routine seeds its kind from the activity name',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+
+      // A custom activity is a routine the app synthesises, so its kind is
+      // seeded from the name - the same rule the editor follows for a new
+      // phase.
+      final res = await controller.startRoutine('Coffee Break');
+      expect(res.success, isTrue);
+
+      final repo = container.read(routineRepositoryProvider);
+      final custom =
+          (await repo.getAllRoutines()).firstWhere((r) => r.name == 'Coffee Break');
+      expect(custom.phases.single.kind, PhaseKind.rest);
+    });
+
+    test(
+        'a custom activity whose name says nothing about resting is a focus phase',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+
+      final res = await controller.startRoutine('Email cleanup');
+      expect(res.success, isTrue);
+
+      final repo = container.read(routineRepositoryProvider);
+      final custom = (await repo.getAllRoutines())
+          .firstWhere((r) => r.name == 'Email cleanup');
+      expect(custom.phases.single.kind, PhaseKind.focus);
+    });
+
+    test(
+        'the stop fallback seeds the kind of a forgotten run from the phase name',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const routine = Routine(
+        id: 'r_forgotten_break',
+        name: 'Forgotten Break',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Coffee Break',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+
+      // The engine holds the run until it is stopped and forgets it then: the
+      // timer controller has to build the run state by hand, and the routine
+      // snapshot by hand as well.
+      final engine = _ForgetfulEngine(
+        TimerRunState(
+          runId: 'run-forgotten-break',
+          status: RunStatus.running,
+          phaseStatus: PhaseStatus.active,
+          currentPhase: routine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 600000,
+          stateVersion: 1,
+          totalActiveElapsedMs: 600000,
+          runStartedAtUtc: DateTime.utc(2026, 10, 16, 8, 50),
+        ),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+          timerEngineProvider.overrideWithValue(engine),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      await controller.stop();
+
+      final verification = container.read(sessionVerificationControllerProvider);
+      final session = verification.candidateSession!;
+
+      // The phase the run ended on is a break, so the time it took is rest
+      // time - both in the phase log and in the synthesised snapshot.
+      expect(session.events.single.kind, PhaseKind.rest);
+      expect(session.routineSnapshot.phases.single.kind, PhaseKind.rest);
+    });
+
+    test(
+        'the stop fallback builds a saveable session when the engine forgets the run',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const routine = Routine(
+        id: 'r_forgotten',
+        name: 'Forgotten Run',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+
+      // The engine holds the run until it is stopped and forgets it then: the
+      // timer controller has to build the run state by hand.
+      final engine = _ForgetfulEngine(
+        TimerRunState(
+          runId: 'run-forgotten',
+          status: RunStatus.running,
+          phaseStatus: PhaseStatus.active,
+          currentPhase: routine.phases.first,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          activeElapsedMs: 600000,
+          stateVersion: 1,
+          totalActiveElapsedMs: 600000,
+          runStartedAtUtc: DateTime.utc(2026, 10, 16, 8, 50),
+        ),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+          timerEngineProvider.overrideWithValue(engine),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(db.close);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      expect(
+        container.read(activeTimerControllerProvider).displayElapsedMs,
+        600000,
+      );
+
+      await controller.stop();
+
+      // The hand-built state carries the phase's time, so the session it
+      // produces has a total that is the sum of its phases.
+      final verification = container.read(sessionVerificationControllerProvider);
+      expect(verification.isVisible, isTrue);
+      final session = verification.candidateSession!;
+      expect(session.totalDurationMs, 600000);
+      expect(session.events.length, 1);
+      expect(session.events[0].durationMs, 600000);
+      expect(
+        session.events.fold<int>(0, (sum, event) => sum + event.durationMs),
+        session.totalDurationMs,
+      );
+
+      // And the session is saveable: it passes the validator and is written.
+      final saved = await container
+          .read(sessionVerificationControllerProvider.notifier)
+          .confirmSave();
+      expect(saved, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
   });
+}
+
+/// An engine that forgets the run when it is stopped — the path where the
+/// timer controller has to build the run state by hand.
+class _ForgetfulEngine implements TimerEngine {
+  _ForgetfulEngine(this._state);
+
+  TimerRunState? _state;
+
+  @override
+  String? get activeRunId => _state?.runId;
+
+  @override
+  TimerRunState? getState(String runId) => _state;
+
+  @override
+  TimerRun? getActiveRun() => null;
+
+  @override
+  Future<TimerCommandResult> stop(String runId) async {
+    _state = null;
+    return const TimerCommandResult(success: true, stateVersion: 2);
+  }
+
+  @override
+  Future<Duration> elapsed(String runId) async => Duration.zero;
+
+  @override
+  Stream<TimerRunState> get stateStream => const Stream.empty();
+
+  @override
+  Stream<TimerEvent> get eventStream => const Stream.empty();
+
+  @override
+  Future<void> recover() async {}
+
+  @override
+  void cancelBoundaryTimer() {}
+
+  @override
+  void dispose() {}
+
+  @override
+  Future<TimerCommandResult> start(String routineId) async =>
+      const TimerCommandResult(success: false, stateVersion: 0);
+
+  @override
+  Future<TimerCommandResult> pause(String runId) async =>
+      const TimerCommandResult(success: false, stateVersion: 0);
+
+  @override
+  Future<TimerCommandResult> resume(String runId) async =>
+      const TimerCommandResult(success: false, stateVersion: 0);
+
+  @override
+  Future<TimerCommandResult> skipPhase(String runId) async =>
+      const TimerCommandResult(success: false, stateVersion: 0);
+
+  @override
+  Future<TimerCommandResult> finishPhase(String runId) async =>
+      const TimerCommandResult(success: false, stateVersion: 0);
+
+  @override
+  Future<TimerCommandResult> finishRun(String runId) async =>
+      const TimerCommandResult(success: false, stateVersion: 0);
 }
 

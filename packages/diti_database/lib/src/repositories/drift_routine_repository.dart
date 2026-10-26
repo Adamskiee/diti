@@ -26,6 +26,7 @@ class DriftRoutineRepository implements RoutineRepository {
         transition: p.transitionPolicy == 'manual'
             ? TransitionPolicy.manual
             : TransitionPolicy.auto,
+        kind: p.kind == PhaseKind.rest.name ? PhaseKind.rest : PhaseKind.focus,
       );
     }).toList(growable: false);
 
@@ -70,6 +71,11 @@ class DriftRoutineRepository implements RoutineRepository {
         name: Value(p.name),
         durationMs: Value(p.durationMs),
         transitionPolicy: Value(p.transition.name),
+        // The dao deletes and re-inserts every phase row on each save, so
+        // the kind has to be written every time. Leaving it out would reset
+        // the kinds the migration inferred the first time a user edits the
+        // routine.
+        kind: Value(p.kind.name),
       ));
     }
 

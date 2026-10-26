@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:timer_engine/timer_engine.dart';
@@ -8,6 +10,8 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
   final SessionRepository _sessionRepository;
   final PlanBlockRepository _planBlockRepository;
   final void Function()? _onSessionSaved;
+  String? _currentRunId;
+  final Set<String> _handledRunIds = <String>{};
 
   SessionVerificationController({
     required SessionRepository sessionRepository,
@@ -18,19 +22,30 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
         _onSessionSaved = onSessionSaved,
         super(const DraftSessionState());
 
-  static const int minNoiseDurationMs = 60000; // 60 seconds
-
   Future<void> prepareVerification({
     required TimerRunState runState,
     required Routine routineSnapshot,
     String? planBlockId,
     DateTime? nowUtc,
   }) async {
-    final activeDurationMs = runState.activeElapsedMs;
+    if (_handledRunIds.contains(runState.runId) || state.isSaving) {
+      return;
+    }
+    _handledRunIds.add(runState.runId);
+    _currentRunId = runState.runId;
+    // The run's total active time: every phase that ended plus the phase
+    // that was running. Never the current phase alone — that would drop the
+    // focus time of a run that was cancelled during its break.
+    final totalDurationMs = runState.totalActiveElapsedMs;
+    final breakdown = List<PhaseLedgerEntry>.of(runState.completedPhases);
 
-    // Noise filter: prune cancelled micro-sessions < 60s
-    if (runState.status == RunStatus.cancelled &&
-        activeDurationMs < minNoiseDurationMs) {
+    // Prune runs without measurable time (< 1s) — such a session cannot be
+    // saved at all — and every run whose ledger was lost. A session with a
+    // total but no phases would break the rule that the total is the sum of
+    // the phases.
+    final hasNoMeasurableTime =
+        totalDurationMs < SessionValidator.minDurationMs;
+    if (hasNoMeasurableTime || breakdown.isEmpty) {
       if (planBlockId != null) {
         await _revertPlanBlock(planBlockId);
       }
@@ -39,46 +54,52 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     }
 
     final end = nowUtc ?? DateTime.now().toUtc();
-    final start = end.subtract(Duration(milliseconds: activeDurationMs));
+    // The session starts when the run started. A pause inside the run makes
+    // the wall-clock span longer than the active time, so a start derived
+    // from the active time would push the earlier phases' events out of the
+    // session's window and the session could not be saved.
+    final start = runState.runStartedAtUtc ??
+        end.subtract(Duration(milliseconds: totalDurationMs));
     final outcome = runState.status == RunStatus.completed
         ? SessionOutcome.completed
         : SessionOutcome.cancelled;
 
+    final sessionId = const Uuid().v4();
+
     final candidate = SessionRecord(
-      sessionId: const Uuid().v4(),
+      sessionId: sessionId,
       routineId: routineSnapshot.id,
       planBlockId: planBlockId,
       routineName: routineSnapshot.name,
       startedAtUtc: start,
       endedAtUtc: end,
-      totalDurationMs: activeDurationMs,
+      totalDurationMs: totalDurationMs,
       outcome: outcome,
       routineSnapshot: routineSnapshot,
+      events: _eventsFor(breakdown, sessionId),
     );
 
     state = DraftSessionState(
       candidateSession: candidate,
       planBlockId: planBlockId,
-      draftDurationMs: activeDurationMs,
+      draftDurationMs: totalDurationMs,
       draftRoutineName: routineSnapshot.name,
       isVisible: true,
       isSaving: false,
+      phaseBreakdown: breakdown,
     );
   }
 
   void adjustDuration(Duration delta) {
-    final current = state.draftDurationMs;
-    final updated = (current + delta.inMilliseconds)
+    final target = (state.draftDurationMs + delta.inMilliseconds)
         .clamp(SessionValidator.minDurationMs, SessionValidator.maxDurationMs);
-    state = state.copyWith(draftDurationMs: updated, clearValidationError: true);
+    _applyTotal(target);
   }
 
   void setDurationMs(int durationMs) {
-    final clamped = durationMs.clamp(
-      SessionValidator.minDurationMs,
-      SessionValidator.maxDurationMs,
-    );
-    state = state.copyWith(draftDurationMs: clamped, clearValidationError: true);
+    final target = durationMs
+        .clamp(SessionValidator.minDurationMs, SessionValidator.maxDurationMs);
+    _applyTotal(target);
   }
 
   void setRoutineName(String name) {
@@ -92,7 +113,13 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     final trimmedName = state.draftRoutineName.trim();
     final finalDuration = state.draftDurationMs;
     final finalEnd = candidate.endedAtUtc;
-    final finalStart = candidate.endedAtUtc.subtract(Duration(milliseconds: finalDuration));
+    // The session keeps the run's real start: the wall-clock span is longer
+    // than the active time whenever the run was paused, and the phases'
+    // events must stay inside the session's window.
+    final finalStart = candidate.startedAtUtc;
+    // The stored events carry the adjusted breakdown, so the stored total
+    // and the stored breakdown agree.
+    final events = _eventsFor(state.phaseBreakdown, candidate.sessionId);
 
     final finalizedSession = SessionRecord(
       sessionId: candidate.sessionId,
@@ -104,7 +131,7 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
       totalDurationMs: finalDuration,
       outcome: candidate.outcome,
       routineSnapshot: candidate.routineSnapshot,
-      events: candidate.events,
+      events: events,
     );
 
     final validation = SessionValidator.validate(finalizedSession);
@@ -132,6 +159,9 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
         );
       }
 
+      if (_currentRunId != null) {
+        _handledRunIds.add(_currentRunId!);
+      }
       _onSessionSaved?.call();
       state = const DraftSessionState();
       return true;
@@ -149,7 +179,88 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     if (blockId != null) {
       await _revertPlanBlock(blockId);
     }
+    if (_currentRunId != null) {
+      _handledRunIds.add(_currentRunId!);
+    }
     state = const DraftSessionState();
+  }
+
+  /// Moves the session's total to [target] and lets the last focus phase
+  /// absorb the difference, so the total and the breakdown always agree.
+  void _applyTotal(int target) {
+    final current = state.draftDurationMs;
+    final applied = target - current;
+
+    final breakdown = state.phaseBreakdown;
+    if (breakdown.isEmpty) {
+      state = state.copyWith(draftDurationMs: target, clearValidationError: true);
+      return;
+    }
+
+    // The delta lands on the last focus phase, so the focus time the user
+    // sees is the one that moves. A session without a focus phase moves its
+    // last phase instead.
+    final index = _lastAdjustableIndex(breakdown);
+    final entry = breakdown[index];
+    final newDuration = math.max(0, entry.durationMs + applied);
+    // What the phase could not absorb is dropped, so the total moves by
+    // exactly what the phase took.
+    final absorbed = newDuration - entry.durationMs;
+
+    final updated = List<PhaseLedgerEntry>.of(breakdown);
+    updated[index] = _withDuration(entry, newDuration);
+
+    state = state.copyWith(
+      phaseBreakdown: updated,
+      draftDurationMs: current + absorbed,
+      clearValidationError: true,
+    );
+  }
+
+  /// The phase an adjustment lands on: the last focus phase, or the last
+  /// phase when the session has none.
+  int _lastAdjustableIndex(List<PhaseLedgerEntry> breakdown) {
+    for (var i = breakdown.length - 1; i >= 0; i--) {
+      if (breakdown[i].kind == PhaseKind.focus) return i;
+    }
+    return breakdown.length - 1;
+  }
+
+  PhaseLedgerEntry _withDuration(PhaseLedgerEntry entry, int durationMs) {
+    return PhaseLedgerEntry(
+      phaseId: entry.phaseId,
+      phaseName: entry.phaseName,
+      kind: entry.kind,
+      phaseIndex: entry.phaseIndex,
+      repeatIndex: entry.repeatIndex,
+      durationMs: durationMs,
+      outcome: entry.outcome,
+      startedAtUtc: entry.startedAtUtc,
+      endedAtUtc: entry.endedAtUtc,
+    );
+  }
+
+  /// The session events of a breakdown: one event per phase, carrying the
+  /// phase's kind and the active time it took.
+  List<SessionEventRecord> _eventsFor(
+    List<PhaseLedgerEntry> breakdown,
+    String sessionId,
+  ) {
+    return breakdown
+        .map((e) => SessionEventRecord(
+              eventId: const Uuid().v4(),
+              sessionId: sessionId,
+              eventType: e.outcome == PhaseStatus.skipped
+                  ? 'phase_skipped'
+                  : 'phase_finished',
+              occurredAtUtc: e.endedAtUtc,
+              phaseId: e.phaseId,
+              phaseName: e.phaseName,
+              durationMs: e.durationMs,
+              outcome: e.outcome.name,
+              kind: e.kind,
+            ))
+        .toList(growable: false);
   }
 
   Future<void> _revertPlanBlock(String blockId) async {

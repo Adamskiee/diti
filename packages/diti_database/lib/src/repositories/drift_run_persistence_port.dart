@@ -3,6 +3,7 @@ import 'package:timer_engine/timer_engine.dart';
 import 'package:diti_database/src/database/diti_database.dart'
     hide Routine, RoutinePhase, TimerRun, TimerEvent;
 import 'package:diti_database/src/daos/timer_runs_dao.dart';
+import 'package:diti_database/src/mappers/phase_ledger_serializer.dart';
 import 'package:diti_database/src/mappers/snapshot_serializer.dart';
 
 class DriftRunPersistencePort implements RunPersistencePort {
@@ -27,6 +28,9 @@ class DriftRunPersistencePort implements RunPersistencePort {
           stateVersion: Value(run.stateVersion),
           lastEventId: Value(run.lastEventId),
           routineSnapshotJson: Value(SnapshotSerializer.routineToJson(run.routineSnapshot)),
+          phaseLedgerJson: Value(PhaseLedgerSerializer.toJson(run.phaseLedger)),
+          runStartedAtUtc: Value(run.runStartedAtUtc),
+          phaseFirstStartedAtUtc: Value(run.phaseFirstStartedAtUtc),
         );
 
         await dao.upsertRun(runCompanion);
@@ -82,6 +86,11 @@ class DriftRunPersistencePort implements RunPersistencePort {
         pausedAtUtc: runData.pausedAtUtc,
         stateVersion: runData.stateVersion,
         lastEventId: runData.lastEventId,
+        // A corrupt ledger degrades to an empty one: the run must still be
+        // recoverable.
+        phaseLedger: PhaseLedgerSerializer.fromJson(runData.phaseLedgerJson),
+        runStartedAtUtc: runData.runStartedAtUtc,
+        phaseFirstStartedAtUtc: runData.phaseFirstStartedAtUtc,
       );
     } catch (e) {
       throw PersistenceException('Failed to retrieve latest active run: $e');

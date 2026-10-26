@@ -8,6 +8,8 @@ import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:diti/src/features/timer/presentation/active_timer_screen.dart';
 import 'package:timer_engine/timer_engine.dart';
+import 'package:diti_database/diti_database.dart';
+import 'package:diti/src/features/history/providers/history_providers.dart';
 import '../../../../test/helpers/test_fakes.dart';
 
 void main() {
@@ -77,12 +79,6 @@ void main() {
       await tester.tap(stopButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Stop Routine?'), findsOneWidget);
-
-      // Confirm stop
-      await tester.tap(find.text('Stop'));
-      await tester.pumpAndSettle();
-
       expect(container.read(activeTimerControllerProvider).status,
           RunStatus.cancelled);
 
@@ -90,7 +86,7 @@ void main() {
       await db.close();
     });
 
-    testWidgets('dismisses stop dialog when Keep Going is pressed',
+    testWidgets('tapping stop button cancels the active run',
         (tester) async {
       final db = createInMemoryTestDatabase();
       final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
@@ -138,15 +134,72 @@ void main() {
       await tester.tap(find.byKey(const Key('timer_stop_button')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Stop Routine?'), findsOneWidget);
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.cancelled);
 
-      // Press Keep Going
-      await tester.tap(find.text('Keep Going'));
+      container.dispose();
+      await db.close();
+    });
+
+    testWidgets('stopping active timer with elapsed time triggers session verification',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_stop_verify',
+        name: 'Sprint Focus',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      await container
+          .read(activeTimerControllerProvider.notifier)
+          .startRoutine('r_stop_verify');
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ActiveTimerScreen(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text('Stop Routine?'), findsNothing);
-      expect(container.read(activeTimerControllerProvider).status,
-          RunStatus.running);
+      // Advance clock by 15 seconds
+      fakeClock.advance(const Duration(seconds: 15));
+      await tester.pump();
+
+      // Tap stop
+      await tester.tap(find.byKey(const Key('timer_stop_button')));
+      await tester.pumpAndSettle();
+
+      final verificationState =
+          container.read(sessionVerificationControllerProvider);
+      expect(verificationState.isVisible, isTrue);
+      expect(verificationState.draftRoutineName, equals('Sprint Focus'));
+      expect(verificationState.draftDurationMs, equals(15000));
+      expect(verificationState.candidateSession?.outcome,
+          equals(SessionOutcome.cancelled));
 
       container.dispose();
       await db.close();

@@ -136,7 +136,10 @@ void main() {
     state = engine.getState(runId);
     expect(state!.status, equals(RunStatus.completed));
     expect(state.phaseStatus, equals(PhaseStatus.skipped));
-    expect(state.activeElapsedMs, equals(60000));
+    // Both phases were skipped without running, so the run has no active
+    // time at all: the old expectation of the configured 60s phase length
+    // counted a phase that never ran.
+    expect(state.totalActiveElapsedMs, equals(0));
 
     // Verifies both phaseSkipped and runCompleted events are emitted
     expect(events.any((e) => e.type == TimerEventType.phaseSkipped), isTrue);
@@ -307,7 +310,9 @@ void main() {
     final state = engine.getState(runId);
     expect(state!.status, equals(RunStatus.completed));
     expect(state.phaseStatus, equals(PhaseStatus.finished));
-    expect(state.activeElapsedMs, equals(25000));
+    // The finished phase's 25s live in the ledger now, so the run total
+    // carries them and the phase that is over carries none.
+    expect(state.totalActiveElapsedMs, equals(25000));
     expect(notifications.scheduledBoundaries, isEmpty);
 
     // finishRun on already completed is idempotent
@@ -397,7 +402,8 @@ void main() {
     expect(state!.status, equals(RunStatus.completed));
     expect(state.currentPhase.id, equals('p2'));
     expect(state.phaseStatus, equals(PhaseStatus.finished));
-    expect(state.activeElapsedMs, equals(10000));
+    // Four phases of 10s each: the run total is the sum of the ledger.
+    expect(state.totalActiveElapsedMs, equals(40000));
   });
 
   test('Completing final phase emits both phaseFinished and runCompleted events', () async {

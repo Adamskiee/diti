@@ -20,9 +20,9 @@ class _ProbeStep implements SchemaMigration {
 
 void main() {
   group('DitiDatabase Migration Integration', () {
-    test('DitiDatabase defaults schemaVersion to 1 and uses defaultMigrationRegistry', () async {
+    test('DitiDatabase defaults schemaVersion to 2 and uses defaultMigrationRegistry', () async {
       final db = DitiDatabase.inMemory();
-      expect(db.schemaVersion, equals(1));
+      expect(db.schemaVersion, equals(2));
       await db.close();
     });
 

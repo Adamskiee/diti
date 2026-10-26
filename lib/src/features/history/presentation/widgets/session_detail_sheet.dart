@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:intl/intl.dart';
+import 'package:timer_engine/timer_engine.dart';
 import '../../../../core/utils/duration_formatter.dart';
 import '../../providers/history_providers.dart';
 
@@ -32,6 +33,10 @@ class SessionDetailSheet extends ConsumerWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        // The sheet's chrome - the handle, the title, the detail rows and
+        // the action button - stays outside every scrollable, so dragging it
+        // down dismisses the sheet the way the handle promises. Only the
+        // phase log scrolls.
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +53,6 @@ class SessionDetailSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
@@ -60,9 +64,9 @@ class SessionDetailSheet extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: outcomeColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -74,6 +78,13 @@ class SessionDetailSheet extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                ),
+                // The phase log can swallow a drag, so the sheet carries an
+                // explicit close: dismissing it never depends on a gesture.
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
             ),
@@ -102,24 +113,21 @@ class SessionDetailSheet extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              ...session.events.map((e) {
-                final phaseTitle = e.phaseName ?? e.eventType;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(phaseTitle, style: theme.textTheme.bodySmall),
-                      Text(
-                        DurationFormatter.formatMs(e.durationMs),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
+              // The log is the sheet's only scrollable region. It takes the
+              // space the chrome leaves it and scrolls on its own, so a long
+              // log never overflows the sheet.
+              Flexible(
+                fit: FlexFit.loose,
+                child: ListView.builder(
+                  key: const Key('phase_log'),
+                  primary: false,
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: session.events.length,
+                  itemBuilder: (context, index) =>
+                      _buildPhaseRow(session.events[index], theme),
+                ),
+              ),
             ],
             const SizedBox(height: 24),
             SizedBox(
@@ -139,6 +147,77 @@ class SessionDetailSheet extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// One phase of the log: the phase's name, the kind of phase it ran as and
+  /// the active time it took. The duration is the phase's own active time -
+  /// pauses are not part of it.
+  ///
+  /// The kind is the one the phase was recorded with, so a phase renamed
+  /// after the session keeps the kind it ran as. A phase the user abandoned
+  /// is marked as skipped: the time it took still counts, but it must not
+  /// read like a phase that ran to its end.
+  Widget _buildPhaseRow(SessionEventRecord event, ThemeData theme) {
+    final phaseTitle = event.phaseName ?? event.eventType;
+    final isFocus = event.kind == PhaseKind.focus;
+    final kindColor =
+        isFocus ? theme.colorScheme.primary : theme.colorScheme.tertiary;
+    final isSkipped = event.outcome == PhaseStatus.skipped.name;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              phaseTitle,
+              style: theme.textTheme.bodySmall,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Chip(
+            label: Text(
+              isFocus ? 'Focus' : 'Rest',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: kindColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: kindColor.withAlpha(30),
+            padding: EdgeInsets.zero,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          if (isSkipped) ...[
+            const SizedBox(width: 8),
+            Chip(
+              label: Text(
+                'Skipped',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              backgroundColor:
+                  theme.colorScheme.onSurfaceVariant.withAlpha(30),
+              padding: EdgeInsets.zero,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
+          const SizedBox(width: 12),
+          Text(
+            DurationFormatter.formatMs(event.durationMs),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
       ),
     );
   }

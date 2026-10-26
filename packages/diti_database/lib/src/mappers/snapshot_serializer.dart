@@ -6,7 +6,7 @@ class SnapshotSerializer {
 
   static String routineToJson(Routine routine) {
     final map = {
-      'schemaVersion': 1,
+      'schemaVersion': 2,
       'id': routine.id,
       'name': routine.name,
       'repeatRule': {
@@ -19,6 +19,7 @@ class SnapshotSerializer {
                 'name': p.name,
                 'durationMs': p.durationMs,
                 'transition': p.transition.name,
+                'kind': p.kind.name,
               })
           .toList(),
     };
@@ -32,9 +33,11 @@ class SnapshotSerializer {
     }
 
     final schemaVersion = decoded['schemaVersion'];
-    if (schemaVersion != 1) {
+    if (schemaVersion != 1 && schemaVersion != 2) {
       throw FormatException('Unsupported or missing snapshot schemaVersion: $schemaVersion');
     }
+    // Version 1 predates the kind tag, so only version 2 snapshots carry it.
+    final carriesKind = schemaVersion == 2;
 
     final id = decoded['id'] as String? ?? '';
     final name = decoded['name'] as String? ?? '';
@@ -53,11 +56,17 @@ class SnapshotSerializer {
       final pTransStr = pMap['transition'] as String? ?? 'auto';
       final pTrans = pTransStr == 'manual' ? TransitionPolicy.manual : TransitionPolicy.auto;
 
+      // A version 1 phase was never tagged, so it is always focus.
+      final kind = carriesKind
+          ? ((pMap['kind'] as String?) == 'rest' ? PhaseKind.rest : PhaseKind.focus)
+          : PhaseKind.focus;
+
       return RoutinePhase(
         id: pId,
         name: pName,
         durationMs: pDuration,
         transition: pTrans,
+        kind: kind,
       );
     }).toList(growable: false);
 

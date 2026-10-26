@@ -77,6 +77,75 @@ void main() {
       expect(fetched, equals(routineForever));
     });
 
+    test('a routine round-trips phase kinds', () async {
+      final routine = Routine(
+        id: 'routine-kinds',
+        name: 'Kinds',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(
+            id: 'kind-focus',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+            kind: PhaseKind.focus,
+          ),
+          RoutinePhase(
+            id: 'kind-break',
+            name: 'Short Break',
+            durationMs: 300000,
+            transition: TransitionPolicy.manual,
+            kind: PhaseKind.rest,
+          ),
+        ],
+      );
+
+      await repository.saveRoutine(routine);
+
+      final fetched = await repository.getRoutine('routine-kinds');
+      expect(fetched, isNotNull);
+      expect(fetched!.phases[0].kind, equals(PhaseKind.focus));
+      expect(fetched.phases[1].kind, equals(PhaseKind.rest));
+    });
+
+    test('saving a routine preserves an inferred kind', () async {
+      final routine = Routine(
+        id: 'routine-inferred',
+        name: 'Inferred',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(
+            id: 'phase-break',
+            name: 'Short Break',
+            durationMs: 300000,
+            transition: TransitionPolicy.auto,
+            kind: PhaseKind.rest,
+          ),
+        ],
+      );
+
+      await repository.saveRoutine(routine);
+
+      // A user edits the routine: the editor loads it, changes it and saves
+      // it again. The dao deletes and re-inserts every phase row, so a save
+      // that forgot the kind would reset it to the column default.
+      final loaded = await repository.getRoutine('routine-inferred');
+      expect(loaded!.phases.single.kind, equals(PhaseKind.rest));
+
+      await repository.saveRoutine(
+        Routine(
+          id: loaded.id,
+          name: 'Inferred and edited',
+          repeatRule: loaded.repeatRule,
+          phases: loaded.phases,
+        ),
+      );
+
+      final reloaded = await repository.getRoutine('routine-inferred');
+      expect(reloaded, isNotNull);
+      expect(reloaded!.phases.single.kind, equals(PhaseKind.rest));
+    });
+
     test('returns null when routine is not found', () async {
       final fetched = await repository.getRoutine('unknown-id');
       expect(fetched, isNull);

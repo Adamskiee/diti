@@ -40,7 +40,7 @@ class ActiveTimerScreen extends ConsumerWidget {
               key: const Key('timer_stop_button'),
               icon: const Icon(Icons.close),
               tooltip: 'Stop Routine',
-              onPressed: () => _confirmStop(context, controller),
+              onPressed: () => _handleStop(context, controller),
             ),
         ],
       ),
@@ -176,30 +176,9 @@ class ActiveTimerScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmStop(BuildContext context, ActiveTimerController controller) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Stop Routine?'),
-        content:
-            const Text('Are you sure you want to cancel the current session?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Keep Going'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              controller.stop();
-              if (context.mounted) {
-                Navigator.of(context).maybePop();
-              }
-            },
-            child: const Text('Stop', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+  void _handleStop(BuildContext context, ActiveTimerController controller) async {
+    final nav = Navigator.of(context);
+    nav.pop();
+    await controller.stop();
   }
 }

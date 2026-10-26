@@ -32,6 +32,7 @@ void main() {
       required int durationMinutes,
       SessionOutcome outcome = SessionOutcome.completed,
       String? planBlockId,
+      List<SessionEventRecord> events = const [],
     }) {
       final routine = createMockRoutine('r1', routineName);
       return SessionRecord(
@@ -44,6 +45,27 @@ void main() {
         totalDurationMs: durationMinutes * 60 * 1000,
         outcome: outcome,
         routineSnapshot: routine,
+        events: events,
+      );
+    }
+
+    /// One phase event, the way the app stores a phase's active time.
+    SessionEventRecord createPhaseEvent({
+      required String sessionId,
+      required String phaseName,
+      required int durationMinutes,
+      required PhaseKind kind,
+    }) {
+      return SessionEventRecord(
+        eventId: 'evt_${sessionId}_$phaseName',
+        sessionId: sessionId,
+        eventType: 'phase_finished',
+        occurredAtUtc: DateTime.utc(2026, 10, 12, 10, 0),
+        phaseId: 'phase_$phaseName',
+        phaseName: phaseName,
+        durationMs: durationMinutes * 60 * 1000,
+        outcome: 'completed',
+        kind: kind,
       );
     }
 
@@ -56,7 +78,9 @@ void main() {
         now: now,
       );
 
-      expect(summary.totalFocusDurationMs, 0);
+      expect(summary.totalDurationMs, 0);
+      expect(summary.focusDurationMs, 0);
+      expect(summary.restDurationMs, 0);
       expect(summary.completedCount, 0);
       expect(summary.interruptedOrCancelledCount, 0);
       expect(summary.completionRate, 0.0);
@@ -94,7 +118,9 @@ void main() {
         now: now,
       );
 
-      expect(summary.totalFocusDurationMs, (60 + 30 + 30) * 60 * 1000);
+      expect(summary.totalDurationMs, (60 + 30 + 30) * 60 * 1000);
+      expect(summary.focusDurationMs, (60 + 30 + 30) * 60 * 1000);
+      expect(summary.restDurationMs, 0);
       expect(summary.completedCount, 2);
       expect(summary.interruptedOrCancelledCount, 1);
       expect(summary.completionRate, closeTo(2 / 3, 0.001));
@@ -207,6 +233,221 @@ void main() {
       );
 
       expect(summary.dailyBuckets.length, 30);
+    });
+
+    test('splits a multi-phase session into focus and rest', () {
+      final session = createSession(
+        id: 's_split',
+        routineName: 'Pomodoro',
+        start: DateTime(2026, 10, 12, 10, 0), // Monday
+        durationMinutes: 30,
+        events: [
+          createPhaseEvent(
+            sessionId: 's_split',
+            phaseName: 'Focus',
+            durationMinutes: 25,
+            kind: PhaseKind.focus,
+          ),
+          createPhaseEvent(
+            sessionId: 's_split',
+            phaseName: 'Break',
+            durationMinutes: 5,
+            kind: PhaseKind.rest,
+          ),
+        ],
+      );
+
+      final summary = AnalyticsAggregator.computeSummary(
+        sessions: [session],
+        planBlocks: [],
+        timeframe: AnalyticsTimeframe.thisWeek,
+        range: range,
+        now: now,
+      );
+
+      expect(summary.totalDurationMs, 1800000);
+      expect(summary.focusDurationMs, 1500000);
+      expect(summary.restDurationMs, 300000);
+    });
+
+    test('a session with no events counts entirely as focus', () {
+      // A session recorded before the per-phase breakdown existed: it has no
+      // events, so its whole duration is focus and nothing is rest.
+      final session = createSession(
+        id: 's_without_events',
+        routineName: 'Deep Work',
+        start: DateTime(2026, 10, 12, 10, 0), // Monday
+        durationMinutes: 25,
+      );
+
+      final summary = AnalyticsAggregator.computeSummary(
+        sessions: [session],
+        planBlocks: [],
+        timeframe: AnalyticsTimeframe.thisWeek,
+        range: range,
+        now: now,
+      );
+
+      expect(summary.focusDurationMs, 1500000);
+      expect(summary.restDurationMs, 0);
+      expect(summary.totalDurationMs, 1500000);
+    });
+
+    test('the total always equals focus plus rest', () {
+      final sessions = [
+        createSession(
+          id: 's_mixed_split',
+          routineName: 'Pomodoro',
+          start: DateTime(2026, 10, 12, 10, 0), // Monday
+          durationMinutes: 30,
+          events: [
+            createPhaseEvent(
+              sessionId: 's_mixed_split',
+              phaseName: 'Focus',
+              durationMinutes: 25,
+              kind: PhaseKind.focus,
+            ),
+            createPhaseEvent(
+              sessionId: 's_mixed_split',
+              phaseName: 'Break',
+              durationMinutes: 5,
+              kind: PhaseKind.rest,
+            ),
+          ],
+        ),
+        createSession(
+          id: 's_mixed_legacy',
+          routineName: 'Deep Work',
+          start: DateTime(2026, 10, 13, 9, 0), // Tuesday, no events
+          durationMinutes: 45,
+        ),
+        createSession(
+          id: 's_mixed_rest_only',
+          routineName: 'Reading',
+          start: DateTime(2026, 10, 14, 9, 0), // Wednesday, rest only
+          durationMinutes: 10,
+          events: [
+            createPhaseEvent(
+              sessionId: 's_mixed_rest_only',
+              phaseName: 'Cooldown',
+              durationMinutes: 10,
+              kind: PhaseKind.rest,
+            ),
+          ],
+        ),
+      ];
+
+      final summary = AnalyticsAggregator.computeSummary(
+        sessions: sessions,
+        planBlocks: [],
+        timeframe: AnalyticsTimeframe.thisWeek,
+        range: range,
+        now: now,
+      );
+
+      expect(
+        summary.totalDurationMs,
+        summary.focusDurationMs + summary.restDurationMs,
+      );
+      expect(summary.totalDurationMs, (30 + 45 + 10) * 60 * 1000);
+      expect(summary.focusDurationMs, (25 + 45) * 60 * 1000);
+      expect(summary.restDurationMs, (5 + 10) * 60 * 1000);
+    });
+
+    test('daily buckets split focus and rest', () {
+      final sessions = [
+        createSession(
+          id: 's_bucket_split',
+          routineName: 'Pomodoro',
+          start: DateTime(2026, 10, 12, 10, 0), // Monday
+          durationMinutes: 30,
+          events: [
+            createPhaseEvent(
+              sessionId: 's_bucket_split',
+              phaseName: 'Focus',
+              durationMinutes: 25,
+              kind: PhaseKind.focus,
+            ),
+            createPhaseEvent(
+              sessionId: 's_bucket_split',
+              phaseName: 'Break',
+              durationMinutes: 5,
+              kind: PhaseKind.rest,
+            ),
+          ],
+        ),
+        createSession(
+          id: 's_bucket_legacy',
+          routineName: 'Deep Work',
+          start: DateTime(2026, 10, 12, 15, 0), // Monday, no events
+          durationMinutes: 20,
+        ),
+      ];
+
+      final summary = AnalyticsAggregator.computeSummary(
+        sessions: sessions,
+        planBlocks: [],
+        timeframe: AnalyticsTimeframe.thisWeek,
+        range: range,
+        now: now,
+      );
+
+      final monday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Mon');
+      expect(monday.focusDurationMs, (25 + 20) * 60 * 1000);
+      expect(monday.restDurationMs, 5 * 60 * 1000);
+      expect(
+        monday.totalDurationMs,
+        monday.focusDurationMs + monday.restDurationMs,
+      );
+
+      for (final bucket in summary.dailyBuckets) {
+        expect(
+          bucket.totalDurationMs,
+          bucket.focusDurationMs + bucket.restDurationMs,
+          reason: 'bucket ${bucket.dayLabel} must split cleanly',
+        );
+      }
+    });
+
+    test('a session crossing midnight is attributed to its start date', () {
+      final session = createSession(
+        id: 's_midnight_split',
+        routineName: 'Late Night Flow',
+        start: DateTime(2026, 10, 14, 23, 50), // Wednesday 11:50 PM
+        durationMinutes: 30, // Ends Thursday 12:20 AM
+        events: [
+          createPhaseEvent(
+            sessionId: 's_midnight_split',
+            phaseName: 'Focus',
+            durationMinutes: 20,
+            kind: PhaseKind.focus,
+          ),
+          createPhaseEvent(
+            sessionId: 's_midnight_split',
+            phaseName: 'Break',
+            durationMinutes: 10,
+            kind: PhaseKind.rest,
+          ),
+        ],
+      );
+
+      final summary = AnalyticsAggregator.computeSummary(
+        sessions: [session],
+        planBlocks: [],
+        timeframe: AnalyticsTimeframe.thisWeek,
+        range: range,
+        now: now,
+      );
+
+      final wednesday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Wed');
+      final thursday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Thu');
+
+      expect(wednesday.totalDurationMs, 30 * 60 * 1000);
+      expect(wednesday.focusDurationMs, 20 * 60 * 1000);
+      expect(wednesday.restDurationMs, 10 * 60 * 1000);
+      expect(thursday.totalDurationMs, 0);
+      expect(thursday.focusDurationMs, 0);
+      expect(thursday.restDurationMs, 0);
     });
   });
 }

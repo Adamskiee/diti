@@ -16,6 +16,10 @@ class SessionEventRecord {
   final int durationMs;
   final String? outcome;
 
+  /// Whether the phase this event belongs to is a focus phase or a rest
+  /// phase. Events that were recorded before the kinds existed are focus.
+  final PhaseKind kind;
+
   SessionEventRecord({
     required this.eventId,
     required this.sessionId,
@@ -25,6 +29,7 @@ class SessionEventRecord {
     this.phaseName,
     this.durationMs = 0,
     this.outcome,
+    this.kind = PhaseKind.focus,
   }) : occurredAtUtc = occurredAtUtc.isUtc ? occurredAtUtc : occurredAtUtc.toUtc();
 }
 
