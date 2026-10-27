@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:diti_database/diti_database.dart';
+import 'package:diti_tracker/diti_tracker.dart';
 import 'package:intl/intl.dart';
 import 'analytics_models.dart';
 import 'analytics_timeframe.dart';
@@ -52,6 +53,9 @@ class AnalyticsAggregator {
     // 4. Compute plan vs actual
     final planVsActual = _buildPlanVsActual(filteredSessions, planBlocks);
 
+    // 5. Aggregate external app usages
+    final appUsages = _buildAppUsages(filteredSessions);
+
     return AnalyticsSummary(
       timeframe: timeframe,
       dateRange: range,
@@ -63,6 +67,7 @@ class AnalyticsAggregator {
       dailyBuckets: buckets,
       activityBreakdowns: breakdowns,
       planVersusActual: planVsActual,
+      appUsages: appUsages,
     );
   }
 
@@ -229,5 +234,46 @@ class AnalyticsAggregator {
       netVarianceMs: totalActual - totalPlanned,
       linkedSessionCount: count,
     );
+  }
+
+  /// Aggregates tracked external application usage across all sessions in timeframe.
+  static List<AppUsageSummary> _buildAppUsages(List<SessionRecord> sessions) {
+    if (sessions.isEmpty) return const [];
+
+    final Map<String, ({String appName, String category, String? sampleTitle, int durationMs})> grouped = {};
+
+    for (final s in sessions) {
+      for (final u in s.appUsages) {
+        final key = '${u.appName}::${u.category}';
+        final existing = grouped[key];
+        if (existing == null) {
+          grouped[key] = (
+            appName: u.appName,
+            category: u.category,
+            sampleTitle: u.sampleTitle,
+            durationMs: u.durationMs,
+          );
+        } else {
+          grouped[key] = (
+            appName: existing.appName,
+            category: existing.category,
+            sampleTitle: existing.sampleTitle ?? u.sampleTitle,
+            durationMs: existing.durationMs + u.durationMs,
+          );
+        }
+      }
+    }
+
+    final list = grouped.values
+        .map((entry) => AppUsageSummary(
+              appName: entry.appName,
+              category: entry.category,
+              sampleTitle: entry.sampleTitle,
+              durationMs: entry.durationMs,
+            ))
+        .toList();
+
+    list.sort((a, b) => b.durationMs.compareTo(a.durationMs));
+    return list;
   }
 }

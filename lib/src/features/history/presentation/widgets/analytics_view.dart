@@ -4,6 +4,7 @@ import '../../providers/history_providers.dart';
 import 'activity_breakdown_card.dart';
 import 'focus_bar_chart_widget.dart';
 import 'plan_vs_actual_card.dart';
+import 'session_app_breakdown_card.dart';
 import 'summary_metric_cards.dart';
 import 'timeframe_selector_bar.dart';
 
@@ -64,6 +65,13 @@ class AnalyticsView extends ConsumerWidget {
                   SummaryMetricCards(summary: summary),
                   const SizedBox(height: 16),
                   FocusBarChartWidget(buckets: summary.dailyBuckets),
+                  if (summary.appUsages.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    SessionAppBreakdownCard(
+                      usages: summary.appUsages,
+                      totalDurationMs: summary.totalDurationMs,
+                    ),
+                  ],
                   if (summary.activityBreakdowns.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     ActivityBreakdownCard(breakdowns: summary.activityBreakdowns),
