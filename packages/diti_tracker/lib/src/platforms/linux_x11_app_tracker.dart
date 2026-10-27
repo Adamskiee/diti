@@ -10,8 +10,9 @@ class LinuxX11AppTracker implements AppTrackerPort {
 
   static final RegExp _windowIdRegex =
       RegExp(r'_NET_ACTIVE_WINDOW\([^)]*\)\s*[:=]\s*(?:window id #\s*)?(0x[0-9a-fA-F]+|\d+)');
-  static final RegExp _wmClassRegex =
-      RegExp(r'WM_CLASS\([^)]*\)\s*=\s*"([^"]*)"');
+  static final RegExp _wmClassLineRegex =
+      RegExp(r'WM_CLASS\([^)]*\)\s*=\s*(.*)');
+  static final RegExp _quotedStringRegex = RegExp(r'"([^"]*)"');
   static final RegExp _wmNameRegex =
       RegExp(r'_NET_WM_NAME\([^)]*\)\s*=\s*"([^"]*)"');
 
@@ -46,10 +47,15 @@ class LinuxX11AppTracker implements AppTrackerPort {
       }
 
       final detailsOut = detailsResult.stdout.toString();
-      final classMatch = _wmClassRegex.firstMatch(detailsOut);
+      final classLine = _wmClassLineRegex.firstMatch(detailsOut)?.group(1) ?? '';
+      final classMatches = _quotedStringRegex
+          .allMatches(classLine)
+          .map((m) => m.group(1))
+          .whereType<String>()
+          .toList();
       final nameMatch = _wmNameRegex.firstMatch(detailsOut);
 
-      final rawClass = classMatch?.group(1) ?? '';
+      final rawClass = classMatches.join(' ');
       final rawTitle = nameMatch?.group(1) ?? '';
 
       if (rawClass.isEmpty && rawTitle.isEmpty) {

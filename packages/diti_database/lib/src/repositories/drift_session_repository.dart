@@ -55,21 +55,23 @@ class DriftSessionRepository implements SessionRepository {
       );
     }).toList(growable: false);
 
-    await dao.createSessionWithEvents(sessionCompanion, eventCompanions);
+    await database.transaction(() async {
+      await dao.createSessionWithEvents(sessionCompanion, eventCompanions);
 
-    if (session.appUsages.isNotEmpty) {
-      final usageCompanions = session.appUsages.map((u) {
-        return SessionAppUsagesCompanion(
-          id: Value(u.id),
-          sessionId: Value(u.sessionId),
-          appName: Value(u.appName),
-          category: Value(u.category),
-          sampleTitle: Value(u.sampleTitle),
-          durationMs: Value(u.durationMs),
-        );
-      }).toList(growable: false);
-      await appUsagesDao.insertUsages(usageCompanions);
-    }
+      if (session.appUsages.isNotEmpty) {
+        final usageCompanions = session.appUsages.map((u) {
+          return SessionAppUsagesCompanion(
+            id: Value(u.id),
+            sessionId: Value(u.sessionId),
+            appName: Value(u.appName),
+            category: Value(u.category),
+            sampleTitle: Value(u.sampleTitle),
+            durationMs: Value(u.durationMs),
+          );
+        }).toList(growable: false);
+        await appUsagesDao.insertUsages(usageCompanions);
+      }
+    });
   }
 
   @override

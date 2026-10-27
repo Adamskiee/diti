@@ -7,6 +7,7 @@ class SessionAppTracker {
   final AppTrackerPort _trackerPort;
   final Duration sampleInterval;
   final Duration maxSampleGap;
+  final Duration minTrackedDuration;
 
   bool _isTracking = false;
   bool _isPaused = false;
@@ -20,6 +21,7 @@ class SessionAppTracker {
     required AppTrackerPort trackerPort,
     this.sampleInterval = const Duration(milliseconds: 2500),
     this.maxSampleGap = const Duration(seconds: 10),
+    this.minTrackedDuration = Duration.zero,
   }) : _trackerPort = trackerPort;
 
   bool get isTracking => _isTracking;
@@ -55,6 +57,7 @@ class SessionAppTracker {
     _lastTickAt = null;
 
     final summaries = _accumulators.values
+        .where((acc) => acc.durationMs >= minTrackedDuration.inMilliseconds)
         .map((acc) => acc.toSummary())
         .toList();
 

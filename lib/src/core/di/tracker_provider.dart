@@ -11,7 +11,10 @@ final appTrackerPortProvider = Provider<AppTrackerPort>((ref) {
 
 final sessionAppTrackerProvider = Provider<SessionAppTracker>((ref) {
   final port = ref.watch(appTrackerPortProvider);
-  final tracker = SessionAppTracker(trackerPort: port);
+  final tracker = SessionAppTracker(
+    trackerPort: port,
+    minTrackedDuration: const Duration(seconds: 5),
+  );
   ref.onDispose(() {
     tracker.stopSession();
   });

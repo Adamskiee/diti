@@ -43,8 +43,33 @@ void main() {
       final sample = await tracker.sampleActiveWindow();
 
       expect(sample, isNotNull);
-      expect(sample!.rawClass, equals('google-chrome'));
+      expect(sample!.rawClass, equals('google-chrome Google-chrome'));
       expect(sample.rawTitle, equals('The Beatles - Let It Be - YouTube - Google Chrome'));
+    });
+
+    test('extracts multi-string WM_CLASS such as Navigator firefox', () async {
+      final fakeRunner = FakeProcessRunner({
+        'xprop -root _NET_ACTIVE_WINDOW': ProcessResult(
+          0,
+          0,
+          '_NET_ACTIVE_WINDOW(WINDOW): window id # 0x5a00001\n',
+          '',
+        ),
+        'xprop -id 0x5a00001 WM_CLASS _NET_WM_NAME': ProcessResult(
+          0,
+          0,
+          'WM_CLASS(STRING) = "Navigator", "firefox"\n'
+          '_NET_WM_NAME(UTF8_STRING) = "Mozilla Firefox"\n',
+          '',
+        ),
+      });
+
+      final tracker = LinuxX11AppTracker(processRunner: fakeRunner);
+      final sample = await tracker.sampleActiveWindow();
+
+      expect(sample, isNotNull);
+      expect(sample!.rawClass, equals('Navigator firefox'));
+      expect(sample.rawTitle, equals('Mozilla Firefox'));
     });
 
     test('returns null when active window id is not found or desktop is idle', () async {

@@ -123,5 +123,35 @@ void main() {
       final results = await tracker.stopSession();
       expect(results, isEmpty);
     });
+
+    test('prunes transient switches shorter than minTrackedDuration', () async {
+      final prunedTracker = SessionAppTracker(
+        trackerPort: stub,
+        sampleInterval: const Duration(seconds: 2),
+        minTrackedDuration: const Duration(seconds: 5),
+      );
+
+      // App 1: 6 seconds (persists)
+      stub.currentSample = ActiveAppSample(
+        rawClass: 'alacritty',
+        rawTitle: 'bash',
+        sampledAt: DateTime.utc(2026, 10, 26, 10, 0, 0),
+      );
+      prunedTracker.startSession('session-6');
+      await prunedTracker.tick(now: DateTime.utc(2026, 10, 26, 10, 0, 0));
+      await prunedTracker.tick(now: DateTime.utc(2026, 10, 26, 10, 0, 6));
+
+      // App 2: 2 seconds (pruned)
+      stub.currentSample = ActiveAppSample(
+        rawClass: 'spotify',
+        rawTitle: 'Spotify',
+        sampledAt: DateTime.utc(2026, 10, 26, 10, 0, 6),
+      );
+      await prunedTracker.tick(now: DateTime.utc(2026, 10, 26, 10, 0, 8));
+
+      final results = await prunedTracker.stopSession();
+      expect(results.length, equals(1));
+      expect(results.first.appName, equals('Terminal'));
+    });
   });
 }
