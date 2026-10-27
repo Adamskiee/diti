@@ -102,6 +102,32 @@ void main() {
       expect(sample.rawTitle, equals('bash - /home/user'));
     });
 
+    test('extracts active window via KWin DBus on KDE Wayland', () async {
+      final fakeRunner = FakeProcessRunner({
+        'busctl --user call org.kde.KWin /Scripting org.kde.kwin.Scripting loadScript s /tmp/diti_kwin_probe.js':
+            ProcessResult(0, 0, 'int32 42\n', ''),
+        'busctl --user call org.kde.KWin /42 org.kde.kwin.Script run':
+            ProcessResult(0, 0, '', ''),
+        'busctl --user call org.kde.KWin /42 org.kde.kwin.Script stop':
+            ProcessResult(0, 0, '', ''),
+        'busctl --user call org.kde.KWin /Scripting org.kde.kwin.Scripting unloadScript s /tmp/diti_kwin_probe.js':
+            ProcessResult(0, 0, '', ''),
+        'journalctl _COMM=kwin_wayland -n 5 -o cat': ProcessResult(
+          0,
+          0,
+          'js: DITI_ACTIVE:brave-browser:::(1) YouTube - Brave\n',
+          '',
+        ),
+      });
+
+      final tracker = LinuxX11AppTracker(processRunner: fakeRunner);
+      final sample = await tracker.sampleActiveWindow();
+
+      expect(sample, isNotNull);
+      expect(sample!.rawClass, equals('brave-browser'));
+      expect(sample.rawTitle, equals('(1) YouTube - Brave'));
+    });
+
     test('returns null when both xprop and xdotool fail', () async {
       final fakeRunner = FakeProcessRunner({
         'xprop -root _NET_ACTIVE_WINDOW': ProcessResult(

@@ -1,3 +1,4 @@
+import 'dart:io';
 import '../domain/active_app_sample.dart';
 import '../ports/app_tracker_port.dart';
 import '../ports/process_runner.dart';
@@ -16,12 +17,119 @@ class LinuxX11AppTracker implements AppTrackerPort {
   static final RegExp _wmNameRegex =
       RegExp(r'_NET_WM_NAME\([^)]*\)\s*=\s*"([^"]*)"');
 
+  static const String _kwinScriptPath = '/tmp/diti_kwin_probe.js';
+  static bool _kwinScriptInitialized = false;
+
   @override
   Future<ActiveAppSample?> sampleActiveWindow() async {
+    // 1. Try KWin on KDE Plasma (Wayland & X11)
+    final kwinSample = await _sampleViaKWin();
+    if (kwinSample != null) return kwinSample;
+
+    // 2. Try X11 xprop
     final xpropSample = await _sampleViaXprop();
     if (xpropSample != null) return xpropSample;
 
+    // 3. Fallback to xdotool
     return _sampleViaXdotool();
+  }
+
+  Future<ActiveAppSample?> _sampleViaKWin() async {
+    try {
+      if (!_kwinScriptInitialized) {
+        final file = File(_kwinScriptPath);
+        if (!file.existsSync()) {
+          file.writeAsStringSync(
+            'var w = workspace.activeClient || workspace.activeWindow;\n'
+            'if (w) {\n'
+            '    print("DITI_ACTIVE:" + (w.resourceClass || "") + ":::" + (w.caption || ""));\n'
+            '}\n',
+          );
+        }
+        _kwinScriptInitialized = true;
+      }
+
+      final loadResult = await _runner.run('busctl', [
+        '--user',
+        'call',
+        'org.kde.KWin',
+        '/Scripting',
+        'org.kde.kwin.Scripting',
+        'loadScript',
+        's',
+        _kwinScriptPath,
+      ]);
+      if (loadResult.exitCode != 0) return null;
+
+      final loadOut = loadResult.stdout.toString().trim();
+      final parts = loadOut.split(RegExp(r'\s+'));
+      if (parts.isEmpty) return null;
+      final scriptNum = parts.last;
+      if (int.tryParse(scriptNum) == null) return null;
+
+      // Run script to trigger log print
+      await _runner.run('busctl', [
+        '--user',
+        'call',
+        'org.kde.KWin',
+        '/$scriptNum',
+        'org.kde.kwin.Script',
+        'run',
+      ]);
+
+      // Stop script
+      await _runner.run('busctl', [
+        '--user',
+        'call',
+        'org.kde.KWin',
+        '/$scriptNum',
+        'org.kde.kwin.Script',
+        'stop',
+      ]);
+
+      // Unload script
+      await _runner.run('busctl', [
+        '--user',
+        'call',
+        'org.kde.KWin',
+        '/Scripting',
+        'org.kde.kwin.Scripting',
+        'unloadScript',
+        's',
+        _kwinScriptPath,
+      ]);
+
+      // Read active window from journal
+      final journalResult = await _runner.run('journalctl', [
+        '_COMM=kwin_wayland',
+        '-n',
+        '5',
+        '-o',
+        'cat',
+      ]);
+      if (journalResult.exitCode != 0) return null;
+
+      final lines = journalResult.stdout.toString().split('\n');
+      for (final line in lines.reversed) {
+        if (line.contains('DITI_ACTIVE:')) {
+          final payload = line.split('DITI_ACTIVE:').last.trim();
+          final split = payload.split(':::');
+          final rawClass = split.first.trim();
+          final rawTitle =
+              split.length > 1 ? split.sublist(1).join(':::').trim() : '';
+          if (rawClass.isNotEmpty || rawTitle.isNotEmpty) {
+            return ActiveAppSample(
+              rawClass: rawClass,
+              rawTitle: rawTitle,
+              sampledAt: DateTime.now().toUtc(),
+            );
+          }
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<ActiveAppSample?> _sampleViaXprop() async {
