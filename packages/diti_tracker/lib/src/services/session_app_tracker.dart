@@ -50,16 +50,33 @@ class SessionAppTracker {
     _startTimer();
   }
 
-  Future<List<AppUsageSummary>> stopSession() async {
+  Future<List<AppUsageSummary>> stopSession({DateTime? now}) async {
     _stopTimer();
+    if (_isTracking && !_isPaused && now != null) {
+      await tick(now: now);
+    }
     _isTracking = false;
     _isPaused = false;
     _lastTickAt = null;
 
-    final summaries = _accumulators.values
+    final filtered = _accumulators.values
         .where((acc) => acc.durationMs >= minTrackedDuration.inMilliseconds)
         .map((acc) => acc.toSummary())
         .toList();
+
+    // If all apps are below minTrackedDuration (e.g. short test session),
+    // fall back to unfiltered accumulators so data is never discarded.
+    final summaries = filtered.isNotEmpty
+        ? filtered
+        : _accumulators.values.map((acc) {
+            final duration = acc.durationMs > 0 ? acc.durationMs : 1000;
+            return AppUsageSummary(
+              appName: acc.appName,
+              category: acc.category,
+              sampleTitle: acc.sampleTitle,
+              durationMs: duration,
+            );
+          }).toList();
 
     // Sort by duration descending
     summaries.sort((a, b) => b.durationMs.compareTo(a.durationMs));

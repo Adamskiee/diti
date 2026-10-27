@@ -18,6 +18,13 @@ class LinuxX11AppTracker implements AppTrackerPort {
 
   @override
   Future<ActiveAppSample?> sampleActiveWindow() async {
+    final xpropSample = await _sampleViaXprop();
+    if (xpropSample != null) return xpropSample;
+
+    return _sampleViaXdotool();
+  }
+
+  Future<ActiveAppSample?> _sampleViaXprop() async {
     try {
       final activeWindowResult = await _runner.run('xprop', [
         '-root',
@@ -67,6 +74,39 @@ class LinuxX11AppTracker implements AppTrackerPort {
         rawTitle: rawTitle,
         sampledAt: DateTime.now().toUtc(),
       );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<ActiveAppSample?> _sampleViaXdotool() async {
+    try {
+      final classResult = await _runner.run('xdotool', [
+        'getactivewindow',
+        'getwindowclassname',
+      ]);
+      final titleResult = await _runner.run('xdotool', [
+        'getactivewindow',
+        'getwindowname',
+      ]);
+
+      if (classResult.exitCode == 0 || titleResult.exitCode == 0) {
+        final rawClass = classResult.exitCode == 0
+            ? classResult.stdout.toString().trim()
+            : '';
+        final rawTitle = titleResult.exitCode == 0
+            ? titleResult.stdout.toString().trim()
+            : '';
+
+        if (rawClass.isNotEmpty || rawTitle.isNotEmpty) {
+          return ActiveAppSample(
+            rawClass: rawClass,
+            rawTitle: rawTitle,
+            sampledAt: DateTime.now().toUtc(),
+          );
+        }
+      }
+      return null;
     } catch (_) {
       return null;
     }

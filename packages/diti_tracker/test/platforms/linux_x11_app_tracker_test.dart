@@ -72,7 +72,7 @@ void main() {
       expect(sample.rawTitle, equals('Mozilla Firefox'));
     });
 
-    test('returns null when active window id is not found or desktop is idle', () async {
+    test('falls back to xdotool when xprop returns 0x0', () async {
       final fakeRunner = FakeProcessRunner({
         'xprop -root _NET_ACTIVE_WINDOW': ProcessResult(
           0,
@@ -80,21 +80,47 @@ void main() {
           '_NET_ACTIVE_WINDOW(WINDOW): window id # 0x0\n',
           '',
         ),
+        'xdotool getactivewindow getwindowclassname': ProcessResult(
+          0,
+          0,
+          'alacritty\n',
+          '',
+        ),
+        'xdotool getactivewindow getwindowname': ProcessResult(
+          0,
+          0,
+          'bash - /home/user\n',
+          '',
+        ),
       });
 
       final tracker = LinuxX11AppTracker(processRunner: fakeRunner);
       final sample = await tracker.sampleActiveWindow();
 
-      expect(sample, isNull);
+      expect(sample, isNotNull);
+      expect(sample!.rawClass, equals('alacritty'));
+      expect(sample.rawTitle, equals('bash - /home/user'));
     });
 
-    test('returns null gracefully on xprop process failure', () async {
+    test('returns null when both xprop and xdotool fail', () async {
       final fakeRunner = FakeProcessRunner({
         'xprop -root _NET_ACTIVE_WINDOW': ProcessResult(
           0,
           1,
           '',
           'xprop: unable to open display\n',
+        ),
+        'xdotool getactivewindow getwindowclassname': ProcessResult(
+          0,
+          1,
+          '',
+          'There are no windows in the stack\n',
+        ),
+        'xdotool getactivewindow getwindowname': ProcessResult(
+          0,
+          1,
+          '',
+          'There are no windows in the stack\n',
         ),
       });
 
