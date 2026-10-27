@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_tracker/diti_tracker.dart';
 
 final appTrackerPortProvider = Provider<AppTrackerPort>((ref) {
+  if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    return const NoopAppTracker();
+  }
   if (Platform.isLinux) {
     return LinuxX11AppTracker();
   }

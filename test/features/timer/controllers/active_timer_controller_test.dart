@@ -1064,10 +1064,12 @@ void main() {
         ),
       ];
 
-      when(() => mockTracker.startSession(any())).thenReturn(null);
+      when(() => mockTracker.startSession(any(), now: any(named: 'now')))
+          .thenReturn(null);
       when(() => mockTracker.pauseSession()).thenReturn(null);
       when(() => mockTracker.resumeSession()).thenReturn(null);
-      when(() => mockTracker.stopSession()).thenAnswer((_) async => sampleUsages);
+      when(() => mockTracker.stopSession(now: any(named: 'now')))
+          .thenAnswer((_) async => sampleUsages);
 
       const testRoutine = Routine(
         id: 'r1',
@@ -1100,7 +1102,7 @@ void main() {
 
       // 1. Start routine
       await controller.startRoutine('r1');
-      verify(() => mockTracker.startSession(any())).called(1);
+      verify(() => mockTracker.startSession(any(), now: any(named: 'now'))).called(1);
 
       // 2. Pause routine
       await controller.pause();
@@ -1115,7 +1117,7 @@ void main() {
 
       // 4. Stop routine
       await controller.stop();
-      verify(() => mockTracker.stopSession()).called(1);
+      verify(() => mockTracker.stopSession(now: any(named: 'now'))).called(1);
 
       // Verify that SessionVerificationController received the app usages
       final verificationState = container.read(sessionVerificationControllerProvider);

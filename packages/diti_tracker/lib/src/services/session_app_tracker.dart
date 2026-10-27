@@ -14,6 +14,7 @@ class SessionAppTracker {
   String? _sessionId;
   DateTime? _lastTickAt;
   Timer? _timer;
+  Future<void>? _initialSampleFuture;
 
   final Map<String, _AppUsageAccumulator> _accumulators = {};
 
@@ -28,14 +29,33 @@ class SessionAppTracker {
   bool get isPaused => _isPaused;
   String? get activeSessionId => _sessionId;
 
-  void startSession(String sessionId) {
+  void startSession(String sessionId, {DateTime? now}) {
     _stopTimer();
     _sessionId = sessionId;
     _isTracking = true;
     _isPaused = false;
-    _lastTickAt = null;
     _accumulators.clear();
+    final startTime = now ?? DateTime.now().toUtc();
+    _lastTickAt = startTime;
     _startTimer();
+    _initialSampleFuture = _sampleInitial(startTime);
+  }
+
+  Future<void> _sampleInitial(DateTime startTime) async {
+    if (!_isTracking || _isPaused) return;
+    final sample = await _trackerPort.sampleActiveWindow();
+    if (sample == null || !_isTracking || _isPaused) return;
+    final identity =
+        AppIdentityRules.identify(sample.rawClass, sample.rawTitle);
+    final key = '${identity.appName}::${identity.category}';
+    _accumulators.putIfAbsent(
+      key,
+      () => _AppUsageAccumulator(
+        appName: identity.appName,
+        category: identity.category,
+        sampleTitle: identity.sampleTitle,
+      ),
+    );
   }
 
   void pauseSession() {
@@ -52,14 +72,34 @@ class SessionAppTracker {
 
   Future<List<AppUsageSummary>> stopSession({DateTime? now}) async {
     _stopTimer();
-    if (_isTracking && !_isPaused && now != null) {
-      await tick(now: now);
+
+    if (_initialSampleFuture != null) {
+      try {
+        await _initialSampleFuture;
+      } catch (_) {}
     }
+
+    if (_isTracking && !_isPaused) {
+      if (now != null) {
+        await tick(now: now);
+      } else if (_lastTickAt != null) {
+        final currentWall = DateTime.now().toUtc();
+        final diff = currentWall.difference(_lastTickAt!);
+        if (diff >= Duration.zero && diff <= maxSampleGap) {
+          await tick(now: currentWall);
+        }
+      }
+    }
+
     _isTracking = false;
     _isPaused = false;
     _lastTickAt = null;
+    _initialSampleFuture = null;
 
-    final filtered = _accumulators.values
+    final nonZeroAccumulators =
+        _accumulators.values.where((acc) => acc.durationMs > 0).toList();
+
+    final filtered = nonZeroAccumulators
         .where((acc) => acc.durationMs >= minTrackedDuration.inMilliseconds)
         .map((acc) => acc.toSummary())
         .toList();
@@ -68,15 +108,7 @@ class SessionAppTracker {
     // fall back to unfiltered accumulators so data is never discarded.
     final summaries = filtered.isNotEmpty
         ? filtered
-        : _accumulators.values.map((acc) {
-            final duration = acc.durationMs > 0 ? acc.durationMs : 1000;
-            return AppUsageSummary(
-              appName: acc.appName,
-              category: acc.category,
-              sampleTitle: acc.sampleTitle,
-              durationMs: duration,
-            );
-          }).toList();
+        : nonZeroAccumulators.map((acc) => acc.toSummary()).toList();
 
     // Sort by duration descending
     summaries.sort((a, b) => b.durationMs.compareTo(a.durationMs));
@@ -119,7 +151,9 @@ class SessionAppTracker {
         final effectiveElapsed =
             elapsed > maxSampleGap ? sampleInterval : elapsed;
 
-        final identity = AppIdentityRules.identify(sample.rawClass, sample.rawTitle);
+        final activeSample = sample;
+        final identity = AppIdentityRules.identify(
+            activeSample.rawClass, activeSample.rawTitle);
         final key = '${identity.appName}::${identity.category}';
 
         final acc = _accumulators.putIfAbsent(

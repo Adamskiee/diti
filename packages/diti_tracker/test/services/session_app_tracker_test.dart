@@ -153,5 +153,29 @@ void main() {
       expect(results.length, equals(1));
       expect(results.first.appName, equals('Terminal'));
     });
+
+    test('retains active app for short test session stopped before sampleInterval', () async {
+      stub.currentSample = ActiveAppSample(
+        rawClass: 'brave-browser',
+        rawTitle: 'YouTube - Brave',
+        sampledAt: DateTime.utc(2026, 10, 26, 10, 0, 0),
+      );
+
+      final shortTracker = SessionAppTracker(
+        trackerPort: stub,
+        sampleInterval: const Duration(seconds: 2),
+        minTrackedDuration: const Duration(seconds: 5),
+      );
+
+      shortTracker.startSession('session-short', now: DateTime.utc(2026, 10, 26, 10, 0, 0));
+      // Stopped after 1.5 seconds (less than sampleInterval and minTrackedDuration)
+      final results = await shortTracker.stopSession(
+        now: DateTime.utc(2026, 10, 26, 10, 0, 1, 500),
+      );
+
+      expect(results.length, equals(1));
+      expect(results.first.category, equals('YouTube'));
+      expect(results.first.durationMs, equals(1500));
+    });
   });
 }

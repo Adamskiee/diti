@@ -36,6 +36,9 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       if (s != null) {
         if (s.status == RunStatus.running) {
           _startTicker();
+          if (!tracker.isTracking) {
+            tracker.startSession(currentRunId);
+          }
         }
         return _mapFromRunState(s);
       }
@@ -208,7 +211,8 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
 
     final future = () async {
       final tracker = ref.read(sessionAppTrackerProvider);
-      final appUsages = await tracker.stopSession();
+      final nowUtc = ref.read(wallClockProvider).utcNow;
+      final appUsages = await tracker.stopSession(now: nowUtc);
       verificationController.setAppUsages(appUsages);
     }().catchError((_) {});
 
@@ -278,7 +282,11 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
     final engine = ref.read(timerEngineProvider);
     final res = await engine.start(resolvedRoutineId);
     if (res.success && engine.activeRunId != null) {
-      ref.read(sessionAppTrackerProvider).startSession(engine.activeRunId!);
+      final nowUtc = ref.read(wallClockProvider).utcNow;
+      ref.read(sessionAppTrackerProvider).startSession(
+            engine.activeRunId!,
+            now: nowUtc,
+          );
       final s = engine.getState(engine.activeRunId!);
       if (s != null) {
         _syncState(s);
