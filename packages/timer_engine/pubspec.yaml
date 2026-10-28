@@ -1,6 +1,6 @@
 name: timer_engine
 description: Pure Dart deterministic timer engine for FocusFlow.
-version: 2.1.0
+version: 2.2.0
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
