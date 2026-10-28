@@ -33,6 +33,7 @@ void main() {
       SessionOutcome outcome = SessionOutcome.completed,
       String? planBlockId,
       List<SessionEventRecord> events = const [],
+      List<SessionAppUsageRecord> appUsages = const [],
     }) {
       final routine = createMockRoutine('r1', routineName);
       return SessionRecord(
@@ -46,6 +47,7 @@ void main() {
         outcome: outcome,
         routineSnapshot: routine,
         events: events,
+        appUsages: appUsages,
       );
     }
 
@@ -448,6 +450,83 @@ void main() {
       expect(thursday.totalDurationMs, 0);
       expect(thursday.focusDurationMs, 0);
       expect(thursday.restDurationMs, 0);
+    });
+
+    test('aggregates appUsages across sessions in timeframe, summing durations and sorting descending', () {
+      final session1 = createSession(
+        id: 's1',
+        routineName: 'Coding',
+        start: DateTime(2026, 10, 14, 10, 0),
+        durationMinutes: 30,
+        appUsages: const [
+          SessionAppUsageRecord(
+            id: 'u1',
+            sessionId: 's1',
+            appName: 'VS Code',
+            category: 'Development',
+            sampleTitle: 'main.dart',
+            durationMs: 1200000, // 20m
+          ),
+          SessionAppUsageRecord(
+            id: 'u2',
+            sessionId: 's1',
+            appName: 'Terminal',
+            category: 'Terminal',
+            sampleTitle: 'bash',
+            durationMs: 600000, // 10m
+          ),
+        ],
+      );
+
+      final session2 = createSession(
+        id: 's2',
+        routineName: 'Research',
+        start: DateTime(2026, 10, 15, 14, 0),
+        durationMinutes: 40,
+        appUsages: const [
+          SessionAppUsageRecord(
+            id: 'u3',
+            sessionId: 's2',
+            appName: 'Brave',
+            category: 'YouTube',
+            sampleTitle: 'Tutorial - YouTube',
+            durationMs: 1800000, // 30m
+          ),
+          SessionAppUsageRecord(
+            id: 'u4',
+            sessionId: 's2',
+            appName: 'VS Code',
+            category: 'Development',
+            sampleTitle: 'test.dart',
+            durationMs: 600000, // 10m
+          ),
+        ],
+      );
+
+      final summary = AnalyticsAggregator.computeSummary(
+        sessions: [session1, session2],
+        planBlocks: [],
+        timeframe: AnalyticsTimeframe.thisWeek,
+        range: range,
+        now: now,
+      );
+
+      expect(summary.appUsages.length, equals(3));
+      // 1st: VS Code (1200000 + 600000 = 1800000ms)
+      // 2nd: Brave YouTube (1800000ms)
+      // 3rd: Terminal (600000ms)
+      final vsCode = summary.appUsages.firstWhere((u) => u.appName == 'VS Code');
+      expect(vsCode.durationMs, equals(1800000));
+      expect(vsCode.category, equals('Development'));
+
+      final youtube = summary.appUsages.firstWhere((u) => u.category == 'YouTube');
+      expect(youtube.durationMs, equals(1800000));
+      expect(youtube.appName, equals('Brave'));
+
+      final terminal = summary.appUsages.firstWhere((u) => u.category == 'Terminal');
+      expect(terminal.durationMs, equals(600000));
+
+      expect(summary.appUsages.last.appName, equals('Terminal'));
     });
   });
 }

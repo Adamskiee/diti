@@ -3,6 +3,7 @@ import 'package:timer_engine/timer_engine.dart';
 import 'package:diti_database/src/database/diti_database.dart'
     hide Routine, RoutinePhase, TimerRun, TimerEvent;
 import 'package:diti_database/src/domain/session_record.dart';
+import 'package:diti_database/src/domain/session_app_usage_record.dart';
 import 'package:diti_database/src/domain/session_validator.dart';
 import 'package:diti_database/src/repositories/drift_session_repository.dart';
 
@@ -119,6 +120,51 @@ void main() {
       expect(fetched!.events.length, equals(2));
       expect(fetched.events[0].kind, equals(PhaseKind.focus));
       expect(fetched.events[1].kind, equals(PhaseKind.rest));
+    });
+
+    test('session app usages round-trip properly', () async {
+      final session = SessionRecord(
+        sessionId: 'session-usages',
+        routineId: 'r-sess',
+        routineName: 'Work Block',
+        startedAtUtc: DateTime.utc(2026, 10, 13, 9, 0),
+        endedAtUtc: DateTime.utc(2026, 10, 13, 9, 30),
+        totalDurationMs: 1800000,
+        outcome: SessionOutcome.completed,
+        routineSnapshot: routine,
+        appUsages: const [
+          SessionAppUsageRecord(
+            id: 'u1',
+            sessionId: 'session-usages',
+            appName: 'Visual Studio Code',
+            category: 'IDE',
+            sampleTitle: 'main.dart',
+            durationMs: 1200000,
+          ),
+          SessionAppUsageRecord(
+            id: 'u2',
+            sessionId: 'session-usages',
+            appName: 'Chrome',
+            category: 'Documentation',
+            sampleTitle: 'Flutter Docs',
+            durationMs: 600000,
+          ),
+        ],
+      );
+
+      await repository.recordSession(session);
+
+      final fetched = await repository.getSession('session-usages');
+      expect(fetched, isNotNull);
+      expect(fetched!.appUsages.length, equals(2));
+      expect(fetched.appUsages[0].id, equals('u1'));
+      expect(fetched.appUsages[0].appName, equals('Visual Studio Code'));
+      expect(fetched.appUsages[0].category, equals('IDE'));
+      expect(fetched.appUsages[0].sampleTitle, equals('main.dart'));
+      expect(fetched.appUsages[0].durationMs, equals(1200000));
+      expect(fetched.appUsages[1].id, equals('u2'));
+      expect(fetched.appUsages[1].appName, equals('Chrome'));
+      expect(fetched.appUsages[1].category, equals('Documentation'));
     });
 
     test('returns null for non-existent session', () async {

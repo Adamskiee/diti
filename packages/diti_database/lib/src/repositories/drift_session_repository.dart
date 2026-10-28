@@ -3,7 +3,9 @@ import 'package:timer_engine/timer_engine.dart';
 import 'package:diti_database/src/database/diti_database.dart'
     hide Routine, RoutinePhase, TimerRun, TimerEvent;
 import 'package:diti_database/src/daos/sessions_dao.dart';
+import 'package:diti_database/src/daos/session_app_usages_dao.dart';
 import 'package:diti_database/src/domain/session_record.dart';
+import 'package:diti_database/src/domain/session_app_usage_record.dart';
 import 'package:diti_database/src/domain/session_validator.dart';
 import 'package:diti_database/src/mappers/snapshot_serializer.dart';
 import 'package:diti_database/src/repositories/session_repository.dart';
@@ -11,8 +13,11 @@ import 'package:diti_database/src/repositories/session_repository.dart';
 class DriftSessionRepository implements SessionRepository {
   final DitiDatabase database;
   final SessionsDao dao;
+  final SessionAppUsagesDao appUsagesDao;
 
-  DriftSessionRepository(this.database) : dao = SessionsDao(database);
+  DriftSessionRepository(this.database)
+      : dao = SessionsDao(database),
+        appUsagesDao = SessionAppUsagesDao(database);
 
   @override
   Future<void> recordSession(SessionRecord session) async {
@@ -50,8 +55,27 @@ class DriftSessionRepository implements SessionRepository {
       );
     }).toList(growable: false);
 
-    await dao.createSessionWithEvents(sessionCompanion, eventCompanions);
+    await database.transaction(() async {
+      await dao.createSessionWithEvents(sessionCompanion, eventCompanions);
+
+      if (session.appUsages.isNotEmpty) {
+        final usageCompanions = session.appUsages.map((u) {
+          return SessionAppUsagesCompanion(
+            id: Value(u.id),
+            sessionId: Value(u.sessionId),
+            appName: Value(u.appName),
+            category: Value(u.category),
+            sampleTitle: Value(u.sampleTitle),
+            durationMs: Value(u.durationMs),
+          );
+        }).toList(growable: false);
+        await appUsagesDao.insertUsages(usageCompanions);
+      }
+    });
   }
+
+  @override
+  Future<void> saveSession(SessionRecord session) => recordSession(session);
 
   @override
   Future<SessionRecord?> getSession(String sessionId) async {
@@ -59,6 +83,9 @@ class DriftSessionRepository implements SessionRepository {
     if (row == null) return null;
     return _mapSession(row);
   }
+
+  @override
+  Future<SessionRecord?> getSessionById(String sessionId) => getSession(sessionId);
 
   Future<SessionRecord> _mapSession(SessionData row) async {
     final eventRows = await dao.getEventsForSession(row.sessionId);
@@ -73,6 +100,18 @@ class DriftSessionRepository implements SessionRepository {
         durationMs: e.durationMs,
         outcome: e.outcome,
         kind: e.kind == PhaseKind.rest.name ? PhaseKind.rest : PhaseKind.focus,
+      );
+    }).toList(growable: false);
+
+    final usageRows = await appUsagesDao.getUsagesForSession(row.sessionId);
+    final appUsages = usageRows.map((u) {
+      return SessionAppUsageRecord(
+        id: u.id,
+        sessionId: u.sessionId,
+        appName: u.appName,
+        category: u.category,
+        sampleTitle: u.sampleTitle,
+        durationMs: u.durationMs,
       );
     }).toList(growable: false);
 
@@ -94,6 +133,7 @@ class DriftSessionRepository implements SessionRepository {
       outcome: outcome,
       routineSnapshot: routineSnapshot,
       events: events,
+      appUsages: appUsages,
     );
   }
 

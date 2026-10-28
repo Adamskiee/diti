@@ -1,4 +1,5 @@
 import 'package:diti_database/diti_database.dart';
+import 'package:diti_tracker/diti_tracker.dart';
 import 'package:timer_engine/timer_engine.dart';
 
 class DraftSessionState {
@@ -14,6 +15,9 @@ class DraftSessionState {
   /// Its durations always add up to [draftDurationMs].
   final List<PhaseLedgerEntry> phaseBreakdown;
 
+  /// The active application usage summaries collected during the session.
+  final List<AppUsageSummary> appUsages;
+
   const DraftSessionState({
     this.candidateSession,
     this.planBlockId,
@@ -23,6 +27,7 @@ class DraftSessionState {
     this.isSaving = false,
     this.validationError,
     this.phaseBreakdown = const [],
+    this.appUsages = const [],
   });
 
   DraftSessionState copyWith({
@@ -35,6 +40,7 @@ class DraftSessionState {
     String? validationError,
     bool clearValidationError = false,
     List<PhaseLedgerEntry>? phaseBreakdown,
+    List<AppUsageSummary>? appUsages,
   }) {
     return DraftSessionState(
       candidateSession: candidateSession ?? this.candidateSession,
@@ -47,6 +53,7 @@ class DraftSessionState {
           ? null
           : (validationError ?? this.validationError),
       phaseBreakdown: phaseBreakdown ?? this.phaseBreakdown,
+      appUsages: appUsages ?? this.appUsages,
     );
   }
 }

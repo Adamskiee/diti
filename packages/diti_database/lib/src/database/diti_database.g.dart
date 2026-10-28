@@ -2,7 +2,7 @@
 
 part of 'diti_database.dart';
 
-// ignore_for_file: type=lint, deprecated_member_use
+// ignore_for_file: type=lint
 class $RoutinesTable extends Routines with TableInfo<$RoutinesTable, Routine> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -3323,6 +3323,363 @@ class PlanBlocksCompanion extends UpdateCompanion<PlanBlock> {
   }
 }
 
+class $SessionAppUsagesTable extends SessionAppUsages
+    with TableInfo<$SessionAppUsagesTable, SessionAppUsage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SessionAppUsagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES sessions (session_id) ON DELETE CASCADE'));
+  static const VerificationMeta _appNameMeta =
+      const VerificationMeta('appName');
+  @override
+  late final GeneratedColumn<String> appName = GeneratedColumn<String>(
+      'app_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _categoryMeta =
+      const VerificationMeta('category');
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+      'category', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sampleTitleMeta =
+      const VerificationMeta('sampleTitle');
+  @override
+  late final GeneratedColumn<String> sampleTitle = GeneratedColumn<String>(
+      'sample_title', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _durationMsMeta =
+      const VerificationMeta('durationMs');
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+      'duration_ms', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, sessionId, appName, category, sampleTitle, durationMs];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'session_app_usages';
+  @override
+  VerificationContext validateIntegrity(Insertable<SessionAppUsage> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('app_name')) {
+      context.handle(_appNameMeta,
+          appName.isAcceptableOrUnknown(data['app_name']!, _appNameMeta));
+    } else if (isInserting) {
+      context.missing(_appNameMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(_categoryMeta,
+          category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('sample_title')) {
+      context.handle(
+          _sampleTitleMeta,
+          sampleTitle.isAcceptableOrUnknown(
+              data['sample_title']!, _sampleTitleMeta));
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+          _durationMsMeta,
+          durationMs.isAcceptableOrUnknown(
+              data['duration_ms']!, _durationMsMeta));
+    } else if (isInserting) {
+      context.missing(_durationMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SessionAppUsage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SessionAppUsage(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      appName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}app_name'])!,
+      category: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}category'])!,
+      sampleTitle: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sample_title']),
+      durationMs: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}duration_ms'])!,
+    );
+  }
+
+  @override
+  $SessionAppUsagesTable createAlias(String alias) {
+    return $SessionAppUsagesTable(attachedDatabase, alias);
+  }
+}
+
+class SessionAppUsage extends DataClass implements Insertable<SessionAppUsage> {
+  final String id;
+  final String sessionId;
+  final String appName;
+  final String category;
+  final String? sampleTitle;
+  final int durationMs;
+  const SessionAppUsage(
+      {required this.id,
+      required this.sessionId,
+      required this.appName,
+      required this.category,
+      this.sampleTitle,
+      required this.durationMs});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['app_name'] = Variable<String>(appName);
+    map['category'] = Variable<String>(category);
+    if (!nullToAbsent || sampleTitle != null) {
+      map['sample_title'] = Variable<String>(sampleTitle);
+    }
+    map['duration_ms'] = Variable<int>(durationMs);
+    return map;
+  }
+
+  SessionAppUsagesCompanion toCompanion(bool nullToAbsent) {
+    return SessionAppUsagesCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      appName: Value(appName),
+      category: Value(category),
+      sampleTitle: sampleTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sampleTitle),
+      durationMs: Value(durationMs),
+    );
+  }
+
+  factory SessionAppUsage.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SessionAppUsage(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      appName: serializer.fromJson<String>(json['appName']),
+      category: serializer.fromJson<String>(json['category']),
+      sampleTitle: serializer.fromJson<String?>(json['sampleTitle']),
+      durationMs: serializer.fromJson<int>(json['durationMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'appName': serializer.toJson<String>(appName),
+      'category': serializer.toJson<String>(category),
+      'sampleTitle': serializer.toJson<String?>(sampleTitle),
+      'durationMs': serializer.toJson<int>(durationMs),
+    };
+  }
+
+  SessionAppUsage copyWith(
+          {String? id,
+          String? sessionId,
+          String? appName,
+          String? category,
+          Value<String?> sampleTitle = const Value.absent(),
+          int? durationMs}) =>
+      SessionAppUsage(
+        id: id ?? this.id,
+        sessionId: sessionId ?? this.sessionId,
+        appName: appName ?? this.appName,
+        category: category ?? this.category,
+        sampleTitle: sampleTitle.present ? sampleTitle.value : this.sampleTitle,
+        durationMs: durationMs ?? this.durationMs,
+      );
+  SessionAppUsage copyWithCompanion(SessionAppUsagesCompanion data) {
+    return SessionAppUsage(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      appName: data.appName.present ? data.appName.value : this.appName,
+      category: data.category.present ? data.category.value : this.category,
+      sampleTitle:
+          data.sampleTitle.present ? data.sampleTitle.value : this.sampleTitle,
+      durationMs:
+          data.durationMs.present ? data.durationMs.value : this.durationMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionAppUsage(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('appName: $appName, ')
+          ..write('category: $category, ')
+          ..write('sampleTitle: $sampleTitle, ')
+          ..write('durationMs: $durationMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, sessionId, appName, category, sampleTitle, durationMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SessionAppUsage &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.appName == this.appName &&
+          other.category == this.category &&
+          other.sampleTitle == this.sampleTitle &&
+          other.durationMs == this.durationMs);
+}
+
+class SessionAppUsagesCompanion extends UpdateCompanion<SessionAppUsage> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<String> appName;
+  final Value<String> category;
+  final Value<String?> sampleTitle;
+  final Value<int> durationMs;
+  final Value<int> rowid;
+  const SessionAppUsagesCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.appName = const Value.absent(),
+    this.category = const Value.absent(),
+    this.sampleTitle = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SessionAppUsagesCompanion.insert({
+    required String id,
+    required String sessionId,
+    required String appName,
+    required String category,
+    this.sampleTitle = const Value.absent(),
+    required int durationMs,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        sessionId = Value(sessionId),
+        appName = Value(appName),
+        category = Value(category),
+        durationMs = Value(durationMs);
+  static Insertable<SessionAppUsage> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<String>? appName,
+    Expression<String>? category,
+    Expression<String>? sampleTitle,
+    Expression<int>? durationMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (appName != null) 'app_name': appName,
+      if (category != null) 'category': category,
+      if (sampleTitle != null) 'sample_title': sampleTitle,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SessionAppUsagesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? sessionId,
+      Value<String>? appName,
+      Value<String>? category,
+      Value<String?>? sampleTitle,
+      Value<int>? durationMs,
+      Value<int>? rowid}) {
+    return SessionAppUsagesCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      appName: appName ?? this.appName,
+      category: category ?? this.category,
+      sampleTitle: sampleTitle ?? this.sampleTitle,
+      durationMs: durationMs ?? this.durationMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (appName.present) {
+      map['app_name'] = Variable<String>(appName.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (sampleTitle.present) {
+      map['sample_title'] = Variable<String>(sampleTitle.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionAppUsagesCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('appName: $appName, ')
+          ..write('category: $category, ')
+          ..write('sampleTitle: $sampleTitle, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$DitiDatabase extends GeneratedDatabase {
   _$DitiDatabase(QueryExecutor e) : super(e);
   $DitiDatabaseManager get managers => $DitiDatabaseManager(this);
@@ -3333,10 +3690,14 @@ abstract class _$DitiDatabase extends GeneratedDatabase {
   late final $SessionsTable sessions = $SessionsTable(this);
   late final $SessionEventsTable sessionEvents = $SessionEventsTable(this);
   late final $PlanBlocksTable planBlocks = $PlanBlocksTable(this);
+  late final $SessionAppUsagesTable sessionAppUsages =
+      $SessionAppUsagesTable(this);
   late final RoutinesDao routinesDao = RoutinesDao(this as DitiDatabase);
   late final TimerRunsDao timerRunsDao = TimerRunsDao(this as DitiDatabase);
   late final SessionsDao sessionsDao = SessionsDao(this as DitiDatabase);
   late final PlanBlocksDao planBlocksDao = PlanBlocksDao(this as DitiDatabase);
+  late final SessionAppUsagesDao sessionAppUsagesDao =
+      SessionAppUsagesDao(this as DitiDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3348,7 +3709,8 @@ abstract class _$DitiDatabase extends GeneratedDatabase {
         timerEvents,
         sessions,
         sessionEvents,
-        planBlocks
+        planBlocks,
+        sessionAppUsages
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -3372,6 +3734,13 @@ abstract class _$DitiDatabase extends GeneratedDatabase {
                 limitUpdateKind: UpdateKind.delete),
             result: [
               TableUpdate('session_events', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('sessions',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('session_app_usages', kind: UpdateKind.delete),
             ],
           ),
         ],
@@ -3618,17 +3987,16 @@ class $$RoutinesTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (routinePhasesRefs)
-                    await $_getPrefetchedData<Routine, $RoutinesTable,
-                            RoutinePhase>(
+                    await $_getPrefetchedDataByColumns<Routine, $RoutinesTable,
+                            RoutinePhase, $RoutinePhasesTable>(
                         currentTable: table,
                         referencedTable: $$RoutinesTableReferences
                             ._routinePhasesRefsTable(db),
                         managerFromTypedResult: (p0) =>
                             $$RoutinesTableReferences(db, table, p0)
                                 .routinePhasesRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.routineId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'routine_id',
                         typedResults: items)
                 ];
               },
@@ -4327,17 +4695,16 @@ class $$TimerRunsTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (timerEventsRefs)
-                    await $_getPrefetchedData<TimerRun, $TimerRunsTable,
-                            TimerEvent>(
+                    await $_getPrefetchedDataByColumns<TimerRun,
+                            $TimerRunsTable, TimerEvent, $TimerEventsTable>(
                         currentTable: table,
                         referencedTable: $$TimerRunsTableReferences
                             ._timerEventsRefsTable(db),
                         managerFromTypedResult: (p0) =>
                             $$TimerRunsTableReferences(db, table, p0)
                                 .timerEventsRefs,
-                        referencedItemsForCurrentItem: (item,
-                                referencedItems) =>
-                            referencedItems.where((e) => e.runId == item.runId),
+                        currentColumn: 'run_id',
+                        referencedColumn: 'run_id',
                         typedResults: items)
                 ];
               },
@@ -4692,6 +5059,24 @@ final class $$SessionsTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$SessionAppUsagesTable, List<SessionAppUsage>>
+      _sessionAppUsagesRefsTable(_$DitiDatabase db) =>
+          MultiTypedResultKey.fromTable(db.sessionAppUsages,
+              aliasName:
+                  'sessions__session_id__session_app_usages__session_id');
+
+  $$SessionAppUsagesTableProcessedTableManager get sessionAppUsagesRefs {
+    final manager =
+        $$SessionAppUsagesTableTableManager($_db, $_db.sessionAppUsages).filter(
+            (f) => f.sessionId.sessionId
+                .sqlEquals($_itemColumn<String>('session_id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_sessionAppUsagesRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$SessionsTableFilterComposer
@@ -4745,6 +5130,27 @@ class $$SessionsTableFilterComposer
             $$SessionEventsTableFilterComposer(
               $db: $db,
               $table: $db.sessionEvents,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> sessionAppUsagesRefs(
+      Expression<bool> Function($$SessionAppUsagesTableFilterComposer f) f) {
+    final $$SessionAppUsagesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.sessionAppUsages,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionAppUsagesTableFilterComposer(
+              $db: $db,
+              $table: $db.sessionAppUsages,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -4850,6 +5256,27 @@ class $$SessionsTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> sessionAppUsagesRefs<T extends Object>(
+      Expression<T> Function($$SessionAppUsagesTableAnnotationComposer a) f) {
+    final $$SessionAppUsagesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.sessionAppUsages,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionAppUsagesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.sessionAppUsages,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$SessionsTableTableManager extends RootTableManager<
@@ -4863,7 +5290,8 @@ class $$SessionsTableTableManager extends RootTableManager<
     $$SessionsTableUpdateCompanionBuilder,
     (Session, $$SessionsTableReferences),
     Session,
-    PrefetchHooks Function({bool sessionEventsRefs})> {
+    PrefetchHooks Function(
+        {bool sessionEventsRefs, bool sessionAppUsagesRefs})> {
   $$SessionsTableTableManager(_$DitiDatabase db, $SessionsTable table)
       : super(TableManagerState(
           db: db,
@@ -4928,27 +5356,40 @@ class $$SessionsTableTableManager extends RootTableManager<
                     $$SessionsTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({sessionEventsRefs = false}) {
+          prefetchHooksCallback: (
+              {sessionEventsRefs = false, sessionAppUsagesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
-                if (sessionEventsRefs) db.sessionEvents
+                if (sessionEventsRefs) db.sessionEvents,
+                if (sessionAppUsagesRefs) db.sessionAppUsages
               ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (sessionEventsRefs)
-                    await $_getPrefetchedData<Session, $SessionsTable,
-                            SessionEvent>(
+                    await $_getPrefetchedDataByColumns<Session, $SessionsTable,
+                            SessionEvent, $SessionEventsTable>(
                         currentTable: table,
                         referencedTable: $$SessionsTableReferences
                             ._sessionEventsRefsTable(db),
                         managerFromTypedResult: (p0) =>
                             $$SessionsTableReferences(db, table, p0)
                                 .sessionEventsRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.sessionId == item.sessionId),
+                        currentColumn: 'session_id',
+                        referencedColumn: 'session_id',
+                        typedResults: items),
+                  if (sessionAppUsagesRefs)
+                    await $_getPrefetchedDataByColumns<Session, $SessionsTable,
+                            SessionAppUsage, $SessionAppUsagesTable>(
+                        currentTable: table,
+                        referencedTable: $$SessionsTableReferences
+                            ._sessionAppUsagesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$SessionsTableReferences(db, table, p0)
+                                .sessionAppUsagesRefs,
+                        currentColumn: 'session_id',
+                        referencedColumn: 'session_id',
                         typedResults: items)
                 ];
               },
@@ -4968,7 +5409,8 @@ typedef $$SessionsTableProcessedTableManager = ProcessedTableManager<
     $$SessionsTableUpdateCompanionBuilder,
     (Session, $$SessionsTableReferences),
     Session,
-    PrefetchHooks Function({bool sessionEventsRefs})>;
+    PrefetchHooks Function(
+        {bool sessionEventsRefs, bool sessionAppUsagesRefs})>;
 typedef $$SessionEventsTableCreateCompanionBuilder = SessionEventsCompanion
     Function({
   required String eventId,
@@ -5541,6 +5983,298 @@ typedef $$PlanBlocksTableProcessedTableManager = ProcessedTableManager<
     (PlanBlock, BaseReferences<_$DitiDatabase, $PlanBlocksTable, PlanBlock>),
     PlanBlock,
     PrefetchHooks Function()>;
+typedef $$SessionAppUsagesTableCreateCompanionBuilder
+    = SessionAppUsagesCompanion Function({
+  required String id,
+  required String sessionId,
+  required String appName,
+  required String category,
+  Value<String?> sampleTitle,
+  required int durationMs,
+  Value<int> rowid,
+});
+typedef $$SessionAppUsagesTableUpdateCompanionBuilder
+    = SessionAppUsagesCompanion Function({
+  Value<String> id,
+  Value<String> sessionId,
+  Value<String> appName,
+  Value<String> category,
+  Value<String?> sampleTitle,
+  Value<int> durationMs,
+  Value<int> rowid,
+});
+
+final class $$SessionAppUsagesTableReferences extends BaseReferences<
+    _$DitiDatabase, $SessionAppUsagesTable, SessionAppUsage> {
+  $$SessionAppUsagesTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $SessionsTable _sessionIdTable(_$DitiDatabase db) => db.sessions
+      .createAlias('session_app_usages__session_id__sessions__session_id');
+
+  $$SessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<String>('session_id')!;
+
+    final manager = $$SessionsTableTableManager($_db, $_db.sessions)
+        .filter((f) => f.sessionId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$SessionAppUsagesTableFilterComposer
+    extends Composer<_$DitiDatabase, $SessionAppUsagesTable> {
+  $$SessionAppUsagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get appName => $composableBuilder(
+      column: $table.appName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sampleTitle => $composableBuilder(
+      column: $table.sampleTitle, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => ColumnFilters(column));
+
+  $$SessionsTableFilterComposer get sessionId {
+    final $$SessionsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.sessions,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionsTableFilterComposer(
+              $db: $db,
+              $table: $db.sessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionAppUsagesTableOrderingComposer
+    extends Composer<_$DitiDatabase, $SessionAppUsagesTable> {
+  $$SessionAppUsagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get appName => $composableBuilder(
+      column: $table.appName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sampleTitle => $composableBuilder(
+      column: $table.sampleTitle, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => ColumnOrderings(column));
+
+  $$SessionsTableOrderingComposer get sessionId {
+    final $$SessionsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.sessions,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionsTableOrderingComposer(
+              $db: $db,
+              $table: $db.sessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionAppUsagesTableAnnotationComposer
+    extends Composer<_$DitiDatabase, $SessionAppUsagesTable> {
+  $$SessionAppUsagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get appName =>
+      $composableBuilder(column: $table.appName, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get sampleTitle => $composableBuilder(
+      column: $table.sampleTitle, builder: (column) => column);
+
+  GeneratedColumn<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => column);
+
+  $$SessionsTableAnnotationComposer get sessionId {
+    final $$SessionsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.sessions,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.sessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionAppUsagesTableTableManager extends RootTableManager<
+    _$DitiDatabase,
+    $SessionAppUsagesTable,
+    SessionAppUsage,
+    $$SessionAppUsagesTableFilterComposer,
+    $$SessionAppUsagesTableOrderingComposer,
+    $$SessionAppUsagesTableAnnotationComposer,
+    $$SessionAppUsagesTableCreateCompanionBuilder,
+    $$SessionAppUsagesTableUpdateCompanionBuilder,
+    (SessionAppUsage, $$SessionAppUsagesTableReferences),
+    SessionAppUsage,
+    PrefetchHooks Function({bool sessionId})> {
+  $$SessionAppUsagesTableTableManager(
+      _$DitiDatabase db, $SessionAppUsagesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SessionAppUsagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SessionAppUsagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SessionAppUsagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> sessionId = const Value.absent(),
+            Value<String> appName = const Value.absent(),
+            Value<String> category = const Value.absent(),
+            Value<String?> sampleTitle = const Value.absent(),
+            Value<int> durationMs = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionAppUsagesCompanion(
+            id: id,
+            sessionId: sessionId,
+            appName: appName,
+            category: category,
+            sampleTitle: sampleTitle,
+            durationMs: durationMs,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String sessionId,
+            required String appName,
+            required String category,
+            Value<String?> sampleTitle = const Value.absent(),
+            required int durationMs,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionAppUsagesCompanion.insert(
+            id: id,
+            sessionId: sessionId,
+            appName: appName,
+            category: category,
+            sampleTitle: sampleTitle,
+            durationMs: durationMs,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$SessionAppUsagesTable, SessionAppUsage>(table),
+                    $$SessionAppUsagesTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (sessionId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.sessionId,
+                    referencedTable:
+                        $$SessionAppUsagesTableReferences._sessionIdTable(db),
+                    referencedColumn: $$SessionAppUsagesTableReferences
+                        ._sessionIdTable(db)
+                        .sessionId,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$SessionAppUsagesTableProcessedTableManager = ProcessedTableManager<
+    _$DitiDatabase,
+    $SessionAppUsagesTable,
+    SessionAppUsage,
+    $$SessionAppUsagesTableFilterComposer,
+    $$SessionAppUsagesTableOrderingComposer,
+    $$SessionAppUsagesTableAnnotationComposer,
+    $$SessionAppUsagesTableCreateCompanionBuilder,
+    $$SessionAppUsagesTableUpdateCompanionBuilder,
+    (SessionAppUsage, $$SessionAppUsagesTableReferences),
+    SessionAppUsage,
+    PrefetchHooks Function({bool sessionId})>;
 
 class $DitiDatabaseManager {
   final _$DitiDatabase _db;
@@ -5559,4 +6293,6 @@ class $DitiDatabaseManager {
       $$SessionEventsTableTableManager(_db, _db.sessionEvents);
   $$PlanBlocksTableTableManager get planBlocks =>
       $$PlanBlocksTableTableManager(_db, _db.planBlocks);
+  $$SessionAppUsagesTableTableManager get sessionAppUsages =>
+      $$SessionAppUsagesTableTableManager(_db, _db.sessionAppUsages);
 }

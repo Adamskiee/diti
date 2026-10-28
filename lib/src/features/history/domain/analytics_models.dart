@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:diti_tracker/diti_tracker.dart';
 import 'analytics_timeframe.dart';
 
 class DailyBucket {
@@ -70,6 +71,7 @@ class AnalyticsSummary {
   final List<DailyBucket> dailyBuckets;
   final List<ActivityBreakdown> activityBreakdowns;
   final PlanVersusActualMetrics? planVersusActual;
+  final List<AppUsageSummary> appUsages;
 
   const AnalyticsSummary({
     required this.timeframe,
@@ -82,6 +84,7 @@ class AnalyticsSummary {
     required this.dailyBuckets,
     required this.activityBreakdowns,
     this.planVersusActual,
+    this.appUsages = const [],
   });
 
   double get completionRate => (completedCount + interruptedOrCancelledCount) == 0

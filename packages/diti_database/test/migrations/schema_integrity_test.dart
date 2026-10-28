@@ -15,8 +15,8 @@ void main() {
   });
 
   group('Schema Integrity & SQLite Pragmas', () {
-    test('database boots with schemaVersion 2', () {
-      expect(database.schemaVersion, equals(2));
+    test('database boots with schemaVersion 3', () {
+      expect(database.schemaVersion, equals(3));
     });
 
     test('enforces foreign key constraints: rejecting orphaned child rows', () async {

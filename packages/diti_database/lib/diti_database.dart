@@ -11,17 +11,20 @@ export 'src/database/tables/timer_events_table.dart';
 export 'src/database/tables/sessions_table.dart';
 export 'src/database/tables/session_events_table.dart';
 export 'src/database/tables/plan_blocks_table.dart';
+export 'src/database/tables/session_app_usages_table.dart';
 
 // DAOs
 export 'src/daos/routines_dao.dart';
 export 'src/daos/timer_runs_dao.dart';
 export 'src/daos/sessions_dao.dart';
 export 'src/daos/plan_blocks_dao.dart';
+export 'src/daos/session_app_usages_dao.dart';
 
 // Domain models
 export 'src/domain/session_record.dart';
 export 'src/domain/session_validator.dart';
 export 'src/domain/plan_block.dart';
+export 'src/domain/session_app_usage_record.dart';
 
 // Mappers & Serializers
 export 'src/mappers/phase_ledger_serializer.dart';
@@ -41,3 +44,4 @@ export 'src/database/migrations/migration_registry.dart';
 export 'src/database/migrations/migration_runner.dart';
 export 'src/database/migrations/migration_exceptions.dart';
 export 'src/database/migrations/v1_to_v2_migration.dart';
+export 'src/database/migrations/v2_to_v3_migration.dart';
