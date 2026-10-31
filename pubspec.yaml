@@ -35,9 +35,16 @@ dev_dependencies:
   alchemist: ^0.14.1
   integration_test:
     sdk: flutter
+  patrol: ^4.10.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/
+
+patrol:
+  app_name: Diti
+  test_directory: patrol_test
+  android:
+    package_name: com.adilabs.diti.debug
 
