@@ -98,7 +98,7 @@ void main() {
       expect(state.currentRepetition, equals(2));
     });
 
-    test('clamps remaining to 0 when activeElapsed exceeds phase durationMs', () {
+    test('clamps remaining to 0 when activeElapsed exceeds phase durationMs for focus phase', () {
       final run = TimerRun(
         runId: 'test-run-overtime',
         routineSnapshot: routine,
@@ -116,6 +116,41 @@ void main() {
       final state = run.calculateState(currentMonotonicMs: 6000);
       expect(state.activeElapsedMs, equals(1505000));
       expect(state.remainingMs, equals(0));
+    });
+
+    test('runs remainingMs on negative when activeElapsed exceeds phase durationMs for rest phase', () {
+      final restRoutine = Routine(
+        id: 'routine-with-rest',
+        name: 'Routine with Rest',
+        repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: const [
+          RoutinePhase(
+            id: 'rest-phase',
+            name: 'Short Break',
+            durationMs: 300000, // 5 min
+            transition: TransitionPolicy.manual,
+            kind: PhaseKind.rest,
+          ),
+        ],
+      );
+
+      final run = TimerRun(
+        runId: 'test-run-rest-overtime',
+        routineSnapshot: restRoutine,
+        status: RunStatus.running,
+        phaseStatus: PhaseStatus.awaitingAction,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        accumulatedMs: 300000,
+        phaseStartedAtUtc: DateTime.utc(2026, 10, 13, 10, 0, 0),
+        phaseStartedMonotonicMs: 1000,
+        stateVersion: 1,
+      );
+
+      // Monotonic advanced by 15000ms -> activeMs = 315000 (15 seconds overtime)
+      final state = run.calculateState(currentMonotonicMs: 16000);
+      expect(state.activeElapsedMs, equals(315000));
+      expect(state.remainingMs, equals(-15000));
     });
 
     test('protects against monotonic clock skew backwards (delta < 0 clamped to 0)', () {

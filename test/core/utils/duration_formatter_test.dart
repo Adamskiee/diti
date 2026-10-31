@@ -10,6 +10,15 @@ void main() {
       expect(DurationFormatter.formatMs(1500000), '25:00');
     });
 
+    test('formatMs formats negative durations with minus sign', () {
+      expect(DurationFormatter.formatMs(-500), '00:00');
+      expect(DurationFormatter.formatMs(-1000), '-00:01');
+      expect(DurationFormatter.formatMs(-5000), '-00:05');
+      expect(DurationFormatter.formatMs(-65000), '-01:05');
+      expect(DurationFormatter.formatMs(-1500000), '-25:00');
+      expect(DurationFormatter.formatMs(-3665000), '-01:01:05');
+    });
+
     test('formatMs formats 1 hour or more as hh:mm:ss', () {
       expect(DurationFormatter.formatMs(3600000), '01:00:00');
       expect(DurationFormatter.formatMs(3665000), '01:01:05');

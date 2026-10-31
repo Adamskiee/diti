@@ -31,7 +31,7 @@ void main() {
       expect(pomodoro.phases[0].transition, TransitionPolicy.auto);
       expect(pomodoro.phases[1].name, 'Short Break');
       expect(pomodoro.phases[1].durationMs, 300000); // 5 min
-      expect(pomodoro.phases[1].transition, TransitionPolicy.auto);
+      expect(pomodoro.phases[1].transition, TransitionPolicy.manual);
 
       final deepWork = starterRoutines.firstWhere((r) => r.id == 'deep-work-default');
       expect(deepWork.name, 'Deep Work');

@@ -27,11 +27,14 @@ class _PhaseEditDialogState extends State<PhaseEditDialog> {
     _isOpenEnded = p != null && p.durationMs == null;
     _minutes = p?.durationMs != null ? (p!.durationMs! ~/ 60000) : 25;
     if (_minutes <= 0) _minutes = 1;
-    _transition = p?.transition ?? TransitionPolicy.auto;
     // A new phase starts out with the kind its name suggests. An existing
     // phase keeps the kind it was stored with: the name heuristic only seeds
     // a new phase, it never reclassifies one the user already tagged.
     _kind = p?.kind ?? PhaseKind.inferFromName(_nameController.text);
+    _transition = p?.transition ??
+        (_kind == PhaseKind.rest
+            ? TransitionPolicy.manual
+            : TransitionPolicy.auto);
     _nameController.addListener(_onNameChanged);
   }
 

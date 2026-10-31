@@ -371,6 +371,78 @@ void main() {
       await db.close();
     });
 
+    testWidgets('renders overtime state with negative timer and OVERTIME badge for rest phase',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_overtime_rest',
+        name: 'Overtime Rest Test',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p_rest',
+            name: 'Break',
+            durationMs: 10000, // 10s
+            transition: TransitionPolicy.manual,
+            kind: PhaseKind.rest,
+          ),
+          RoutinePhase(
+            id: 'p_focus',
+            name: 'Focus',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto,
+            kind: PhaseKind.focus,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      final controller =
+          container.read(activeTimerControllerProvider.notifier);
+      await controller.startRoutine('r_overtime_rest');
+
+      // Advance clock by 15s (5s overtime)
+      fakeClock.advance(const Duration(seconds: 15));
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      controller.tick();
+
+      expect(container.read(activeTimerControllerProvider).isAwaitingAction,
+          isTrue);
+      expect(container.read(activeTimerControllerProvider).displayRemainingMs,
+          equals(-5000));
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ActiveTimerScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('-00:05'), findsOneWidget);
+      expect(find.text('OVERTIME — READY TO CONTINUE'), findsOneWidget);
+      expect(find.text('Start Next Phase'), findsOneWidget);
+
+      container.dispose();
+      await db.close();
+    });
+
     testWidgets('renders open-ended phase with Open Flow badge', (tester) async {
       final db = createInMemoryTestDatabase();
       final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));

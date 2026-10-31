@@ -82,7 +82,11 @@ class TimerRun {
     int? remaining;
     final duration = currentPhase.durationMs;
     if (duration != null) {
-      remaining = math.max(0, duration - activeMs);
+      if (currentPhase.kind == PhaseKind.rest) {
+        remaining = duration - activeMs;
+      } else {
+        remaining = math.max(0, duration - activeMs);
+      }
     }
 
     return TimerRunState(

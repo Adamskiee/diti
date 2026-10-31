@@ -162,6 +162,61 @@ void main() {
     expect(state.remainingMs, equals(0)); // clamped to 0
   });
 
+  test('recovery halts at awaitingAction on rest phase and reports negative remainingMs', () async {
+    final restRecoveryRoutine = Routine(
+      id: 'rest-recovery-routine',
+      name: 'Rest Recovery Routine',
+      repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+      phases: const [
+        RoutinePhase(
+          id: 'focus-1',
+          name: 'Focus 1',
+          durationMs: 1500000, // 25 min
+          transition: TransitionPolicy.auto,
+          kind: PhaseKind.focus,
+        ),
+        RoutinePhase(
+          id: 'rest-1',
+          name: 'Rest 1',
+          durationMs: 300000, // 5 min
+          transition: TransitionPolicy.manual,
+          kind: PhaseKind.rest,
+        ),
+        RoutinePhase(
+          id: 'focus-2',
+          name: 'Focus 2',
+          durationMs: 1500000,
+          transition: TransitionPolicy.auto,
+          kind: PhaseKind.focus,
+        ),
+      ],
+    );
+    await routineRepo.saveRoutine(restRecoveryRoutine);
+
+    await engine.start('rest-recovery-routine');
+    final runId = engine.activeRunId!;
+
+    engine.dispose();
+    // 25m focus-1 + 5m rest-1 + 10m overtime in rest-1 = 40m total
+    clock.advance(const Duration(minutes: 40));
+
+    final freshEngine = TimerEngineImpl(
+      monotonicClock: clock,
+      wallClock: clock,
+      routineRepository: routineRepo,
+      persistencePort: persistence,
+      notificationPort: notifications,
+    );
+
+    await freshEngine.recover();
+    final state = freshEngine.getState(runId);
+
+    expect(state!.currentPhase.id, equals('rest-1'));
+    expect(state.phaseStatus, equals(PhaseStatus.awaitingAction));
+    expect(state.activeElapsedMs, equals(900000)); // 15 min total in rest-1 (5m + 10m overtime)
+    expect(state.remainingMs, equals(-600000)); // -10 min = -600,000ms
+  });
+
   test('T-020: Multiple commands arriving concurrently execute sequentially in FIFO order', () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;

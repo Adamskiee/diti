@@ -287,6 +287,64 @@ void main() {
       expect(cancelledState.isActive, false);
     });
 
+    test('rest timer in awaitingAction with overtime maps to negative displayRemainingMs and formatted time with minus sign', () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_rest_overtime',
+        name: 'Rest Overtime Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p_rest',
+            name: 'Short Break',
+            durationMs: 300000, // 5 min
+            transition: TransitionPolicy.manual,
+            kind: PhaseKind.rest,
+          ),
+          RoutinePhase(
+            id: 'p_work',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.auto,
+            kind: PhaseKind.focus,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      final repo = container.read(routineRepositoryProvider);
+      await repo.saveRoutine(testRoutine);
+
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      await controller.startRoutine('r_rest_overtime');
+
+      // Advance clock by 5 min + 45 seconds (345 seconds total)
+      fakeClock.advance(const Duration(seconds: 345));
+      await pumpEventQueue();
+      controller.tick();
+
+      final state = container.read(activeTimerControllerProvider);
+      expect(state.phaseStatus, equals(PhaseStatus.awaitingAction));
+      expect(state.isAwaitingAction, isTrue);
+      expect(state.displayRemainingMs, equals(-45000)); // -45 seconds
+      expect(state.formattedTime, equals('-00:45'));
+      expect(state.progress, equals(0.0));
+
+      container.dispose();
+      await db.close();
+    });
+
     test('periodic ticker updates display state automatically without manual tick',
         () async {
       final db = createInMemoryTestDatabase();
