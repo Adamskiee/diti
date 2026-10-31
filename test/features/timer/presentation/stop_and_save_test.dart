@@ -94,10 +94,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SessionVerificationSheet), findsNothing);
 
-    // Verify session was persisted
+    // Verify session was persisted as completed
     final allSessions = await db.select(db.sessions).get();
     expect(allSessions.length, 1);
-    expect(allSessions.first.outcome, 'cancelled');
+    expect(allSessions.first.outcome, 'completed');
 
     container.dispose();
     await db.close();

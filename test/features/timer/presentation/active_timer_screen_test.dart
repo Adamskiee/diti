@@ -199,7 +199,7 @@ void main() {
       expect(verificationState.draftRoutineName, equals('Sprint Focus'));
       expect(verificationState.draftDurationMs, equals(15000));
       expect(verificationState.candidateSession?.outcome,
-          equals(SessionOutcome.cancelled));
+          equals(SessionOutcome.completed));
 
       container.dispose();
       await db.close();

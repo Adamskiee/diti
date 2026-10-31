@@ -461,7 +461,7 @@ void main() {
     });
 
     test(
-        'cancelling active timer run updates linked planBlock to cancelled and records actual duration',
+        'cancelling active timer run updates linked planBlock to completed when saved to analytics and records actual duration',
         () async {
       final db = createInMemoryTestDatabase();
       final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
@@ -514,7 +514,7 @@ void main() {
 
       final updatedBlock =
           await container.read(planBlockRepositoryProvider).getBlockById('block_002');
-      expect(updatedBlock?.status, PlanBlockStatus.cancelled);
+      expect(updatedBlock?.status, PlanBlockStatus.completed);
       expect(updatedBlock?.actualDurationMs, 600000);
       expect(updatedBlock?.sessionId, isNotNull);
 
