@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:diti_database/diti_database.dart';
 import 'package:diti_tracker/diti_tracker.dart';
 import 'analytics_timeframe.dart';
 
@@ -31,12 +32,14 @@ class ActivityBreakdown {
   final int totalDurationMs;
   final double percentage; // 0.0 to 1.0
   final Color color;
+  final List<SessionRecord> sessions;
 
   const ActivityBreakdown({
     required this.routineName,
     required this.totalDurationMs,
     required this.percentage,
     required this.color,
+    this.sessions = const [],
   });
 }
 
