@@ -109,7 +109,7 @@ void main() {
       verifyNever(() => mockSessionRepo.recordSession(any()));
     });
 
-    test('cancelled run with measurable time >= 1s opens verification sheet', () async {
+    test('cancelled run with measurable time >= 1s opens verification sheet with completed outcome', () async {
       final runState = TimerRunState(
         runId: 'run-short-cancel',
         status: RunStatus.cancelled,
@@ -132,7 +132,53 @@ void main() {
       expect(controller.state.isVisible, isTrue);
       expect(controller.state.draftDurationMs, equals(45000));
       expect(controller.state.draftRoutineName, equals('Flow Focus'));
-      expect(controller.state.candidateSession?.outcome, equals(SessionOutcome.cancelled));
+      expect(controller.state.candidateSession?.outcome, equals(SessionOutcome.completed));
+    });
+
+    test('cancelled run saved via confirmSave persists as completed and completes linked plan block', () async {
+      when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
+      when(() => mockPlanRepo.linkSession(
+        blockId: any(named: 'blockId'),
+        sessionId: any(named: 'sessionId'),
+        actualDurationMs: any(named: 'actualDurationMs'),
+        status: any(named: 'status'),
+      )).thenAnswer((_) async {});
+
+      final runState = TimerRunState(
+        runId: 'run-cancel-save',
+        status: RunStatus.cancelled,
+        phaseStatus: PhaseStatus.active,
+        currentPhase: testRoutine.phases.first,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 0,
+        stateVersion: 1,
+        totalActiveElapsedMs: 60000,
+        completedPhases: _focusLedger(60000),
+        runStartedAtUtc: _runStart,
+      );
+
+      await controller.prepareVerification(
+        runState: runState,
+        routineSnapshot: testRoutine,
+        planBlockId: 'block-cancel-save',
+      );
+
+      final result = await controller.confirmSave();
+      expect(result, isTrue);
+
+      verify(() => mockSessionRepo.recordSession(any(
+        that: isA<SessionRecord>()
+            .having((s) => s.outcome, 'outcome', SessionOutcome.completed)
+            .having((s) => s.totalDurationMs, 'totalDurationMs', 60000),
+      ))).called(1);
+
+      verify(() => mockPlanRepo.linkSession(
+        blockId: 'block-cancel-save',
+        sessionId: any(named: 'sessionId'),
+        actualDurationMs: 60000,
+        status: PlanBlockStatus.completed,
+      )).called(1);
     });
 
     test('completed run of any duration opens verification sheet', () async {

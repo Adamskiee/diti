@@ -70,7 +70,7 @@ class DitiDatabase extends _$DitiDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

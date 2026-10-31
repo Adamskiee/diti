@@ -288,9 +288,9 @@ void main() {
   });
 
   group('schema version', () {
-    test('the database declares schema version 3', () async {
+    test('the database declares schema version 4', () async {
       final db = DitiDatabase.inMemory();
-      expect(db.schemaVersion, equals(3));
+      expect(db.schemaVersion, equals(4));
       await db.close();
     });
 
@@ -315,7 +315,7 @@ void main() {
 
       // Drift records the new version, so the next launch skips the step
       // instead of failing on "duplicate column name".
-      expect(raw.userVersion, equals(3));
+      expect(raw.userVersion, equals(4));
 
       final second = DitiDatabase(
         NativeDatabase.opened(raw, closeUnderlyingOnClose: false),

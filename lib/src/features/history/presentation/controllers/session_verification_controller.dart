@@ -62,9 +62,9 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
     // session's window and the session could not be saved.
     final start = runState.runStartedAtUtc ??
         end.subtract(Duration(milliseconds: totalDurationMs));
-    final outcome = runState.status == RunStatus.completed
-        ? SessionOutcome.completed
-        : SessionOutcome.cancelled;
+    // Any session saved to analytics via verification is marked completed,
+    // including routines that were stopped early.
+    const outcome = SessionOutcome.completed;
 
     final sessionId = const Uuid().v4();
 
