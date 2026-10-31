@@ -141,8 +141,10 @@ void main() {
       expect(summary.activityBreakdowns.length, 2);
       expect(summary.activityBreakdowns[0].routineName, 'Deep Work');
       expect(summary.activityBreakdowns[0].percentage, closeTo(0.75, 0.001));
+      expect(summary.activityBreakdowns[0].sessions.map((s) => s.sessionId), ['s2', 's1']);
       expect(summary.activityBreakdowns[1].routineName, 'Reading');
       expect(summary.activityBreakdowns[1].percentage, closeTo(0.25, 0.001));
+      expect(summary.activityBreakdowns[1].sessions.map((s) => s.sessionId), ['s3']);
     });
 
     test('attributes session crossing midnight to local start date', () {

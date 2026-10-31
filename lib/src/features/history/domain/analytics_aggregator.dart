@@ -180,9 +180,11 @@ class AnalyticsAggregator {
     if (totalMs == 0 || sessions.isEmpty) return const [];
 
     final Map<String, int> durationByRoutine = {};
+    final Map<String, List<SessionRecord>> sessionsByRoutine = {};
     for (final s in sessions) {
       final name = s.routineName.trim().isEmpty ? 'Quick Timer' : s.routineName;
       durationByRoutine[name] = (durationByRoutine[name] ?? 0) + s.totalDurationMs;
+      sessionsByRoutine.putIfAbsent(name, () => []).add(s);
     }
 
     final sortedEntries = durationByRoutine.entries.toList()
@@ -193,12 +195,16 @@ class AnalyticsAggregator {
       final entry = sortedEntries[i];
       final color = _palette[i % _palette.length];
       final percentage = entry.value / totalMs;
+      final routineSessions = sessionsByRoutine[entry.key] ?? [];
+      routineSessions.sort((a, b) => b.startedAtUtc.compareTo(a.startedAtUtc));
+
       breakdowns.add(
         ActivityBreakdown(
           routineName: entry.key,
           totalDurationMs: entry.value,
           percentage: percentage,
           color: color,
+          sessions: List.unmodifiable(routineSessions),
         ),
       );
     }
