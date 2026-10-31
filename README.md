@@ -50,17 +50,6 @@ done
 flutter pub get
 ```
 
-### Running Tests & Linting
-```bash
-for pkg in packages/*; do
-  if [ -d "$pkg/test" ]; then
-    (cd "$pkg" && flutter test)
-  fi
-done
-flutter test test/
-flutter analyze --fatal-infos
-```
-
 ## Running Tests
 
 | Layer | Command |
@@ -73,6 +62,18 @@ flutter analyze --fatal-infos
 | Patrol E2E (Android, API 33+) | `dart pub global activate patrol_cli` then `patrol test` |
 
 CI (`.github/workflows/ci.yml`) runs unit/widget/golden tests first; Linux and Android device tests run only if those pass.
+
+### Quick Local Validation
+Run package tests, root test suite, and static analysis in one pass:
+```bash
+for pkg in packages/*; do
+  if [ -d "$pkg/test" ]; then
+    (cd "$pkg" && flutter test)
+  fi
+done
+flutter test test/
+flutter analyze --fatal-infos
+```
 
 ## CI/CD & Releases
 
