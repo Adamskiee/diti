@@ -13,12 +13,20 @@ on:
       - '**.md'
       - 'docs/**'
       - '.gitignore'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PATROL_CLI_VERSION: '4.8.0'
 
 jobs:
-  quality-check:
+  quality:
     name: Code Quality & Tests
     runs-on: ubuntu-latest
-
+    timeout-minutes: 20
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -29,9 +37,7 @@ jobs:
         uses: ./.github/actions/setup-flutter
 
       - name: Static Analysis & Linter
-        run: |
-          echo "Analyzing packages and root project..."
-          flutter analyze --fatal-infos
+        run: flutter analyze --fatal-infos
 
       - name: Run Package Tests
         run: |
@@ -42,7 +48,110 @@ jobs:
             fi
           done
 
-      - name: Run Root Tests
+      - name: Run Root Tests (unit, widget, golden)
+        run: flutter test test/ --coverage
+
+      - name: Upload Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload Golden Failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-failures
+          path: test/**/failures/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  integration-linux:
+    name: Integration Tests (Linux)
+    needs: [quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux Build Dependencies
         run: |
-          echo "Running root application tests..."
-          flutter test test/
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libsecret-1-dev xvfb
+
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          java: 'false'
+
+      - name: Run integration_test on Linux
+        run: xvfb-run -a flutter test integration_test -d linux
+
+  integration-android:
+    name: Integration & Patrol Tests (Android)
+    needs: [quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+
+      - name: Install Patrol CLI
+        run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
+
+      - name: Cache AVD
+        id: avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-x86_64-google_apis
+
+      - name: Create AVD Snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run Patrol and integration_test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            patrol test --verbose
+            flutter test integration_test -d emulator-5554
+
+      - name: Upload Android Test Results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-results
+          path: build/app/outputs/androidTest-results/
+          retention-days: 7
+          if-no-files-found: ignore
