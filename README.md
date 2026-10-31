@@ -61,6 +61,19 @@ flutter test test/
 flutter analyze --fatal-infos
 ```
 
+## Running Tests
+
+| Layer | Command |
+|---|---|
+| Unit + widget + golden | `flutter test test/` |
+| Update goldens | `flutter test --update-goldens test/goldens` (commit `goldens/ci/*.png`) |
+| Package tests | `cd packages/<name> && flutter test` |
+| Integration (Linux) | `flutter test integration_test -d linux` |
+| Integration (Android) | `flutter test integration_test -d <emulator-id>` |
+| Patrol E2E (Android, API 33+) | `dart pub global activate patrol_cli` then `patrol test` |
+
+CI (`.github/workflows/ci.yml`) runs unit/widget/golden tests first; Linux and Android device tests run only if those pass.
+
 ## CI/CD & Releases
 
 Diti features automated CI/CD powered by GitHub Actions:
