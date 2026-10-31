@@ -1,0 +1,34 @@
+name: Setup Flutter
+description: Set up Java (optional) and Flutter stable, then resolve dependencies for root and all local packages.
+inputs:
+  java:
+    description: Install Java 17 (needed for Android builds/tests)
+    required: false
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - name: Set up Java
+      if: inputs.java == 'true'
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        cache: true
+
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        for pkg in packages/*; do
+          if [ -f "$pkg/pubspec.yaml" ]; then
+            echo "Resolving dependencies for $pkg..."
+            (cd "$pkg" && flutter pub get)
+          fi
+        done
+        echo "Resolving root dependencies..."
+        flutter pub get

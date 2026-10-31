@@ -19,26 +19,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Install Dependencies
-        run: |
-          for pkg in packages/*; do
-            if [ -f "$pkg/pubspec.yaml" ]; then
-              (cd "$pkg" && flutter pub get)
-            fi
-          done
-          flutter pub get
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
 
       - name: Analyze
         run: flutter analyze --fatal-infos
@@ -60,26 +42,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Install Dependencies
-        run: |
-          for pkg in packages/*; do
-            if [ -f "$pkg/pubspec.yaml" ]; then
-              (cd "$pkg" && flutter pub get)
-            fi
-          done
-          flutter pub get
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
 
       - name: Configure Android NDK
         run: |
@@ -173,20 +137,10 @@ jobs:
           sudo apt-get install -y clang cmake ninja-build pkg-config \
             libgtk-3-dev liblzma-dev libsecret-1-dev wget file
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
         with:
-          channel: 'stable'
-          cache: true
-
-      - name: Install Dependencies
-        run: |
-          for pkg in packages/*; do
-            if [ -f "$pkg/pubspec.yaml" ]; then
-              (cd "$pkg" && flutter pub get)
-            fi
-          done
-          flutter pub get
+          java: 'false'
 
       - name: Build Linux Bundle
         run: flutter build linux --release
