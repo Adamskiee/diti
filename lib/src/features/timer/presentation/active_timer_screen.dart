@@ -97,9 +97,18 @@ class ActiveTimerScreen extends ConsumerWidget {
                   backgroundColor: AppColors.pausedAmber,
                 )
               else if (isAwaitingAction)
-                const Chip(
-                  avatar: Icon(Icons.touch_app, size: 16),
-                  label: Text('COMPLETED — READY TO CONTINUE'),
+                Chip(
+                  avatar: Icon(
+                    state.displayRemainingMs < 0
+                        ? Icons.timer_outlined
+                        : Icons.touch_app,
+                    size: 16,
+                  ),
+                  label: Text(
+                    state.displayRemainingMs < 0
+                        ? 'OVERTIME — READY TO CONTINUE'
+                        : 'COMPLETED — READY TO CONTINUE',
+                  ),
                   backgroundColor: AppColors.awaitingActionPulse,
                 )
               else

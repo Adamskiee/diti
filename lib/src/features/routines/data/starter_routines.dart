@@ -17,7 +17,7 @@ const List<Routine> starterRoutines = [
         id: 'pomodoro-break',
         name: 'Short Break',
         durationMs: 300000, // 5 min
-        transition: TransitionPolicy.auto,
+        transition: TransitionPolicy.manual,
         kind: PhaseKind.rest,
       ),
     ],

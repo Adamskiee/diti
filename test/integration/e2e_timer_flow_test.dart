@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:diti/main.dart';
@@ -138,6 +138,89 @@ void main() {
 
       // Verify mini-player dismisses
       expect(find.byKey(const Key('mini_player_toggle_button')), findsNothing);
+
+      await db.close();
+      container.dispose();
+    });
+
+    testWidgets(
+        'E2E: Rest timer runs on negative when user does not continue after rest ended',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
+      final fakeClient = FakeNotificationClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      final repo = container.read(routineRepositoryProvider);
+      const routine = Routine(
+        id: 'r_e2e_rest',
+        name: 'Rest Overtime Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p_break',
+            name: 'Coffee Break',
+            durationMs: 60000, // 1 min
+            transition: TransitionPolicy.manual,
+            kind: PhaseKind.rest,
+          ),
+          RoutinePhase(
+            id: 'p_work',
+            name: 'Code Review',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto,
+            kind: PhaseKind.focus,
+          ),
+        ],
+      );
+      await repo.saveRoutine(routine);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: AppShell(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Start routine
+      final startButton = find.text('Start').first;
+      await tester.tap(startButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('01:00'), findsOneWidget);
+      expect(find.text('Coffee Break'), findsOneWidget);
+
+      // Advance clock past 1 min rest: 1 min + 15s (75s total)
+      fakeClock.advance(const Duration(seconds: 75));
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      container.read(activeTimerControllerProvider.notifier).tick();
+      await tester.pumpAndSettle();
+
+      // User has not continued after rest timer ended: timer runs on negative!
+      expect(find.text('-00:15'), findsOneWidget);
+      expect(find.text('OVERTIME — READY TO CONTINUE'), findsOneWidget);
+      expect(find.text('Start Next Phase'), findsOneWidget);
+
+      // User now taps "Start Next Phase" to continue
+      await tester.tap(find.text('Start Next Phase'));
+      await tester.pumpAndSettle();
+
+      // Routine continues to Code Review
+      expect(find.text('Code Review'), findsWidgets);
+      expect(find.text('01:00'), findsOneWidget);
 
       await db.close();
       container.dispose();

@@ -57,6 +57,49 @@ void main() {
     expect(state.phaseStatus, equals(PhaseStatus.active));
   });
 
+  test('Rest phase with manual transition reaches duration and runs negative remainingMs while awaiting user continuation', () async {
+    final routine = Routine(
+      id: 'rest-test',
+      name: 'Rest Routine',
+      repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
+      phases: const [
+        RoutinePhase(
+          id: 'p1',
+          name: 'Short Break',
+          durationMs: 30000,
+          transition: TransitionPolicy.manual,
+          kind: PhaseKind.rest,
+        ),
+        RoutinePhase(
+          id: 'p2',
+          name: 'Work',
+          durationMs: 60000,
+          transition: TransitionPolicy.auto,
+          kind: PhaseKind.focus,
+        ),
+      ],
+    );
+    await routineRepo.saveRoutine(routine);
+
+    await engine.start('rest-test');
+    final runId = engine.activeRunId!;
+
+    clock.advance(const Duration(seconds: 40)); // 10s past 30s rest duration
+    await pumpEventQueue();
+
+    final state = engine.getState(runId);
+    expect(state!.currentPhase.id, equals('p1')); // Still on p1 rest phase!
+    expect(state.phaseStatus, equals(PhaseStatus.awaitingAction));
+    expect(state.remainingMs, equals(-10000)); // -10 seconds
+    expect(state.activeElapsedMs, equals(40000));
+
+    // When the user continues, the phase advances and the ledger captures 40s
+    await engine.finishPhase(runId);
+    final advancedState = engine.getState(runId);
+    expect(advancedState!.currentPhase.id, equals('p2'));
+    expect(advancedState.completedPhases.first.durationMs, equals(40000));
+  });
+
   test('T-007: Manual phase reaches duration, transitions to awaitingAction without auto-advance', () async {
     final routine = Routine(
       id: 'manual-test',
