@@ -145,7 +145,7 @@ jobs:
             adb wait-for-device
             adb devices -l
             flutter devices
-            patrol test --target patrol_test/notification_permission_test.dart --no-check-compatibility --verbose
+            patrol test --target patrol_test/notification_permission_test.dart --no-check-compatibility --show-flutter-logs --verbose
             flutter test integration_test -d android
 
       - name: Upload Android Test Results
@@ -153,6 +153,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-test-results
-          path: build/app/outputs/androidTest-results/
+          path: |
+            build/app/outputs/androidTest-results/
+            build/app/reports/androidTests/
           retention-days: 7
           if-no-files-found: ignore

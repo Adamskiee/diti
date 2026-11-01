@@ -34,8 +34,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
-  Future<NotificationPermissionStatus> _fetchStatus() {
-    return ref.read(notificationPermissionServiceProvider).checkStatus();
+  Future<NotificationPermissionStatus> _fetchStatus() async {
+    final status =
+        await ref.read(notificationPermissionServiceProvider).checkStatus();
+    debugPrint('[SettingsScreen] checkStatus resolved: $status');
+    return status;
   }
 
   void _refresh() {
