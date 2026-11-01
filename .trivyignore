@@ -1,0 +1,3 @@
+# Suppressed CVEs for Trivy scans.
+# Every entry requires a structured justification comment:
+# reason: <explanation> expires: YYYY-MM-DD

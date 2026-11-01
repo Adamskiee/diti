@@ -115,6 +115,7 @@ jobs:
 
       - name: Configure Android NDK
         run: |
+          # shellcheck disable=SC2012,SC2086
           if [ -n "$ANDROID_NDK_HOME" ] && [ -d "$ANDROID_NDK_HOME" ]; then
             echo "Using ANDROID_NDK_HOME: $ANDROID_NDK_HOME"
             echo "ANDROID_NDK_VERSION=$(basename "$ANDROID_NDK_HOME")" >> $GITHUB_ENV
@@ -146,17 +147,25 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
           else
-            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret provided. Falling back to debug signing."
+            echo "::error::ANDROID_KEYSTORE_BASE64 is missing! Production release builds must be signed."
+            exit 1
           fi
 
       - name: Build Universal APK
-        run: flutter build apk --release
+        run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
 
       - name: Build Split per-ABI APKs
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols
 
       - name: Build Android App Bundle (AAB)
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
+
+      - name: Upload Debug Symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-symbols
+          path: build/symbols
+          retention-days: 7
 
       - name: Stage Android Release Assets
         id: stage
@@ -190,6 +199,14 @@ jobs:
           name: android-release-assets
           path: staging/android/*
           retention-days: 1
+
+  security:
+    name: Release Security Gate
+    needs: [build-android]
+    uses: ./.github/workflows/security.yml
+    with:
+      mode: release
+      apk-artifact: android-release-assets
 
   build-linux:
     name: Build Linux Desktop Artifacts
@@ -289,7 +306,7 @@ jobs:
 
   publish-release:
     name: Publish GitHub Release
-    needs: [verify, build-android, build-linux]
+    needs: [verify, build-android, build-linux, security]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -336,6 +353,7 @@ jobs:
       - name: Compute SHA-256 Checksums
         run: |
           cd dist
+          # shellcheck disable=SC2035
           sha256sum * > checksums.txt
           echo "Generated Checksums:"
           cat checksums.txt
