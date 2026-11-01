@@ -82,8 +82,8 @@ Our GitHub Actions pipeline runs on a staged, tier-based model to optimize PR fe
    * Package & root unit, widget, and golden tests (`flutter test`)
    * Headless Linux desktop integration tests (`integration_test`)
 2. **Android Patrol & Device E2E Tests (~16 min):**
-   * Automatically triggered on PRs modifying `android/**`, `patrol_test/**`, `packages/diti_notifications/**`, or `.github/workflows/ci.yml`.
-   * Can be manually forced on any PR by adding the **`ci:e2e`** label or running via `workflow_dispatch`.
+   * Automatically triggered on PRs modifying `android/**`, `patrol_test/**`, `packages/diti_notifications/**`, `.github/workflows/ci.yml`, or `.github/actions/**`.
+   * Can be manually forced on any PR by adding the **ci:e2e** label (takes effect on next commit push or workflow dispatch) or running via `workflow_dispatch`.
    * Automatically runs on all pushes to `main`.
 3. **Pre-Release Gate:**
    * Full Android Patrol E2E suite runs as a mandatory gate in `release.yml` before publishing production binaries.

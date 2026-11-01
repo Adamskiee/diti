@@ -27,13 +27,18 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       run_android: ${{ steps.filter.outputs.android == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'ci:e2e') }}
     steps:
       - name: Checkout Repository
+        if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
 
       - name: Check for Android-affecting changes
+        if: github.event_name == 'pull_request'
         id: filter
         uses: dorny/paths-filter@v3
         with:
@@ -43,6 +48,7 @@ jobs:
               - 'patrol_test/**'
               - 'packages/diti_notifications/**'
               - '.github/workflows/ci.yml'
+              - '.github/actions/**'
 
   quality:
     name: Code Quality & Tests
