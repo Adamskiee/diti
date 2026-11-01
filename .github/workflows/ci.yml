@@ -144,8 +144,11 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
           disable-animations: true
           script: |
-            patrol test --target patrol_test/notification_permission_test.dart -d emulator-5554 --no-check-compatibility --verbose
-            flutter test integration_test -d emulator-5554
+            adb wait-for-device
+            adb devices -l
+            flutter devices
+            patrol test --target patrol_test/notification_permission_test.dart --no-check-compatibility --verbose
+            flutter test integration_test -d android
 
       - name: Upload Android Test Results
         if: failure()
