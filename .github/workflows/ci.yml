@@ -97,6 +97,8 @@ jobs:
     needs: [quality]
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx2560m -XX:MaxMetaspaceSize=768m -XX:ReservedCodeCacheSize=256m' -Dorg.gradle.workers.max=2"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -127,10 +129,6 @@ jobs:
 
       - name: Install Patrol CLI
         run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
-
-      - name: Pre-build Android Test APKs
-        run: |
-          patrol build android --target patrol_test/notification_permission_test.dart --no-check-compatibility --verbose
 
       - name: Run Patrol and integration_test
         uses: reactivecircus/android-emulator-runner@v2
