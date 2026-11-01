@@ -7,11 +7,13 @@ import '../../features/history/providers/history_providers.dart';
 import '../../features/plan/presentation/plan_screen.dart';
 import '../../features/routines/presentation/routine_editor_screen.dart';
 import '../../features/routines/presentation/routine_list_screen.dart';
+import '../../features/settings/presentation/controllers/settings_controller.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/timer/controllers/active_timer_controller.dart';
 import '../../features/timer/presentation/active_timer_screen.dart';
 import '../../features/timer/presentation/widgets/active_timer_mini_player.dart';
 import '../di/timer_engine_provider.dart';
+import '../di/tracker_provider.dart';
 import 'app_tab.dart';
 
 class AppShell extends ConsumerStatefulWidget {
@@ -33,6 +35,11 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(timerLifecycleCoordinatorProvider).initialize();
+      if (ref.read(continuousTrackingEnabledProvider)) {
+        final tracker = ref.read(continuousActivityTrackerProvider);
+        tracker.start();
+        tracker.pruneOldData();
+      }
     });
   }
 
