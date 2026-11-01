@@ -17,3 +17,9 @@ final planBlockRepositoryProvider = Provider<PlanBlockRepository>((ref) {
   final db = ref.watch(databaseProvider);
   return DriftPlanBlockRepository(db);
 });
+
+final activityJournalRepositoryProvider =
+    Provider<ActivityJournalRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return DriftActivityJournalRepository(db);
+});
