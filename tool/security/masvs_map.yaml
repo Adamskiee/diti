@@ -1,0 +1,18 @@
+mappings:
+  # Gitleaks
+  generic-api-key: ["MASVS-STORAGE-1", "MASVS-CODE"]
+  # Manifest
+  manifest-debuggable: ["MASVS-RESILIENCE-4"]
+  manifest-backup-unscoped: ["MASVS-STORAGE-2"]
+  manifest-cleartext-permitted: ["MASVS-NETWORK-1"]
+  manifest-exported-unprotected: ["MASVS-PLATFORM-1"]
+  # Signing
+  debug-signed-apk: ["MASVS-RESILIENCE-2"]
+  signature-verification-failed: ["MASVS-RESILIENCE-2"]
+  # Obfuscation
+  unobfuscated-symbols: ["MASVS-RESILIENCE-3"]
+  # Permissions
+  unallowlisted-permission: ["MASVS-PLATFORM-1", "MASVS-PRIVACY-1"]
+  # MobSF common rules
+  app_is_debuggable: ["MASVS-RESILIENCE-4"]
+  allowbackup_is_true: ["MASVS-STORAGE-2"]
