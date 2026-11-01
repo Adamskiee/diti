@@ -9,11 +9,35 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
-val hasKeystore = keystorePropertiesFile.exists()
-
-if (hasKeystore) {
+if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
+
+// 1. Resolve from Environment Variables, 2. Properties file, 3. null
+val envStorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+val envStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+val envKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+val envKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+
+val releaseStoreFile: File? = when {
+    !envStorePath.isNullOrBlank() -> File(envStorePath)
+    keystoreProperties.getProperty("storeFile") != null -> {
+        val path = keystoreProperties.getProperty("storeFile")
+        val file = File(path)
+        if (file.isAbsolute) file else rootProject.file(path)
+    }
+    else -> null
+}
+
+val releaseStorePassword: String? = envStorePassword ?: keystoreProperties.getProperty("storePassword")
+val releaseKeyAlias: String? = envKeyAlias ?: keystoreProperties.getProperty("keyAlias")
+val releaseKeyPassword: String? = envKeyPassword ?: keystoreProperties.getProperty("keyPassword")
+
+val isReleaseSigningConfigured = releaseStoreFile != null &&
+    releaseStoreFile.exists() &&
+    !releaseStorePassword.isNullOrBlank() &&
+    !releaseKeyAlias.isNullOrBlank() &&
+    !releaseKeyPassword.isNullOrBlank()
 
 android {
     namespace = "com.adilabs.diti"
@@ -44,13 +68,12 @@ android {
     }
 
     signingConfigs {
-        if (hasKeystore) {
+        if (isReleaseSigningConfigured) {
             create("release") {
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                val storeFilePath = keystoreProperties.getProperty("storeFile")
-                storeFile = if (storeFilePath != null) rootProject.file(storeFilePath) else null
-                storePassword = keystoreProperties.getProperty("storePassword")
+                storeFile = releaseStoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
@@ -61,9 +84,10 @@ android {
             manifestPlaceholders["appName"] = "Diti (Debug)"
         }
         release {
-            if (hasKeystore && signingConfigs.findByName("release") != null) {
+            if (isReleaseSigningConfigured && signingConfigs.findByName("release") != null) {
                 signingConfig = signingConfigs.getByName("release")
             } else {
+                logger.warn("WARNING: No valid release keystore found. Falling back to debug signing config.")
                 signingConfig = signingConfigs.getByName("debug")
             }
         }
