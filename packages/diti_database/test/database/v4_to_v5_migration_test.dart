@@ -1,6 +1,4 @@
 import 'package:diti_database/diti_database.dart';
-import 'package:diti_database/src/database/migrations/migration_registry.dart';
-import 'package:diti_database/src/database/migrations/migration_runner.dart';
 import 'package:drift/native.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
