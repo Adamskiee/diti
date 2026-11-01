@@ -2,7 +2,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+
 from tool.security.findings import Finding, save_findings
 
 

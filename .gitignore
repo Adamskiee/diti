@@ -36,3 +36,9 @@ test/**/failures/
 # Patrol generated bundle
 patrol_test/test_bundle.dart
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+

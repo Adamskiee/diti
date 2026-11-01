@@ -55,7 +55,12 @@ def parse_mobsf_report(report: dict[str, Any]) -> list[Finding]:
     return findings
 
 
-def scan_apk(server_url: str, api_key: str, apk_path: str | Path) -> dict[str, Any]:
+def scan_apk(
+    server_url: str,
+    api_key: str,
+    apk_path: str | Path,
+    timeout: int = 300,
+) -> dict[str, Any]:
     url = server_url.rstrip("/")
     headers = {"Authorization": api_key}
     p = Path(apk_path)
@@ -67,6 +72,7 @@ def scan_apk(server_url: str, api_key: str, apk_path: str | Path) -> dict[str, A
             f"{url}/api/v1/upload",
             headers=headers,
             files={"file": (p.name, f, "application/octet-stream")},
+            timeout=timeout,
         )
     res.raise_for_status()
     upload_data = res.json()
@@ -79,12 +85,18 @@ def scan_apk(server_url: str, api_key: str, apk_path: str | Path) -> dict[str, A
         f"{url}/api/v1/scan",
         headers=headers,
         data={"hash": hash_val, "scan_type": scan_type},
+        timeout=timeout,
     )
     res.raise_for_status()
 
     # 3. Fetch JSON Report
     print("Fetching JSON scan report...")
-    res = requests.post(f"{url}/api/v1/report_json", headers=headers, data={"hash": hash_val})
+    res = requests.post(
+        f"{url}/api/v1/report_json",
+        headers=headers,
+        data={"hash": hash_val},
+        timeout=timeout,
+    )
     res.raise_for_status()
     return res.json()
 

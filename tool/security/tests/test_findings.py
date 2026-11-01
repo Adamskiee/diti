@@ -128,3 +128,16 @@ suppressions:
         tmp.flush()
         with pytest.raises(ValueError, match="missing mandatory reason or expires"):
             apply_suppressions([f], tmp.name, now=datetime.date(2026, 11, 1))
+
+
+def test_suppression_empty_block_handled_gracefully():
+    f = Finding("tool", "rule", "high", "title", "loc")
+    content = "suppressions:\n"
+    with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".yaml") as tmp:
+        tmp.write(content)
+        tmp.flush()
+        active, expired = apply_suppressions([f], tmp.name, now=datetime.date(2026, 11, 1))
+
+    assert len(active) == 1
+    assert active[0].suppressed is False
+    assert len(expired) == 0

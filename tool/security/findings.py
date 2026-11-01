@@ -62,7 +62,7 @@ def apply_suppressions(
     with p.open("r", encoding="utf-8") as f:
         config = yaml.safe_load(f) or {}
 
-    raw_suppressions = config.get("suppressions", [])
+    raw_suppressions = config.get("suppressions") or []
     suppression_rules = []
     expired_findings = []
 

@@ -4,7 +4,7 @@ from pathlib import Path
 from tool.security.findings import Finding
 
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
-NS = {"android": ANDROID_NS}
+
 
 def check_manifest(manifest_path: str | Path) -> list[Finding]:
     p = Path(manifest_path)

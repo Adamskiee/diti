@@ -127,16 +127,19 @@ def test_scan_apk(tmp_path: Path):
         assert upload_call.args[0] == "http://localhost:8000/api/v1/upload"
         assert upload_call.kwargs["headers"] == {"Authorization": "test-token"}
         assert "file" in upload_call.kwargs["files"]
+        assert upload_call.kwargs["timeout"] == 300
 
         # Call 2: scan
         scan_call = mock_post.call_args_list[1]
         assert scan_call.args[0] == "http://localhost:8000/api/v1/scan"
         assert scan_call.kwargs["data"] == {"hash": "abc123hash", "scan_type": "apk"}
+        assert scan_call.kwargs["timeout"] == 300
 
         # Call 3: report_json
         report_call = mock_post.call_args_list[2]
         assert report_call.args[0] == "http://localhost:8000/api/v1/report_json"
         assert report_call.kwargs["data"] == {"hash": "abc123hash"}
+        assert report_call.kwargs["timeout"] == 300
 
 
 def test_scan_apk_raises_on_http_error(tmp_path: Path):

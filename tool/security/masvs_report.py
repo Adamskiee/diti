@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import argparse
-import datetime
 import json
 from pathlib import Path
 import sys
 from typing import Any
 import yaml
 
-from tool.security.findings import Finding, apply_suppressions, load_findings, save_findings
+from tool.security.findings import Finding, apply_suppressions, load_findings
 
 
 def load_masvs_map(map_path: str | Path) -> dict[str, list[str]]:
@@ -17,7 +16,9 @@ def load_masvs_map(map_path: str | Path) -> dict[str, list[str]]:
         return {}
     with p.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
-    return data.get("mappings", {})
+    if not isinstance(data, dict):
+        return {}
+    return data.get("mappings") or {}
 
 
 def evaluate_gate(findings: list[Finding], mode: str) -> tuple[int, list[str]]:
@@ -26,11 +27,11 @@ def evaluate_gate(findings: list[Finding], mode: str) -> tuple[int, list[str]]:
         if f.suppressed:
             continue
         # Expired suppression or critical always fails
-        if f.rule_id == "expired-suppression" or f.severity == "critical":
+        if f.rule_id == "expired-suppression" or f.severity.lower() == "critical":
             failures.append(f"[{f.severity.upper()}] {f.tool}:{f.rule_id} at {f.location} - {f.title}")
             continue
 
-        if f.severity == "high":
+        if f.severity.lower() == "high":
             if mode == "release":
                 failures.append(f"[{f.severity.upper()}] {f.tool}:{f.rule_id} at {f.location} - {f.title}")
             elif mode == "pr":

@@ -79,6 +79,29 @@ def test_load_masvs_map(tmp_path):
     mapping = load_masvs_map(map_file)
     assert mapping == {"rule-1": ["MASVS-STORAGE-1"]}
 
+    # Non-dict yaml returns empty dict
+    non_dict_file = tmp_path / "list.yaml"
+    non_dict_file.write_text("- item1\n- item2\n", encoding="utf-8")
+    assert load_masvs_map(non_dict_file) == {}
+
+    # Empty mappings block returns empty dict
+    empty_mappings_file = tmp_path / "empty_map.yaml"
+    empty_mappings_file.write_text("mappings:\n", encoding="utf-8")
+    assert load_masvs_map(empty_mappings_file) == {}
+
+
+def test_evaluate_gate_case_insensitive_severity():
+    f_upper_critical = Finding("mobsf", "c-rule", "CRITICAL", "Crit", "loc")
+    f_mixed_high = Finding("gitleaks", "h-rule", "High", "High", "loc")
+
+    status_code, failures = evaluate_gate([f_upper_critical], mode="pr")
+    assert status_code == 1
+    assert len(failures) == 1
+
+    status_code, failures = evaluate_gate([f_mixed_high], mode="pr")
+    assert status_code == 1
+    assert len(failures) == 1
+
 
 def test_format_markdown_report():
     findings = [
