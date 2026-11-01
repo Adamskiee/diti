@@ -146,7 +146,7 @@ jobs:
             adb devices -l
             flutter devices
             patrol test --target patrol_test/notification_permission_test.dart --no-check-compatibility --show-flutter-logs --verbose
-            flutter test integration_test -d android
+            flutter test integration_test -d emulator-5554
 
       - name: Upload Android Test Results
         if: failure()
