@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Disallow all cloud backups to prevent unencrypted cloud sync of local timer/analytics DB -->
+        <exclude path="." />
+    </cloud-backup>
+    <device-transfer>
+        <!-- Allow device-to-device migration during phone setup -->
+        <include path="." />
+    </device-transfer>
+</data-extraction-rules>
