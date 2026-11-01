@@ -9,6 +9,7 @@ import 'tables/sessions_table.dart';
 import 'tables/session_events_table.dart';
 import 'tables/plan_blocks_table.dart';
 import 'tables/session_app_usages_table.dart';
+import 'tables/activity_samples_table.dart';
 import '../daos/routines_dao.dart';
 import '../daos/timer_runs_dao.dart';
 import '../daos/sessions_dao.dart';
@@ -27,6 +28,7 @@ typedef SessionData = Session;
 typedef SessionEventData = SessionEvent;
 typedef PlanBlockData = PlanBlock;
 typedef SessionAppUsageData = SessionAppUsage;
+typedef ActivitySampleData = ActivitySample;
 
 @DriftDatabase(
   tables: [
@@ -38,6 +40,7 @@ typedef SessionAppUsageData = SessionAppUsage;
     SessionEvents,
     PlanBlocks,
     SessionAppUsages,
+    ActivitySamples,
   ],
   daos: [
     RoutinesDao,
@@ -70,7 +73,7 @@ class DitiDatabase extends _$DitiDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

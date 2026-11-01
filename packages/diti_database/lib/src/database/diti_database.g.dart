@@ -3680,6 +3680,364 @@ class SessionAppUsagesCompanion extends UpdateCompanion<SessionAppUsage> {
   }
 }
 
+class $ActivitySamplesTable extends ActivitySamples
+    with TableInfo<$ActivitySamplesTable, ActivitySample> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivitySamplesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sampledAtUtcMeta =
+      const VerificationMeta('sampledAtUtc');
+  @override
+  late final GeneratedColumn<DateTime> sampledAtUtc = GeneratedColumn<DateTime>(
+      'sampled_at_utc', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _durationMsMeta =
+      const VerificationMeta('durationMs');
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+      'duration_ms', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _appNameMeta =
+      const VerificationMeta('appName');
+  @override
+  late final GeneratedColumn<String> appName = GeneratedColumn<String>(
+      'app_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _categoryMeta =
+      const VerificationMeta('category');
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+      'category', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sampleTitleMeta =
+      const VerificationMeta('sampleTitle');
+  @override
+  late final GeneratedColumn<String> sampleTitle = GeneratedColumn<String>(
+      'sample_title', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, sampledAtUtc, durationMs, appName, category, sampleTitle];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'activity_samples';
+  @override
+  VerificationContext validateIntegrity(Insertable<ActivitySample> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sampled_at_utc')) {
+      context.handle(
+          _sampledAtUtcMeta,
+          sampledAtUtc.isAcceptableOrUnknown(
+              data['sampled_at_utc']!, _sampledAtUtcMeta));
+    } else if (isInserting) {
+      context.missing(_sampledAtUtcMeta);
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+          _durationMsMeta,
+          durationMs.isAcceptableOrUnknown(
+              data['duration_ms']!, _durationMsMeta));
+    } else if (isInserting) {
+      context.missing(_durationMsMeta);
+    }
+    if (data.containsKey('app_name')) {
+      context.handle(_appNameMeta,
+          appName.isAcceptableOrUnknown(data['app_name']!, _appNameMeta));
+    } else if (isInserting) {
+      context.missing(_appNameMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(_categoryMeta,
+          category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('sample_title')) {
+      context.handle(
+          _sampleTitleMeta,
+          sampleTitle.isAcceptableOrUnknown(
+              data['sample_title']!, _sampleTitleMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActivitySample map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActivitySample(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      sampledAtUtc: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}sampled_at_utc'])!,
+      durationMs: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}duration_ms'])!,
+      appName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}app_name'])!,
+      category: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}category'])!,
+      sampleTitle: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sample_title']),
+    );
+  }
+
+  @override
+  $ActivitySamplesTable createAlias(String alias) {
+    return $ActivitySamplesTable(attachedDatabase, alias);
+  }
+}
+
+class ActivitySample extends DataClass implements Insertable<ActivitySample> {
+  final String id;
+  final DateTime sampledAtUtc;
+  final int durationMs;
+  final String appName;
+  final String category;
+  final String? sampleTitle;
+  const ActivitySample(
+      {required this.id,
+      required this.sampledAtUtc,
+      required this.durationMs,
+      required this.appName,
+      required this.category,
+      this.sampleTitle});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sampled_at_utc'] = Variable<DateTime>(sampledAtUtc);
+    map['duration_ms'] = Variable<int>(durationMs);
+    map['app_name'] = Variable<String>(appName);
+    map['category'] = Variable<String>(category);
+    if (!nullToAbsent || sampleTitle != null) {
+      map['sample_title'] = Variable<String>(sampleTitle);
+    }
+    return map;
+  }
+
+  ActivitySamplesCompanion toCompanion(bool nullToAbsent) {
+    return ActivitySamplesCompanion(
+      id: Value(id),
+      sampledAtUtc: Value(sampledAtUtc),
+      durationMs: Value(durationMs),
+      appName: Value(appName),
+      category: Value(category),
+      sampleTitle: sampleTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sampleTitle),
+    );
+  }
+
+  factory ActivitySample.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActivitySample(
+      id: serializer.fromJson<String>(json['id']),
+      sampledAtUtc: serializer.fromJson<DateTime>(json['sampledAtUtc']),
+      durationMs: serializer.fromJson<int>(json['durationMs']),
+      appName: serializer.fromJson<String>(json['appName']),
+      category: serializer.fromJson<String>(json['category']),
+      sampleTitle: serializer.fromJson<String?>(json['sampleTitle']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sampledAtUtc': serializer.toJson<DateTime>(sampledAtUtc),
+      'durationMs': serializer.toJson<int>(durationMs),
+      'appName': serializer.toJson<String>(appName),
+      'category': serializer.toJson<String>(category),
+      'sampleTitle': serializer.toJson<String?>(sampleTitle),
+    };
+  }
+
+  ActivitySample copyWith(
+          {String? id,
+          DateTime? sampledAtUtc,
+          int? durationMs,
+          String? appName,
+          String? category,
+          Value<String?> sampleTitle = const Value.absent()}) =>
+      ActivitySample(
+        id: id ?? this.id,
+        sampledAtUtc: sampledAtUtc ?? this.sampledAtUtc,
+        durationMs: durationMs ?? this.durationMs,
+        appName: appName ?? this.appName,
+        category: category ?? this.category,
+        sampleTitle: sampleTitle.present ? sampleTitle.value : this.sampleTitle,
+      );
+  ActivitySample copyWithCompanion(ActivitySamplesCompanion data) {
+    return ActivitySample(
+      id: data.id.present ? data.id.value : this.id,
+      sampledAtUtc: data.sampledAtUtc.present
+          ? data.sampledAtUtc.value
+          : this.sampledAtUtc,
+      durationMs:
+          data.durationMs.present ? data.durationMs.value : this.durationMs,
+      appName: data.appName.present ? data.appName.value : this.appName,
+      category: data.category.present ? data.category.value : this.category,
+      sampleTitle:
+          data.sampleTitle.present ? data.sampleTitle.value : this.sampleTitle,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivitySample(')
+          ..write('id: $id, ')
+          ..write('sampledAtUtc: $sampledAtUtc, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('appName: $appName, ')
+          ..write('category: $category, ')
+          ..write('sampleTitle: $sampleTitle')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, sampledAtUtc, durationMs, appName, category, sampleTitle);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActivitySample &&
+          other.id == this.id &&
+          other.sampledAtUtc == this.sampledAtUtc &&
+          other.durationMs == this.durationMs &&
+          other.appName == this.appName &&
+          other.category == this.category &&
+          other.sampleTitle == this.sampleTitle);
+}
+
+class ActivitySamplesCompanion extends UpdateCompanion<ActivitySample> {
+  final Value<String> id;
+  final Value<DateTime> sampledAtUtc;
+  final Value<int> durationMs;
+  final Value<String> appName;
+  final Value<String> category;
+  final Value<String?> sampleTitle;
+  final Value<int> rowid;
+  const ActivitySamplesCompanion({
+    this.id = const Value.absent(),
+    this.sampledAtUtc = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.appName = const Value.absent(),
+    this.category = const Value.absent(),
+    this.sampleTitle = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ActivitySamplesCompanion.insert({
+    required String id,
+    required DateTime sampledAtUtc,
+    required int durationMs,
+    required String appName,
+    required String category,
+    this.sampleTitle = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        sampledAtUtc = Value(sampledAtUtc),
+        durationMs = Value(durationMs),
+        appName = Value(appName),
+        category = Value(category);
+  static Insertable<ActivitySample> custom({
+    Expression<String>? id,
+    Expression<DateTime>? sampledAtUtc,
+    Expression<int>? durationMs,
+    Expression<String>? appName,
+    Expression<String>? category,
+    Expression<String>? sampleTitle,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sampledAtUtc != null) 'sampled_at_utc': sampledAtUtc,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (appName != null) 'app_name': appName,
+      if (category != null) 'category': category,
+      if (sampleTitle != null) 'sample_title': sampleTitle,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ActivitySamplesCompanion copyWith(
+      {Value<String>? id,
+      Value<DateTime>? sampledAtUtc,
+      Value<int>? durationMs,
+      Value<String>? appName,
+      Value<String>? category,
+      Value<String?>? sampleTitle,
+      Value<int>? rowid}) {
+    return ActivitySamplesCompanion(
+      id: id ?? this.id,
+      sampledAtUtc: sampledAtUtc ?? this.sampledAtUtc,
+      durationMs: durationMs ?? this.durationMs,
+      appName: appName ?? this.appName,
+      category: category ?? this.category,
+      sampleTitle: sampleTitle ?? this.sampleTitle,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sampledAtUtc.present) {
+      map['sampled_at_utc'] = Variable<DateTime>(sampledAtUtc.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (appName.present) {
+      map['app_name'] = Variable<String>(appName.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (sampleTitle.present) {
+      map['sample_title'] = Variable<String>(sampleTitle.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivitySamplesCompanion(')
+          ..write('id: $id, ')
+          ..write('sampledAtUtc: $sampledAtUtc, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('appName: $appName, ')
+          ..write('category: $category, ')
+          ..write('sampleTitle: $sampleTitle, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$DitiDatabase extends GeneratedDatabase {
   _$DitiDatabase(QueryExecutor e) : super(e);
   $DitiDatabaseManager get managers => $DitiDatabaseManager(this);
@@ -3692,6 +4050,8 @@ abstract class _$DitiDatabase extends GeneratedDatabase {
   late final $PlanBlocksTable planBlocks = $PlanBlocksTable(this);
   late final $SessionAppUsagesTable sessionAppUsages =
       $SessionAppUsagesTable(this);
+  late final $ActivitySamplesTable activitySamples =
+      $ActivitySamplesTable(this);
   late final RoutinesDao routinesDao = RoutinesDao(this as DitiDatabase);
   late final TimerRunsDao timerRunsDao = TimerRunsDao(this as DitiDatabase);
   late final SessionsDao sessionsDao = SessionsDao(this as DitiDatabase);
@@ -3710,7 +4070,8 @@ abstract class _$DitiDatabase extends GeneratedDatabase {
         sessions,
         sessionEvents,
         planBlocks,
-        sessionAppUsages
+        sessionAppUsages,
+        activitySamples
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -6275,6 +6636,200 @@ typedef $$SessionAppUsagesTableProcessedTableManager = ProcessedTableManager<
     (SessionAppUsage, $$SessionAppUsagesTableReferences),
     SessionAppUsage,
     PrefetchHooks Function({bool sessionId})>;
+typedef $$ActivitySamplesTableCreateCompanionBuilder = ActivitySamplesCompanion
+    Function({
+  required String id,
+  required DateTime sampledAtUtc,
+  required int durationMs,
+  required String appName,
+  required String category,
+  Value<String?> sampleTitle,
+  Value<int> rowid,
+});
+typedef $$ActivitySamplesTableUpdateCompanionBuilder = ActivitySamplesCompanion
+    Function({
+  Value<String> id,
+  Value<DateTime> sampledAtUtc,
+  Value<int> durationMs,
+  Value<String> appName,
+  Value<String> category,
+  Value<String?> sampleTitle,
+  Value<int> rowid,
+});
+
+class $$ActivitySamplesTableFilterComposer
+    extends Composer<_$DitiDatabase, $ActivitySamplesTable> {
+  $$ActivitySamplesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get sampledAtUtc => $composableBuilder(
+      column: $table.sampledAtUtc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get appName => $composableBuilder(
+      column: $table.appName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sampleTitle => $composableBuilder(
+      column: $table.sampleTitle, builder: (column) => ColumnFilters(column));
+}
+
+class $$ActivitySamplesTableOrderingComposer
+    extends Composer<_$DitiDatabase, $ActivitySamplesTable> {
+  $$ActivitySamplesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get sampledAtUtc => $composableBuilder(
+      column: $table.sampledAtUtc,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get appName => $composableBuilder(
+      column: $table.appName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sampleTitle => $composableBuilder(
+      column: $table.sampleTitle, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ActivitySamplesTableAnnotationComposer
+    extends Composer<_$DitiDatabase, $ActivitySamplesTable> {
+  $$ActivitySamplesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get sampledAtUtc => $composableBuilder(
+      column: $table.sampledAtUtc, builder: (column) => column);
+
+  GeneratedColumn<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => column);
+
+  GeneratedColumn<String> get appName =>
+      $composableBuilder(column: $table.appName, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get sampleTitle => $composableBuilder(
+      column: $table.sampleTitle, builder: (column) => column);
+}
+
+class $$ActivitySamplesTableTableManager extends RootTableManager<
+    _$DitiDatabase,
+    $ActivitySamplesTable,
+    ActivitySample,
+    $$ActivitySamplesTableFilterComposer,
+    $$ActivitySamplesTableOrderingComposer,
+    $$ActivitySamplesTableAnnotationComposer,
+    $$ActivitySamplesTableCreateCompanionBuilder,
+    $$ActivitySamplesTableUpdateCompanionBuilder,
+    (
+      ActivitySample,
+      BaseReferences<_$DitiDatabase, $ActivitySamplesTable, ActivitySample>
+    ),
+    ActivitySample,
+    PrefetchHooks Function()> {
+  $$ActivitySamplesTableTableManager(
+      _$DitiDatabase db, $ActivitySamplesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivitySamplesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivitySamplesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActivitySamplesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<DateTime> sampledAtUtc = const Value.absent(),
+            Value<int> durationMs = const Value.absent(),
+            Value<String> appName = const Value.absent(),
+            Value<String> category = const Value.absent(),
+            Value<String?> sampleTitle = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ActivitySamplesCompanion(
+            id: id,
+            sampledAtUtc: sampledAtUtc,
+            durationMs: durationMs,
+            appName: appName,
+            category: category,
+            sampleTitle: sampleTitle,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required DateTime sampledAtUtc,
+            required int durationMs,
+            required String appName,
+            required String category,
+            Value<String?> sampleTitle = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ActivitySamplesCompanion.insert(
+            id: id,
+            sampledAtUtc: sampledAtUtc,
+            durationMs: durationMs,
+            appName: appName,
+            category: category,
+            sampleTitle: sampleTitle,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$ActivitySamplesTable, ActivitySample>(table),
+                    BaseReferences<_$DitiDatabase, $ActivitySamplesTable,
+                        ActivitySample>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ActivitySamplesTableProcessedTableManager = ProcessedTableManager<
+    _$DitiDatabase,
+    $ActivitySamplesTable,
+    ActivitySample,
+    $$ActivitySamplesTableFilterComposer,
+    $$ActivitySamplesTableOrderingComposer,
+    $$ActivitySamplesTableAnnotationComposer,
+    $$ActivitySamplesTableCreateCompanionBuilder,
+    $$ActivitySamplesTableUpdateCompanionBuilder,
+    (
+      ActivitySample,
+      BaseReferences<_$DitiDatabase, $ActivitySamplesTable, ActivitySample>
+    ),
+    ActivitySample,
+    PrefetchHooks Function()>;
 
 class $DitiDatabaseManager {
   final _$DitiDatabase _db;
@@ -6295,4 +6850,6 @@ class $DitiDatabaseManager {
       $$PlanBlocksTableTableManager(_db, _db.planBlocks);
   $$SessionAppUsagesTableTableManager get sessionAppUsages =>
       $$SessionAppUsagesTableTableManager(_db, _db.sessionAppUsages);
+  $$ActivitySamplesTableTableManager get activitySamples =>
+      $$ActivitySamplesTableTableManager(_db, _db.activitySamples);
 }

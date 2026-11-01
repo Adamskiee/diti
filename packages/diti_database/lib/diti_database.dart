@@ -12,6 +12,7 @@ export 'src/database/tables/sessions_table.dart';
 export 'src/database/tables/session_events_table.dart';
 export 'src/database/tables/plan_blocks_table.dart';
 export 'src/database/tables/session_app_usages_table.dart';
+export 'src/database/tables/activity_samples_table.dart';
 
 // DAOs
 export 'src/daos/routines_dao.dart';
@@ -46,3 +47,4 @@ export 'src/database/migrations/migration_exceptions.dart';
 export 'src/database/migrations/v1_to_v2_migration.dart';
 export 'src/database/migrations/v2_to_v3_migration.dart';
 export 'src/database/migrations/v3_to_v4_migration.dart';
+export 'src/database/migrations/v4_to_v5_migration.dart';

@@ -66,8 +66,8 @@ void main() {
       final db = DitiDatabase(NativeDatabase.memory());
       addTearDown(db.close);
 
-      // Verify schemaVersion is 4
-      expect(db.schemaVersion, equals(4));
+      // Verify schemaVersion is 5
+      expect(db.schemaVersion, equals(5));
 
       // Insert routine & session
       final sessionRecord = SessionRecord(
@@ -129,8 +129,8 @@ void main() {
       ]).getSingle();
       expect(existing.data['routine_name'], equals('Existing Routine'));
 
-      // Check user_version upgraded to 4
-      expect(raw.userVersion, equals(4));
+      // Check user_version upgraded to 5
+      expect(raw.userVersion, equals(5));
 
       // Verify table session_app_usages was created
       final tables = await db.customSelect(
