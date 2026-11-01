@@ -1,0 +1,35 @@
+app-id: com.adilabs.diti
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: diti
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --filesystem=xdg-config/diti:create
+
+modules:
+  - name: diti
+    buildsystem: simple
+    build-commands:
+      # Install executable binary
+      - install -D -m 0755 diti /app/bin/diti
+      # Install flutter shared libraries and data bundle
+      - cp -r lib /app/
+      - cp -r data /app/bin/
+      # Install desktop file, icon and AppStream metadata
+      - install -D -m 0644 com.adilabs.diti.desktop /app/share/applications/com.adilabs.diti.desktop
+      - install -D -m 0644 com.adilabs.diti.png /app/share/icons/hicolor/256x256/apps/com.adilabs.diti.png
+      - install -D -m 0644 com.adilabs.diti.metainfo.xml /app/share/metainfo/com.adilabs.diti.metainfo.xml
+    sources:
+      - type: dir
+        path: ../../build/linux/x64/release/bundle
+      - type: file
+        path: com.adilabs.diti.desktop
+      - type: file
+        path: com.adilabs.diti.png
+      - type: file
+        path: com.adilabs.diti.metainfo.xml

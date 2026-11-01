@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Diti
+Comment=Cross-platform daily planning and multi-phase routine timer
+Exec=diti
+Icon=com.adilabs.diti
+Type=Application
+Categories=Utility;Clock;ProjectManagement;
+Terminal=false
+StartupWMClass=com.adilabs.diti
+Keywords=timer;pomodoro;routine;focus;productivity;
