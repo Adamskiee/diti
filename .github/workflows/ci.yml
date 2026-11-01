@@ -23,6 +23,27 @@ env:
   PATROL_CLI_VERSION: '4.8.0'
 
 jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run_android: ${{ steps.filter.outputs.android == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'ci:e2e') }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check for Android-affecting changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            android:
+              - 'android/**'
+              - 'patrol_test/**'
+              - 'packages/diti_notifications/**'
+              - '.github/workflows/ci.yml'
+
   quality:
     name: Code Quality & Tests
     runs-on: ubuntu-latest
@@ -94,7 +115,8 @@ jobs:
 
   integration-android:
     name: Integration & Patrol Tests (Android)
-    needs: [quality]
+    needs: [quality, detect-changes]
+    if: needs.detect-changes.outputs.run_android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
