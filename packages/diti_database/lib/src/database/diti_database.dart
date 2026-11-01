@@ -15,6 +15,7 @@ import '../daos/timer_runs_dao.dart';
 import '../daos/sessions_dao.dart';
 import '../daos/plan_blocks_dao.dart';
 import '../daos/session_app_usages_dao.dart';
+import '../daos/activity_journal_dao.dart';
 import 'migrations/migration_runner.dart';
 import 'migrations/migration_registry.dart';
 
@@ -48,6 +49,7 @@ typedef ActivitySampleData = ActivitySample;
     SessionsDao,
     PlanBlocksDao,
     SessionAppUsagesDao,
+    ActivityJournalDao,
   ],
 )
 class DitiDatabase extends _$DitiDatabase {

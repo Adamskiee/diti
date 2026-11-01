@@ -4058,6 +4058,8 @@ abstract class _$DitiDatabase extends GeneratedDatabase {
   late final PlanBlocksDao planBlocksDao = PlanBlocksDao(this as DitiDatabase);
   late final SessionAppUsagesDao sessionAppUsagesDao =
       SessionAppUsagesDao(this as DitiDatabase);
+  late final ActivityJournalDao activityJournalDao =
+      ActivityJournalDao(this as DitiDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
