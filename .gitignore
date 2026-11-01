@@ -44,4 +44,12 @@ __pycache__/
 # FastForge build output
 dist/
 
+# Fastlane
+android/fastlane/report.xml
+android/fastlane/Preview.html
+android/fastlane/screenshots
+android/fastlane/service-account.json
+android/.bundle/
+android/vendor/bundle/
+
 

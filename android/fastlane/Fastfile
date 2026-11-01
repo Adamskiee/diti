@@ -1,0 +1,41 @@
+default_platform(:android)
+
+platform :android do
+  desc "Build release Android App Bundle (AAB) via Gradle"
+  lane :build do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "android/"
+    )
+  end
+
+  desc "Deploy AAB to Google Play Internal Testing track via Supply"
+  lane :distribute_internal do |options|
+    aab_path = options[:aab] || Dir["../dist/*.aab"].first || "../build/app/outputs/bundle/release/app-release.aab"
+    track = options[:track] || "internal"
+    status = options[:status] || "completed"
+
+    UI.user_error!("AAB file not found at: #{aab_path}") unless File.exist?(aab_path)
+
+    supply(
+      package_name: "com.adilabs.diti",
+      track: track,
+      release_status: status,
+      aab: aab_path,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: false,
+      metadata_path: "fastlane/metadata/android"
+    )
+  end
+
+  desc "Deploy AAB to Google Play Production track as draft"
+  lane :distribute_production do |options|
+    distribute_internal(
+      track: "production",
+      status: "draft",
+      aab: options[:aab]
+    )
+  end
+end
