@@ -1,0 +1,4 @@
+# Security suppressions registry.
+# Every entry MUST have a reason and a valid future expires date (YYYY-MM-DD).
+# Expired entries will automatically fail the security gate.
+suppressions: []
