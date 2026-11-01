@@ -85,7 +85,11 @@ Our GitHub Actions pipeline runs on a staged, tier-based model to optimize PR fe
    * Automatically triggered on PRs modifying `android/**`, `patrol_test/**`, `packages/diti_notifications/**`, `.github/workflows/ci.yml`, or `.github/actions/**`.
    * Can be manually forced on any PR by adding the **ci:e2e** label (takes effect on next commit push or workflow dispatch) or running via `workflow_dispatch`.
    * Automatically runs on all pushes to `main`.
-3. **Pre-Release Gate:**
+3. **Security CI (`security.yml`):**
+   * Fast secret scanning (`gitleaks`) and dependency vulnerability audit (`trivy`) run on every PR and push.
+   * Deep APK analysis (MobSF, Apktool manifest hardening, signature validation, obfuscation checks, and MASVS mapping) runs selectively on PRs altering Android/dependency paths or labeled **ci:security**.
+   * Mandatory release gate in `release.yml` blocking any unsuppressed high-severity vulnerabilities or debug-signed artifacts.
+4. **Pre-Release Gate:**
    * Full Android Patrol E2E suite runs as a mandatory gate in `release.yml` before publishing production binaries.
 
 ## CI/CD & Releases
@@ -93,6 +97,7 @@ Our GitHub Actions pipeline runs on a staged, tier-based model to optimize PR fe
 Diti features automated CI/CD powered by GitHub Actions:
 
 - **Continuous Integration (`ci.yml`)**: Automatically validates linter rules (`flutter analyze --fatal-infos`) and executes tests across all packages on Pull Requests and pushes to `main`.
+- **Security CI (`security.yml`)**: Automated secret scanning, dependency vulnerability audits, Android APK hardening checks, and OWASP MASVS v2 mapping (see [MASVS Coverage Matrix](docs/security/masvs-coverage.md)).
 - **Automated Releases (`release.yml`)**: Builds, signs, and distributes multi-platform binaries upon pushing version tags (`v*.*.*`) or via manual `workflow_dispatch`.
 
 ### Released Binaries
