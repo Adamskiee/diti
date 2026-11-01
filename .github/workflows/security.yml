@@ -1,0 +1,315 @@
+name: Security CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Gate evaluation mode'
+        required: true
+        default: 'pr'
+        type: choice
+        options:
+          - pr
+          - release
+  workflow_call:
+    inputs:
+      mode:
+        description: 'Gate evaluation mode'
+        required: false
+        default: 'release'
+        type: string
+      apk-artifact:
+        description: 'Artifact name containing the built universal release APK'
+        required: false
+        default: 'android-release-assets'
+        type: string
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: '8.30.1'
+  TRIVY_VERSION: '0.76.1'
+  APKTOOL_VERSION: '3.0.3'
+  JADX_VERSION: '1.5.6'
+  MOBSF_IMAGE: 'opensecurity/mobile-security-framework-mobsf:v4.6.4'
+
+jobs:
+  selftest:
+    name: Tool Selftest (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install pytest pyyaml requests
+      - name: Run pytest
+        run: pytest tool/security/tests/ -v
+
+  secrets:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Gitleaks
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+      - name: Run Gitleaks
+        run: |
+          mkdir -p raw-reports
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            gitleaks detect --log-opts="origin/${{ github.base_ref }}..HEAD" --report-format json --report-path raw-reports/gitleaks.json --exit-code 0
+          else
+            gitleaks detect --report-format json --report-path raw-reports/gitleaks.json --exit-code 0
+          fi
+      - name: Normalize findings
+        run: |
+          mkdir -p findings
+          python3 -m tool.security.normalize --tool gitleaks --input raw-reports/gitleaks.json --output findings/findings-gitleaks.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-secrets
+          path: findings/findings-gitleaks.json
+          retention-days: 14
+
+  deps:
+    name: Dependency Scan (Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: trivy-db-${{ runner.os }}-
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
+      - name: Run Trivy
+        run: |
+          mkdir -p raw-reports
+          trivy fs --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --format json --output raw-reports/trivy.json .
+      - name: Normalize findings
+        run: |
+          mkdir -p findings
+          python3 -m tool.security.normalize --tool trivy --input raw-reports/trivy.json --output findings/findings-trivy.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-deps
+          path: findings/findings-trivy.json
+          retention-days: 14
+
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run_apk: ${{ steps.filter.outputs.android == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || contains(github.event.pull_request.labels.*.name, 'ci:security') }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+      - name: Check for Android-affecting changes
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            android:
+              - 'android/**'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
+              - 'packages/**'
+              - '.github/workflows/security.yml'
+              - '.github/actions/**'
+              - 'tool/security/**'
+              - '.gitleaks.toml'
+              - '.trivyignore'
+
+  apk-build:
+    name: Build APK for Security Analysis
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.run_apk == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Flutter
+        if: github.event_name != 'workflow_call'
+        uses: ./.github/actions/setup-flutter
+      - name: Build Scannable Release APK
+        if: github.event_name != 'workflow_call'
+        run: |
+          flutter build apk --release --obfuscate --split-debug-info=build/symbols
+          mkdir -p staged-apk
+          cp build/app/outputs/flutter-apk/app-release.apk staged-apk/scan-target.apk
+      - name: Download Artifact from Caller
+        if: github.event_name == 'workflow_call'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.apk-artifact }}
+          path: caller-assets
+      - name: Locate Caller APK
+        if: github.event_name == 'workflow_call'
+        run: |
+          mkdir -p staged-apk
+          UNIVERSAL_APK=$(find caller-assets -name "*universal*.apk" | head -n1)
+          cp "$UNIVERSAL_APK" staged-apk/scan-target.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scan-apk
+          path: staged-apk/scan-target.apk
+          retention-days: 1
+
+  apk-checks:
+    name: Apktool & Artifact Checks
+    needs: [apk-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Download Target APK
+        uses: actions/download-artifact@v4
+        with:
+          name: scan-apk
+          path: .
+      - name: Install Apktool and JADX
+        run: |
+          sudo apt-get update && sudo apt-get install -y binutils
+          curl -sSL "https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar" -o /usr/local/bin/apktool.jar
+          printf '#!/bin/sh\njava -jar /usr/local/bin/apktool.jar "$@"\n' | sudo tee /usr/local/bin/apktool > /dev/null
+          sudo chmod +x /usr/local/bin/apktool
+          curl -sSL "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip" -o jadx.zip
+          sudo unzip -q -d /usr/local/jadx jadx.zip
+          sudo ln -s /usr/local/jadx/bin/jadx /usr/local/bin/jadx
+      - name: Decode APK
+        run: |
+          apktool d scan-target.apk -o decoded_apk
+          apksigner verify --print-certs scan-target.apk > apksigner_out.txt || true
+          mkdir -p lib_strings
+          find decoded_apk -name "libapp.so" -exec strings {} + > lib_strings/strings.txt || touch lib_strings/strings.txt
+      - name: Run Artifact Checks
+        run: |
+          mkdir -p findings
+          python3 -c "
+          from tool.security.manifest_check import check_manifest
+          from tool.security.sign_check import check_signature
+          from tool.security.permissions_check import check_permissions
+          from tool.security.obfuscation_check import check_obfuscation
+          from tool.security.findings import save_findings
+
+          f = []
+          f.extend(check_manifest('decoded_apk/AndroidManifest.xml'))
+          f.extend(check_signature('apksigner_out.txt'))
+          f.extend(check_permissions('decoded_apk/AndroidManifest.xml', 'tool/security/permissions_allowlist.yaml'))
+          f.extend(check_obfuscation('lib_strings/strings.txt', 'tool/security/obfuscation_sentinels.txt'))
+          save_findings(f, 'findings/findings-apk.json')
+          "
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-apk
+          path: findings/findings-apk.json
+          retention-days: 14
+
+  mobsf:
+    name: MobSF Static Analysis
+    needs: [apk-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Download Target APK
+        uses: actions/download-artifact@v4
+        with:
+          name: scan-apk
+          path: .
+      - name: Run MobSF Container
+        run: |
+          API_KEY=$(openssl rand -hex 16)
+          echo "MOBSF_API_KEY=$API_KEY" >> "$GITHUB_ENV"
+          docker run -d --name mobsf -p 8000:8000 -e MOBSF_API_KEY="$API_KEY" ${{ env.MOBSF_IMAGE }}
+          echo "Waiting for MobSF to be healthy..."
+          for _ in $(seq 1 30); do
+            if curl -s -f http://localhost:8000/api/v1/report_json -H "Authorization: $API_KEY" > /dev/null 2>&1; then
+              echo "MobSF is ready!"
+              break
+            fi
+            sleep 4
+          done
+      - name: Execute MobSF Scan
+        run: |
+          mkdir -p findings
+          python3 -m tool.security.mobsf_scan --server http://localhost:8000 --key "$MOBSF_API_KEY" --apk scan-target.apk --output findings/findings-mobsf.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findings-mobsf
+          path: findings/findings-mobsf.json
+          retention-days: 14
+
+  masvs-report:
+    name: MASVS Report & Gate
+    needs: [selftest, secrets, deps, detect-changes, apk-checks, mobsf]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install pyyaml
+      - name: Download all findings artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-findings
+      - name: Generate MASVS Report and Evaluate Gate
+        run: |
+          MODE="${{ inputs.mode || github.event.inputs.mode || 'pr' }}"
+          python3 -m tool.security.masvs_report \
+            --findings-dir all-findings \
+            --map tool/security/masvs_map.yaml \
+            --suppressions tool/security/suppressions.yaml \
+            --mode "$MODE" \
+            --summary "$GITHUB_STEP_SUMMARY" \
+            --json-out masvs-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: masvs-compliance-report
+          path: masvs-report.json
+          retention-days: 30

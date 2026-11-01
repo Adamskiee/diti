@@ -115,6 +115,7 @@ jobs:
 
       - name: Configure Android NDK
         run: |
+          # shellcheck disable=SC2012,SC2086
           if [ -n "$ANDROID_NDK_HOME" ] && [ -d "$ANDROID_NDK_HOME" ]; then
             echo "Using ANDROID_NDK_HOME: $ANDROID_NDK_HOME"
             echo "ANDROID_NDK_VERSION=$(basename "$ANDROID_NDK_HOME")" >> $GITHUB_ENV
@@ -198,6 +199,14 @@ jobs:
           name: android-release-assets
           path: staging/android/*
           retention-days: 1
+
+  security:
+    name: Release Security Gate
+    needs: [build-android]
+    uses: ./.github/workflows/security.yml
+    with:
+      mode: release
+      apk-artifact: android-release-assets
 
   build-linux:
     name: Build Linux Desktop Artifacts
@@ -297,7 +306,7 @@ jobs:
 
   publish-release:
     name: Publish GitHub Release
-    needs: [verify, build-android, build-linux]
+    needs: [verify, build-android, build-linux, security]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -344,6 +353,7 @@ jobs:
       - name: Compute SHA-256 Checksums
         run: |
           cd dist
+          # shellcheck disable=SC2035
           sha256sum * > checksums.txt
           echo "Generated Checksums:"
           cat checksums.txt
