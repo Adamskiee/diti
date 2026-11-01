@@ -55,3 +55,24 @@ class FakeNotificationClient implements NotificationClient {
   Future<NotificationAppLaunchDetails?> getNotificationAppLaunchDetails() async =>
       null;
 }
+
+class FakePermissionService implements NotificationPermissionService {
+  NotificationPermissionStatus status;
+
+  FakePermissionService({
+    this.status = const NotificationPermissionStatus(
+      notificationsEnabled: true,
+      exactAlarmsAllowed: true,
+    ),
+  });
+
+  @override
+  Future<NotificationPermissionStatus> checkStatus() async => status;
+
+  @override
+  Future<bool> requestExactAlarmPermission() async => true;
+
+  @override
+  Future<bool> requestNotificationPermissions() async => true;
+}
+

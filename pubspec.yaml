@@ -26,6 +26,7 @@ dependencies:
   timezone: ^0.9.4
   flutter_local_notifications: ^18.0.1
   drift: ^2.20.0
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:
