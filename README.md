@@ -61,8 +61,6 @@ flutter pub get
 | Integration (Android) | `flutter test integration_test -d <emulator-id>` |
 | Patrol E2E (Android, API 33+) | `dart pub global activate patrol_cli` then `patrol test` |
 
-CI (`.github/workflows/ci.yml`) runs unit/widget/golden tests first; Linux and Android device tests run only if those pass.
-
 ### Quick Local Validation
 Run package tests, root test suite, and static analysis in one pass:
 ```bash
@@ -74,6 +72,21 @@ done
 flutter test test/
 flutter analyze --fatal-infos
 ```
+
+### Continuous Integration (CI)
+
+Our GitHub Actions pipeline runs on a staged, tier-based model to optimize PR feedback speed:
+
+1. **Fast PR Checks (~3–4 min):**
+   * Static analysis & linter (`flutter analyze --fatal-infos`)
+   * Package & root unit, widget, and golden tests (`flutter test`)
+   * Headless Linux desktop integration tests (`integration_test`)
+2. **Android Patrol & Device E2E Tests (~16 min):**
+   * Automatically triggered on PRs modifying `android/**`, `patrol_test/**`, `packages/diti_notifications/**`, or `.github/workflows/ci.yml`.
+   * Can be manually forced on any PR by adding the **`ci:e2e`** label or running via `workflow_dispatch`.
+   * Automatically runs on all pushes to `main`.
+3. **Pre-Release Gate:**
+   * Full Android Patrol E2E suite runs as a mandatory gate in `release.yml` before publishing production binaries.
 
 ## CI/CD & Releases
 
