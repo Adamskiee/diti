@@ -25,7 +25,7 @@ class Finding:
         return cls(
             tool=data.get("tool", "unknown"),
             rule_id=data.get("rule_id", "unknown"),
-            severity=data.get("severity", "info").lower(),
+            severity=(data.get("severity") or "info").lower(),
             title=data.get("title", ""),
             location=data.get("location", ""),
             masvs=data.get("masvs", []),

@@ -36,7 +36,6 @@ env:
   GITLEAKS_VERSION: '8.30.1'
   TRIVY_VERSION: '0.76.1'
   APKTOOL_VERSION: '3.0.3'
-  JADX_VERSION: '1.5.6'
   MOBSF_IMAGE: 'opensecurity/mobile-security-framework-mobsf:v4.6.4'
 
 jobs:
@@ -202,15 +201,16 @@ jobs:
         with:
           name: scan-apk
           path: .
-      - name: Install Apktool and JADX
+      - name: Add Android build-tools to PATH
+        run: |
+          BUILD_TOOLS_DIR=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          echo "$BUILD_TOOLS_DIR" >> "$GITHUB_PATH"
+      - name: Install Apktool
         run: |
           sudo apt-get update && sudo apt-get install -y binutils
           curl -sSL "https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar" -o /usr/local/bin/apktool.jar
           printf '#!/bin/sh\njava -jar /usr/local/bin/apktool.jar "$@"\n' | sudo tee /usr/local/bin/apktool > /dev/null
           sudo chmod +x /usr/local/bin/apktool
-          curl -sSL "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip" -o jadx.zip
-          sudo unzip -q -d /usr/local/jadx jadx.zip
-          sudo ln -s /usr/local/jadx/bin/jadx /usr/local/bin/jadx
       - name: Decode APK
         run: |
           apktool d scan-target.apk -o decoded_apk
@@ -264,7 +264,7 @@ jobs:
           docker run -d --name mobsf -p 8000:8000 -e MOBSF_API_KEY="$API_KEY" ${{ env.MOBSF_IMAGE }}
           echo "Waiting for MobSF to be healthy..."
           for _ in $(seq 1 30); do
-            if curl -s -f http://localhost:8000/api/v1/report_json -H "Authorization: $API_KEY" > /dev/null 2>&1; then
+            if curl -s -f http://localhost:8000/api_docs/ > /dev/null 2>&1; then
               echo "MobSF is ready!"
               break
             fi

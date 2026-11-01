@@ -14,11 +14,19 @@ def parse_mobsf_report(report: dict[str, Any]) -> list[Finding]:
 
     # Manifest findings
     manifest_section = report.get("manifest_analysis") or {}
-    manifest_findings = manifest_section.get("manifest_findings") or []
+    if isinstance(manifest_section, dict):
+        manifest_findings = manifest_section.get("manifest_findings") or []
+    elif isinstance(manifest_section, list):
+        manifest_findings = manifest_section
+    else:
+        manifest_findings = []
+
     for item in manifest_findings:
-        rule_id = item.get("rule", "mobsf-manifest-rule")
-        severity = (item.get("severity") or "info").lower()
-        title = item.get("title") or item.get("description", "Manifest finding")
+        if not isinstance(item, dict):
+            continue
+        rule_id = item.get("rule") or item.get("title") or "mobsf-manifest-rule"
+        severity = (item.get("severity") or item.get("stat") or "info").lower()
+        title = item.get("title") or item.get("description") or item.get("desc") or "Manifest finding"
         findings.append(
             Finding(
                 tool="mobsf",

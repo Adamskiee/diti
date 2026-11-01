@@ -23,6 +23,13 @@ def test_finding_serialization():
     assert loaded[0].masvs == ["MASVS-STORAGE-1"]
     assert loaded[0].suppressed is False
 
+def test_finding_from_dict_severity_none_or_missing():
+    f_none = Finding.from_dict({"tool": "t", "severity": None})
+    assert f_none.severity == "info"
+
+    f_missing = Finding.from_dict({"tool": "t"})
+    assert f_missing.severity == "info"
+
 def test_suppression_active():
     f = Finding(
         tool="apk_manifest",

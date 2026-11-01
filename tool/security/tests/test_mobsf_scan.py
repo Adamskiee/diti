@@ -101,6 +101,41 @@ def test_parse_mobsf_report_defaults_and_edge_cases():
     assert f3.location == "source"
 
 
+def test_parse_mobsf_report_list_manifest_analysis():
+    sample_report = {
+        "manifest_analysis": [
+            {
+                "title": "App is debuggable",
+                "stat": "high",
+                "desc": "android:debuggable is set to true",
+            },
+            {
+                "rule": "allow_backup",
+                "severity": "warning",
+                "description": "Backup is allowed",
+            },
+            "invalid_non_dict_entry",
+        ],
+        "code_analysis": {},
+    }
+    findings = parse_mobsf_report(sample_report)
+    assert len(findings) == 2
+
+    f1 = findings[0]
+    assert f1.tool == "mobsf"
+    assert f1.rule_id == "App is debuggable"
+    assert f1.severity == "high"
+    assert f1.title == "App is debuggable"
+    assert f1.location == "AndroidManifest.xml"
+
+    f2 = findings[1]
+    assert f2.tool == "mobsf"
+    assert f2.rule_id == "allow_backup"
+    assert f2.severity == "warning"
+    assert f2.title == "Backup is allowed"
+    assert f2.location == "AndroidManifest.xml"
+
+
 def test_scan_apk(tmp_path: Path):
     dummy_apk = tmp_path / "app-release.apk"
     dummy_apk.write_bytes(b"dummy apk content")
