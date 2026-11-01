@@ -10,7 +10,7 @@ import '../presentation/controllers/history_feed_controller.dart';
 import '../presentation/controllers/session_verification_controller.dart';
 
 export '../presentation/controllers/manual_session_controller.dart'
-    show manualSessionControllerProvider, ManualSessionController;
+    show manualSessionControllerProvider, ManualSessionController, ManualSessionParams;
 
 enum HistoryTab {
   analytics,

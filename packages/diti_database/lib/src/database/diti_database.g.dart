@@ -4052,6 +4052,9 @@ abstract class _$DitiDatabase extends GeneratedDatabase {
       $SessionAppUsagesTable(this);
   late final $ActivitySamplesTable activitySamples =
       $ActivitySamplesTable(this);
+  late final Index idxActivitySamplesSampledAtUtc = Index(
+      'idx_activity_samples_sampled_at_utc',
+      'CREATE INDEX idx_activity_samples_sampled_at_utc ON activity_samples (sampled_at_utc)');
   late final RoutinesDao routinesDao = RoutinesDao(this as DitiDatabase);
   late final TimerRunsDao timerRunsDao = TimerRunsDao(this as DitiDatabase);
   late final SessionsDao sessionsDao = SessionsDao(this as DitiDatabase);
@@ -4073,7 +4076,8 @@ abstract class _$DitiDatabase extends GeneratedDatabase {
         sessionEvents,
         planBlocks,
         sessionAppUsages,
-        activitySamples
+        activitySamples,
+        idxActivitySamplesSampledAtUtc
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(

@@ -25,32 +25,25 @@ class ManualSessionSheet extends ConsumerStatefulWidget {
 }
 
 class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
+  late final ManualSessionParams _params;
   late final TextEditingController _titleController;
   late final TextEditingController _durationController;
 
   @override
   void initState() {
     super.initState();
+    _params = ManualSessionParams(
+      initialDate: widget.initialDate,
+      initialStartTime: widget.initialStartTime,
+      initialDurationMinutes: widget.initialDurationMinutes,
+      initialRoutineName: widget.initialRoutineName,
+      initialPlanBlockId: widget.initialPlanBlockId,
+    );
+    ref.read(manualSessionControllerProvider(_params));
     _titleController = TextEditingController(text: widget.initialRoutineName ?? '');
     _durationController = TextEditingController(
       text: (widget.initialDurationMinutes ?? 30).toString(),
     );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final ctrl = ref.read(manualSessionControllerProvider.notifier);
-      if (widget.initialDate != null) ctrl.setDate(widget.initialDate!);
-      if (widget.initialStartTime != null) ctrl.setStartTime(widget.initialStartTime!);
-      if (widget.initialDurationMinutes != null) {
-        ctrl.setDurationMinutes(widget.initialDurationMinutes!);
-      }
-      if (widget.initialRoutineName != null) {
-        ctrl.setRoutineName(widget.initialRoutineName!);
-      }
-      if (widget.initialPlanBlockId != null) {
-        ctrl.setPlanBlockId(widget.initialPlanBlockId!);
-      }
-    });
   }
 
   @override
@@ -62,8 +55,8 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(manualSessionControllerProvider);
-    final controller = ref.read(manualSessionControllerProvider.notifier);
+    final state = ref.watch(manualSessionControllerProvider(_params));
+    final controller = ref.read(manualSessionControllerProvider(_params).notifier);
     final theme = Theme.of(context);
     final timeFormat = DateFormat.jm();
     final dateFormat = DateFormat.yMMMd();
@@ -174,7 +167,7 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                         if (picked != null) {
                           controller.setStartTime(picked);
                           _durationController.text =
-                              ref.read(manualSessionControllerProvider).durationMinutes.toString();
+                              ref.read(manualSessionControllerProvider(_params)).durationMinutes.toString();
                         }
                       },
                     ),
@@ -197,7 +190,7 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                         if (picked != null) {
                           controller.setEndTime(picked);
                           _durationController.text =
-                              ref.read(manualSessionControllerProvider).durationMinutes.toString();
+                              ref.read(manualSessionControllerProvider(_params)).durationMinutes.toString();
                         }
                       },
                     ),

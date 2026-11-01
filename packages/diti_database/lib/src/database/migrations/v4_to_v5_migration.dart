@@ -12,6 +12,8 @@ class V4ToV5Migration implements SchemaMigration {
   @override
   Future<void> migrate(Migrator m, DitiDatabase db) async {
     await m.createTable(db.activitySamples);
+    await m.createIndex(Index('idx_activity_samples_sampled_at_utc',
+        'CREATE INDEX IF NOT EXISTS idx_activity_samples_sampled_at_utc ON activity_samples (sampled_at_utc);'));
   }
 
   Future<void> execute(DitiDatabase db, Migrator m) => migrate(m, db);

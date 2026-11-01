@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:diti_database/diti_database.dart';
 
@@ -71,6 +72,7 @@ class ManualSessionState {
           routineName == other.routineName &&
           routineId == other.routineId &&
           planBlockId == other.planBlockId &&
+          listEquals(detectedAppUsages, other.detectedAppUsages) &&
           isLoadingUsage == other.isLoadingUsage &&
           isSaving == other.isSaving &&
           errorMessage == other.errorMessage;
@@ -84,6 +86,7 @@ class ManualSessionState {
         routineName,
         routineId,
         planBlockId,
+        Object.hashAll(detectedAppUsages),
         isLoadingUsage,
         isSaving,
         errorMessage,

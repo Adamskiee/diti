@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
@@ -15,6 +16,8 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
   final ActivityJournalRepository _journalRepository;
   final Ref _ref;
   int _usageSeq = 0;
+  Timer? _debounceTimer;
+  Completer<void>? _debounceCompleter;
 
   ManualSessionController({
     required SessionRepository sessionRepository,
@@ -39,7 +42,7 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
           initialRoutineId,
           initialPlanBlockId,
         )) {
-    refreshUsage();
+    refreshUsage(immediate: true);
   }
 
   static ManualSessionState _createInitialState(
@@ -88,7 +91,7 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
   void setDate(DateTime date) {
     if (!mounted) return;
     state = state.copyWith(selectedDate: date);
-    refreshUsage();
+    refreshUsage(immediate: false);
   }
 
   void setStartTime(TimeOfDay time) {
@@ -98,7 +101,7 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     if (endMin < startMin) endMin += 24 * 60;
     final diff = endMin - startMin;
     state = state.copyWith(startTime: time, durationMinutes: diff > 0 ? diff : 30);
-    refreshUsage();
+    refreshUsage(immediate: false);
   }
 
   void setEndTime(TimeOfDay time) {
@@ -108,7 +111,7 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     if (endMin < startMin) endMin += 24 * 60;
     final diff = endMin - startMin;
     state = state.copyWith(endTime: time, durationMinutes: diff > 0 ? diff : 30);
-    refreshUsage();
+    refreshUsage(immediate: false);
   }
 
   void setDurationMinutes(int minutes) {
@@ -120,7 +123,7 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
       durationMinutes: minutes,
       endTime: TimeOfDay(hour: endTotal ~/ 60, minute: endTotal % 60),
     );
-    refreshUsage();
+    refreshUsage(immediate: false);
   }
 
   void setRoutineName(String name, {String? routineId}) {
@@ -140,7 +143,29 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     );
   }
 
-  Future<void> refreshUsage() async {
+  Future<void> refreshUsage({bool immediate = false}) {
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
+    if (_debounceCompleter != null && !_debounceCompleter!.isCompleted) {
+      _debounceCompleter!.complete();
+    }
+
+    if (immediate) {
+      return _fetchUsage();
+    }
+
+    final completer = Completer<void>();
+    _debounceCompleter = completer;
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      await _fetchUsage();
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    });
+    return completer.future;
+  }
+
+  Future<void> _fetchUsage() async {
     final seq = ++_usageSeq;
     if (!mounted) return;
     state = state.copyWith(isLoadingUsage: true);
@@ -158,6 +183,12 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     }
   }
 
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
   Future<bool> saveSession() async {
     final title = state.routineName.trim();
     if (title.isEmpty) {
@@ -170,6 +201,12 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     if (durationMs < 1000) {
       if (!mounted) return false;
       state = state.copyWith(errorMessage: 'Session duration must be at least 1 minute.');
+      return false;
+    }
+
+    if (_endUtc.isAfter(DateTime.now().toUtc())) {
+      if (!mounted) return false;
+      state = state.copyWith(errorMessage: 'Session end time cannot be in the future.');
       return false;
     }
 
@@ -270,12 +307,54 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
   }
 }
 
-final manualSessionControllerProvider =
-    StateNotifierProvider.autoDispose<ManualSessionController, ManualSessionState>((ref) {
+class ManualSessionParams {
+  final DateTime? initialDate;
+  final TimeOfDay? initialStartTime;
+  final int? initialDurationMinutes;
+  final String? initialRoutineName;
+  final String? initialPlanBlockId;
+
+  const ManualSessionParams({
+    this.initialDate,
+    this.initialStartTime,
+    this.initialDurationMinutes,
+    this.initialRoutineName,
+    this.initialPlanBlockId,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ManualSessionParams &&
+          runtimeType == other.runtimeType &&
+          initialDate == other.initialDate &&
+          initialStartTime == other.initialStartTime &&
+          initialDurationMinutes == other.initialDurationMinutes &&
+          initialRoutineName == other.initialRoutineName &&
+          initialPlanBlockId == other.initialPlanBlockId;
+
+  @override
+  int get hashCode => Object.hash(
+        initialDate,
+        initialStartTime,
+        initialDurationMinutes,
+        initialRoutineName,
+        initialPlanBlockId,
+      );
+}
+
+final manualSessionControllerProvider = StateNotifierProvider.autoDispose
+    .family<ManualSessionController, ManualSessionState, ManualSessionParams>(
+        (ref, params) {
   return ManualSessionController(
     sessionRepository: ref.watch(sessionRepositoryProvider),
     planBlockRepository: ref.watch(planBlockRepositoryProvider),
     journalRepository: ref.watch(activityJournalRepositoryProvider),
     ref: ref,
+    initialDate: params.initialDate,
+    initialStartTime: params.initialStartTime,
+    initialDurationMinutes: params.initialDurationMinutes,
+    initialRoutineName: params.initialRoutineName,
+    initialPlanBlockId: params.initialPlanBlockId,
   );
 });

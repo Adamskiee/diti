@@ -20,6 +20,7 @@ class ContinuousActivityTracker {
   final OnPruneRequest? onPrune;
 
   bool _isRunning = false;
+  bool _isTicking = false;
   DateTime? _lastTickAt;
   Timer? _timer;
   Timer? _pruneTimer;
@@ -63,27 +64,34 @@ class ContinuousActivityTracker {
   }
 
   Future<void> tick({DateTime? now}) async {
-    if (!_isRunning) return;
-    final current = now ?? DateTime.now().toUtc();
-    final last = _lastTickAt;
-    _lastTickAt = current;
+    if (!_isRunning || _isTicking) return;
+    _isTicking = true;
+    try {
+      final current = now ?? DateTime.now().toUtc();
+      final last = _lastTickAt;
+      _lastTickAt = current;
 
-    if (last == null) return;
-    final elapsed = current.difference(last);
-    if (elapsed <= Duration.zero || elapsed > maxSampleGap) return;
+      if (last == null) return;
+      final elapsed = current.difference(last);
+      if (elapsed <= Duration.zero || elapsed > maxSampleGap) return;
 
-    final sample = await _trackerPort.sampleActiveWindow();
-    if (sample == null || !_isRunning) return;
+      final sample = await _trackerPort.sampleActiveWindow();
+      if (sample == null || !_isRunning) return;
 
-    final identity =
-        AppIdentityRules.identify(sample.rawClass, sample.rawTitle);
-    await onSample(
-      current,
-      elapsed.inMilliseconds,
-      identity.appName,
-      identity.category,
-      identity.sampleTitle,
-    );
+      final identity =
+          AppIdentityRules.identify(sample.rawClass, sample.rawTitle);
+      await onSample(
+        current,
+        elapsed.inMilliseconds,
+        identity.appName,
+        identity.category,
+        identity.sampleTitle,
+      );
+    } catch (_) {
+      // Prevent unhandled async exceptions in background timer zone
+    } finally {
+      _isTicking = false;
+    }
   }
 
   Future<void> pruneOldData({DateTime? now}) async {

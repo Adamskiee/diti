@@ -107,5 +107,23 @@ void main() {
       expect(result.first.data['app_name'], equals('Chrome'));
       expect(raw.userVersion, equals(5));
     });
+
+    test('creates idx_activity_samples_sampled_at_utc index on migration', () async {
+      final raw = _openV4Database();
+      final db = DitiDatabase(
+        NativeDatabase.opened(raw, closeUnderlyingOnClose: false),
+      );
+      addTearDown(() async {
+        await db.close();
+        raw.close();
+      });
+
+      await db.customSelect('SELECT 1 FROM activity_samples').get();
+
+      final indexResult = await db.customSelect(
+        "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_activity_samples_sampled_at_utc';",
+      ).get();
+      expect(indexResult, isNotEmpty);
+    });
   });
 }
