@@ -3,16 +3,59 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_notifications/diti_notifications.dart';
 import '../../../core/di/notification_providers.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final permissionService = ref.watch(notificationPermissionServiceProvider);
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
 
+class _SettingsScreenState extends ConsumerState<SettingsScreen>
+    with WidgetsBindingObserver {
+  late Future<NotificationPermissionStatus> _statusFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _statusFuture = _fetchStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refresh();
+    }
+  }
+
+  Future<NotificationPermissionStatus> _fetchStatus() {
+    return ref.read(notificationPermissionServiceProvider).checkStatus();
+  }
+
+  void _refresh() {
+    setState(() {
+      _statusFuture = _fetchStatus();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings & Diagnostics'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Status',
+            onPressed: _refresh,
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -20,7 +63,7 @@ class SettingsScreen extends ConsumerWidget {
           const Text('Permissions', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           FutureBuilder<NotificationPermissionStatus>(
-            future: permissionService.checkStatus(),
+            future: _statusFuture,
             builder: (context, snapshot) {
               final status = snapshot.data;
               return Card(
