@@ -146,17 +146,25 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
           else
-            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret provided. Falling back to debug signing."
+            echo "::error::ANDROID_KEYSTORE_BASE64 is missing! Production release builds must be signed."
+            exit 1
           fi
 
       - name: Build Universal APK
-        run: flutter build apk --release
+        run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
 
       - name: Build Split per-ABI APKs
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols
 
       - name: Build Android App Bundle (AAB)
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
+
+      - name: Upload Debug Symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-symbols
+          path: build/symbols
+          retention-days: 7
 
       - name: Stage Android Release Assets
         id: stage
