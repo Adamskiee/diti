@@ -41,4 +41,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
+# FastForge build output
+dist/
+
 
