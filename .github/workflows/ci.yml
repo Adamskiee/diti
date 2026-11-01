@@ -107,17 +107,26 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Free Runner Disk Space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/lib/android/sdk/system-images/*
+          sudo docker system prune --all --volumes --force 2>/dev/null || true
+          sudo apt-get clean 2>/dev/null || true
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
 
       - name: Install Patrol CLI
         run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
-
-      - name: Free Disk Space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
 
       - name: Pre-build Android Test APKs
         run: |
@@ -131,7 +140,7 @@ jobs:
           target: google_apis
           force-avd-creation: false
           ram-size: 2048M
-          disk-size: 4096M
+          disk-size: 2048M
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
           disable-animations: true
           script: |
