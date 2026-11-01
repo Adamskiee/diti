@@ -4,7 +4,6 @@ import datetime
 import json
 from pathlib import Path
 from typing import Any
-import yaml
 
 @dataclasses.dataclass
 class Finding:
@@ -58,6 +57,8 @@ def apply_suppressions(
     p = Path(suppressions_path)
     if not p.exists():
         return findings, []
+
+    import yaml
 
     with p.open("r", encoding="utf-8") as f:
         config = yaml.safe_load(f) or {}
