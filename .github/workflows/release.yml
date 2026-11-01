@@ -34,9 +34,77 @@ jobs:
           done
           flutter test test/
 
+  verify-e2e-android:
+    name: Pre-Release E2E Tests (Android)
+    needs: [verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PATROL_CLI_VERSION: '4.8.0'
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx2560m -XX:MaxMetaspaceSize=768m -XX:ReservedCodeCacheSize=256m' -Dorg.gradle.workers.max=2"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Free Runner Disk Space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/lib/android/sdk/system-images/*
+          sudo docker system prune --all --volumes --force 2>/dev/null || true
+          sudo apt-get clean 2>/dev/null || true
+          echo "Disk space after cleanup:"
+          df -h
+
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+
+      - name: Install Patrol CLI
+        run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
+
+      - name: Run Patrol and integration_test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          ram-size: 2048M
+          disk-size: 2048M
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
+          disable-animations: true
+          script: |
+            adb wait-for-device
+            adb devices -l
+            flutter devices
+            patrol test --target patrol_test/notification_permission_test.dart --no-check-compatibility --show-flutter-logs --verbose
+            flutter test integration_test -d emulator-5554
+
+      - name: Upload Android Test Results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-android-test-results
+          path: |
+            build/app/outputs/androidTest-results/
+            build/app/reports/androidTests/
+          retention-days: 7
+          if-no-files-found: ignore
+
   build-android:
     name: Build Android Artifacts
-    needs: [verify]
+    needs: [verify, verify-e2e-android]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
