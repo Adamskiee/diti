@@ -38,7 +38,7 @@ void main() {
       expect(await granted, isTrue);
 
       await $('Settings').tap();
-      await $.pumpAndSettle();
+      await $('Enabled').waitUntilVisible(timeout: const Duration(seconds: 10));
       expect($('Enabled'), findsOneWidget);
     },
   );
