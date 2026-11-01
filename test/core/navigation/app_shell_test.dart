@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:diti/src/core/di/app_info_providers.dart';
 import 'package:diti/src/core/di/database_provider.dart';
 import 'package:diti/src/core/di/notification_providers.dart';
 import 'package:diti/src/core/di/repositories_provider.dart';
@@ -16,26 +18,6 @@ import 'package:diti/src/features/timer/presentation/widgets/active_timer_mini_p
 import 'package:diti_notifications/diti_notifications.dart';
 import 'package:timer_engine/timer_engine.dart';
 import '../../helpers/test_fakes.dart';
-
-class FakePermissionService implements NotificationPermissionService {
-  final NotificationPermissionStatus status;
-
-  FakePermissionService({
-    this.status = const NotificationPermissionStatus(
-      notificationsEnabled: true,
-      exactAlarmsAllowed: true,
-    ),
-  });
-
-  @override
-  Future<NotificationPermissionStatus> checkStatus() async => status;
-
-  @override
-  Future<bool> requestExactAlarmPermission() async => true;
-
-  @override
-  Future<bool> requestNotificationPermissions() async => true;
-}
 
 class FakeCoordinator implements TimerLifecycleCoordinator {
   int initializeCalls = 0;
@@ -85,6 +67,15 @@ void main() {
               .overrideWithValue(fakePermission),
           timerLifecycleCoordinatorProvider
               .overrideWithValue(fakeCoordinator),
+          packageInfoProvider.overrideWith(
+            (ref) => PackageInfo(
+              appName: 'Diti',
+              packageName: 'com.adilabs.diti',
+              version: '2.2.0',
+              buildNumber: '',
+              buildSignature: '',
+            ),
+          ),
         ],
       );
 
@@ -135,7 +126,7 @@ void main() {
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.text('Settings & Diagnostics'), findsOneWidget);
       expect(find.text('Version'), findsOneWidget);
-      expect(find.text('0.1.0 (Phase 4A)'), findsOneWidget);
+      expect(find.text('2.2.0'), findsOneWidget);
       expect(find.text('Notifications: '), findsOneWidget);
       expect(find.text('Enabled'), findsOneWidget);
       expect(find.text('Exact Alarms: '), findsOneWidget);
@@ -168,6 +159,15 @@ void main() {
           notificationClientProvider.overrideWithValue(fakeClient),
           timerLifecycleCoordinatorProvider
               .overrideWithValue(fakeCoordinator),
+          packageInfoProvider.overrideWith(
+            (ref) => PackageInfo(
+              appName: 'Diti',
+              packageName: 'com.adilabs.diti',
+              version: '2.2.0',
+              buildNumber: '',
+              buildSignature: '',
+            ),
+          ),
         ],
       );
 
@@ -230,6 +230,15 @@ void main() {
           notificationClientProvider.overrideWithValue(fakeClient),
           timerLifecycleCoordinatorProvider
               .overrideWithValue(fakeCoordinator),
+          packageInfoProvider.overrideWith(
+            (ref) => PackageInfo(
+              appName: 'Diti',
+              packageName: 'com.adilabs.diti',
+              version: '2.2.0',
+              buildNumber: '',
+              buildSignature: '',
+            ),
+          ),
         ],
       );
 
@@ -276,6 +285,15 @@ void main() {
           notificationClientProvider.overrideWithValue(fakeClient),
           timerLifecycleCoordinatorProvider
               .overrideWithValue(fakeCoordinator),
+          packageInfoProvider.overrideWith(
+            (ref) => PackageInfo(
+              appName: 'Diti',
+              packageName: 'com.adilabs.diti',
+              version: '2.2.0',
+              buildNumber: '',
+              buildSignature: '',
+            ),
+          ),
         ],
       );
 
@@ -332,6 +350,15 @@ void main() {
           notificationClientProvider.overrideWithValue(fakeClient),
           timerLifecycleCoordinatorProvider
               .overrideWithValue(fakeCoordinator),
+          packageInfoProvider.overrideWith(
+            (ref) => PackageInfo(
+              appName: 'Diti',
+              packageName: 'com.adilabs.diti',
+              version: '2.2.0',
+              buildNumber: '',
+              buildSignature: '',
+            ),
+          ),
         ],
       );
 
@@ -383,6 +410,15 @@ void main() {
           notificationClientProvider.overrideWithValue(fakeClient),
           timerLifecycleCoordinatorProvider
               .overrideWithValue(fakeCoordinator),
+          packageInfoProvider.overrideWith(
+            (ref) => PackageInfo(
+              appName: 'Diti',
+              packageName: 'com.adilabs.diti',
+              version: '2.2.0',
+              buildNumber: '',
+              buildSignature: '',
+            ),
+          ),
         ],
       );
 

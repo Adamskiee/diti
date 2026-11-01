@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_notifications/diti_notifications.dart';
+import '../../../core/di/app_info_providers.dart';
 import '../../../core/di/notification_providers.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -102,10 +103,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           const SizedBox(height: 24),
           const Text('About Diti', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Card(
+          Card(
             child: ListTile(
-              title: Text('Version'),
-              subtitle: Text('0.1.0 (Phase 4A)'),
+              title: const Text('Version'),
+              subtitle: ref.watch(appVersionProvider).when(
+                    data: (version) => Text(version),
+                    loading: () => const Text('Loading...'),
+                    error: (_, __) => const Text('Unknown'),
+                  ),
             ),
           ),
         ],
