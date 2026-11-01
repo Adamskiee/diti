@@ -1,0 +1,12 @@
+title = "Diti Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlisted paths and fixtures"
+paths = [
+    '''tool/security/tests/''',
+    '''test/fixtures/''',
+    '''pubspec.lock$''',
+]
