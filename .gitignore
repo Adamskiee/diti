@@ -33,3 +33,6 @@ test/**/goldens/macos/
 test/**/goldens/windows/
 test/**/failures/
 
+# Patrol generated bundle
+patrol_test/test_bundle.dart
+
