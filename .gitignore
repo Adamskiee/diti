@@ -26,3 +26,13 @@ Thumbs.db
 android/key.properties
 *.keystore
 *.jks
+
+# Golden tests (Alchemist): only CI goldens are committed
+test/**/goldens/linux/
+test/**/goldens/macos/
+test/**/goldens/windows/
+test/**/failures/
+
+# Patrol generated bundle
+patrol_test/test_bundle.dart
+

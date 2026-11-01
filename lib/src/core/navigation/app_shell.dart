@@ -113,7 +113,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
           ),
           const PlanScreen(),
           const HistoryAnalyticsScreen(),
-          const SettingsScreen(),
+          SettingsScreen(key: ValueKey(_currentTab == AppTab.settings)),
         ],
       ),
       bottomNavigationBar: Column(
