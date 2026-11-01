@@ -13,8 +13,14 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
 
   return AlchemistConfig.runWithConfig(
     config: AlchemistConfig(
-      ciGoldensConfig: const CiGoldensConfig(enabled: true),
-      platformGoldensConfig: PlatformGoldensConfig(enabled: !isRunningInCi),
+      ciGoldensConfig: const CiGoldensConfig(
+        enabled: true,
+        diffThreshold: 0.005, // 0.5% threshold for cross-environment anti-aliasing
+      ),
+      platformGoldensConfig: PlatformGoldensConfig(
+        enabled: !isRunningInCi,
+        diffThreshold: 0.005,
+      ),
     ),
     run: testMain,
   );
