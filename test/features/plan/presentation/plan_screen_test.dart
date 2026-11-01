@@ -5,6 +5,7 @@ import 'package:diti/src/core/di/database_provider.dart';
 import 'package:diti/src/core/di/notification_providers.dart';
 import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
+import 'package:diti/src/features/history/presentation/widgets/manual_session_sheet.dart';
 import 'package:diti/src/features/plan/presentation/plan_screen.dart';
 import 'package:diti/src/features/plan/presentation/widgets/date_selector_strip.dart';
 import 'package:diti/src/features/plan/presentation/widgets/plan_block_card.dart';
@@ -234,6 +235,52 @@ void main() {
       // ActiveTimerScreen should be pushed
       expect(find.byType(ActiveTimerScreen), findsOneWidget);
       expect(find.text('Focus Phase'), findsWidgets);
+
+      await db.close();
+      container.dispose();
+    });
+
+    testWidgets('tapping Record Past Session opens ManualSessionSheet with prefilled data',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          selectedDateProvider.overrideWith((ref) => DateTime(2026, 10, 16)),
+        ],
+      );
+
+      final planRepo = container.read(planBlockRepositoryProvider);
+      final block = PlanBlock(
+        id: 'block-record',
+        planDate: '2026-10-16',
+        scheduledStartUtc: DateTime.utc(2026, 10, 16, 9, 0),
+        timezoneId: 'UTC',
+        plannedDurationMs: 30 * 60 * 1000,
+        routineId: 'Deep Work',
+        status: PlanBlockStatus.scheduled,
+      );
+      await planRepo.createPlanBlock(block);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: PlanScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final recordBtn = find.byTooltip('Record Past Session');
+      expect(recordBtn, findsOneWidget);
+
+      await tester.tap(recordBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ManualSessionSheet), findsOneWidget);
+      expect(find.text('Deep Work'), findsWidgets);
 
       await db.close();
       container.dispose();

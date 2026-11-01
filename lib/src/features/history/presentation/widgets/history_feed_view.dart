@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:intl/intl.dart';
 import '../../providers/history_providers.dart';
+import 'manual_session_sheet.dart';
 import 'session_detail_sheet.dart';
 import 'session_feed_tile.dart';
 
@@ -46,6 +47,18 @@ class HistoryFeedView extends ConsumerWidget {
                 onSelected: (_) {
                   ref.read(historyFeedFilterProvider.notifier).state =
                       HistoryOutcomeFilter.interruptedOrCancelled;
+                },
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.add_task),
+                tooltip: 'Log Past Session',
+                onPressed: () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (ctx) => const ManualSessionSheet(),
+                  );
                 },
               ),
             ],

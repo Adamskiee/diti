@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_database/diti_database.dart';
 import '../../../core/di/timer_engine_provider.dart';
+import '../../history/presentation/widgets/manual_session_sheet.dart';
 import '../../timer/controllers/active_timer_controller.dart';
 import '../../timer/presentation/active_timer_screen.dart';
 import '../providers/plan_providers.dart';
@@ -72,6 +73,8 @@ class PlanScreen extends ConsumerWidget {
                               onEdit: () => _editBlock(context, ref, block),
                               onDelete: () =>
                                   _confirmDelete(context, ref, block),
+                              onRecordPastSession: () =>
+                                  _recordPastSession(context, block),
                             );
                           },
                         ),
@@ -160,6 +163,21 @@ class PlanScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _recordPastSession(BuildContext context, PlanBlock block) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => ManualSessionSheet(
+        initialDate: block.scheduledStartUtc.toLocal(),
+        initialStartTime:
+            TimeOfDay.fromDateTime(block.scheduledStartUtc.toLocal()),
+        initialDurationMinutes: block.plannedDurationMs ~/ 60000,
+        initialRoutineName: block.routineId,
+        initialPlanBlockId: block.id,
       ),
     );
   }
