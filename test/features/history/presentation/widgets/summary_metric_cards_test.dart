@@ -169,4 +169,85 @@ void main() {
     expect(focusIcon.color, theme.colorScheme.primary);
     expect(restIcon.color, theme.colorScheme.tertiary);
   });
+
+  testWidgets('renders 1x4 row on wide screens (>= 840dp)', (tester) async {
+    tester.view.physicalSize = const Size(1024, 768);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final summary = AnalyticsSummary(
+      timeframe: AnalyticsTimeframe.thisWeek,
+      dateRange: DateTimeRange(
+        start: DateTime(2026, 10, 12),
+        end: DateTime(2026, 10, 18),
+      ),
+      totalDurationMs: 60 * 60 * 1000,
+      focusDurationMs: 45 * 60 * 1000,
+      restDurationMs: 15 * 60 * 1000,
+      completedCount: 2,
+      interruptedOrCancelledCount: 0,
+      dailyBuckets: const [],
+      activityBreakdowns: const [],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SummaryMetricCards(summary: summary),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // On wide screen (>= 840dp), all 4 metric cards are in a single horizontal Row.
+    // The top-level layout Row for the 4 metric cards contains 4 Expanded children.
+    final rows = tester.widgetList<Row>(find.descendant(
+      of: find.byType(SummaryMetricCards),
+      matching: find.byType(Row),
+    ));
+
+    final wideLayoutRow = rows.where((r) => r.children.whereType<Expanded>().length == 4);
+    expect(wideLayoutRow, hasLength(1));
+  });
+
+  testWidgets('renders 2x2 grid on compact screens (< 840dp)', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final summary = AnalyticsSummary(
+      timeframe: AnalyticsTimeframe.thisWeek,
+      dateRange: DateTimeRange(
+        start: DateTime(2026, 10, 12),
+        end: DateTime(2026, 10, 18),
+      ),
+      totalDurationMs: 60 * 60 * 1000,
+      focusDurationMs: 45 * 60 * 1000,
+      restDurationMs: 15 * 60 * 1000,
+      completedCount: 2,
+      interruptedOrCancelledCount: 0,
+      dailyBuckets: const [],
+      activityBreakdowns: const [],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SummaryMetricCards(summary: summary),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // On compact screen (< 840dp), 2 layout Rows with 2 Expanded children each.
+    final rows = tester.widgetList<Row>(find.descendant(
+      of: find.byType(SummaryMetricCards),
+      matching: find.byType(Row),
+    ));
+
+    final compactLayoutRows = rows.where((r) => r.children.whereType<Expanded>().length == 2);
+    expect(compactLayoutRows, hasLength(2));
+  });
 }

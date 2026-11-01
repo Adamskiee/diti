@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/responsive_layout.dart';
 import '../../../../core/utils/duration_formatter.dart';
 import '../../domain/analytics_models.dart';
 
@@ -15,56 +16,76 @@ class SummaryMetricCards extends StatelessWidget {
     final theme = Theme.of(context);
     final completionPct = (summary.completionRate * 100).toInt();
 
-    return Column(
-      children: [
-        Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= ResponsiveBreakpoints.expanded;
+
+        final totalTile = _buildMetricTile(
+          context,
+          icon: Icons.timer_outlined,
+          label: 'Total',
+          value: DurationFormatter.formatMs(summary.totalDurationMs),
+          color: theme.colorScheme.secondary,
+        );
+
+        final focusTile = _buildMetricTile(
+          context,
+          icon: Icons.bolt_outlined,
+          label: 'Focus',
+          value: DurationFormatter.formatMs(summary.focusDurationMs),
+          color: theme.colorScheme.primary,
+        );
+
+        final restTile = _buildMetricTile(
+          context,
+          icon: Icons.self_improvement_outlined,
+          label: 'Rest',
+          value: DurationFormatter.formatMs(summary.restDurationMs),
+          color: theme.colorScheme.tertiary,
+        );
+
+        final completedTile = _buildMetricTile(
+          context,
+          icon: Icons.check_circle_outline,
+          label: 'Completed',
+          value: '${summary.completedCount} ($completionPct%)',
+          color: const Color(0xFF006C50),
+        );
+
+        if (isWide) {
+          return Row(
+            children: [
+              Expanded(child: totalTile),
+              const SizedBox(width: 12),
+              Expanded(child: focusTile),
+              const SizedBox(width: 12),
+              Expanded(child: restTile),
+              const SizedBox(width: 12),
+              Expanded(child: completedTile),
+            ],
+          );
+        }
+
+        return Column(
           children: [
-            Expanded(
-              child: _buildMetricTile(
-                context,
-                icon: Icons.timer_outlined,
-                label: 'Total',
-                value: DurationFormatter.formatMs(summary.totalDurationMs),
-                color: theme.colorScheme.secondary,
-              ),
+            Row(
+              children: [
+                Expanded(child: totalTile),
+                const SizedBox(width: 12),
+                Expanded(child: focusTile),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildMetricTile(
-                context,
-                icon: Icons.bolt_outlined,
-                label: 'Focus',
-                value: DurationFormatter.formatMs(summary.focusDurationMs),
-                color: theme.colorScheme.primary,
-              ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: restTile),
+                const SizedBox(width: 12),
+                Expanded(child: completedTile),
+              ],
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildMetricTile(
-                context,
-                icon: Icons.self_improvement_outlined,
-                label: 'Rest',
-                value: DurationFormatter.formatMs(summary.restDurationMs),
-                color: theme.colorScheme.tertiary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildMetricTile(
-                context,
-                icon: Icons.check_circle_outline,
-                label: 'Completed',
-                value: '${summary.completedCount} ($completionPct%)',
-                color: const Color(0xFF006C50),
-              ),
-            ),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 
