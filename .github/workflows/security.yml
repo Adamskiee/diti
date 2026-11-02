@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: pip install pytest pyyaml requests
       - name: Run pytest
-        run: pytest tool/security/tests/ -v
+        run: pytest tool/security/tests/ tool/ci/tests/ -v
 
   secrets:
     name: Secret Scan (Gitleaks)
@@ -162,6 +162,9 @@ jobs:
       - name: Setup Flutter
         if: github.event_name != 'workflow_call'
         uses: ./.github/actions/setup-flutter
+      - name: Setup Gradle Cache
+        if: github.event_name != 'workflow_call'
+        uses: gradle/actions/setup-gradle@v4
       - name: Build Scannable Release APK
         if: github.event_name != 'workflow_call'
         run: |

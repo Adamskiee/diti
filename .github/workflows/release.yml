@@ -70,6 +70,9 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
 
+      - name: Setup Gradle Cache
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Install Patrol CLI
         run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
 
@@ -114,6 +117,9 @@ jobs:
 
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
+
+      - name: Setup Gradle Cache
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Check Play Store Supply Secret
         id: check_supply

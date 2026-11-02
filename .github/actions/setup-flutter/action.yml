@@ -21,6 +21,16 @@ runs:
         channel: 'stable'
         cache: true
 
+    - name: Cache Pub Dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.pub-cache/hosted
+          ~/.pub-cache/git
+        key: pub-cache-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          pub-cache-${{ runner.os }}-
+
     - name: Install Dependencies
       shell: bash
       run: |
