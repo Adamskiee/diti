@@ -1,124 +1,123 @@
-# Diti
-
 <p align="center">
   <img src="assets/diti-256.png" alt="Diti App Icon" width="128" height="128" />
 </p>
 
-[![CI](https://github.com/Adamskiee/aditime/actions/workflows/ci.yml/badge.svg)](https://github.com/Adamskiee/aditime/actions/workflows/ci.yml)
+<h1 align="center">Diti</h1>
 
-Cross-platform daily planning and multi-phase routine timer built with Flutter.
+<p align="center">
+  <strong>Focus on what matters. Adapt when reality changes.</strong><br>
+  Cross-platform, 100% local-first daily planning and multi-phase routine timer built with Flutter.
+</p>
 
-## Installation & Updates (Linux)
+<p align="center">
+  <a href="https://github.com/Adamskiee/diti/actions/workflows/ci.yml"><img src="https://github.com/Adamskiee/diti/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
+  <a href="https://github.com/Adamskiee/diti/actions/workflows/security.yml"><img src="https://github.com/Adamskiee/diti/actions/workflows/security.yml/badge.svg" alt="Security CI" /></a>
+  <a href="https://github.com/Adamskiee/diti/releases/latest"><img src="https://img.shields.io/github/v/release/Adamskiee/diti?color=blue&label=Latest%20Release" alt="Latest Release" /></a>
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Linux-4CAF50" alt="Platforms: Android & Linux" />
+  <img src="https://img.shields.io/badge/Privacy-100%25%20Local--First-9C27B0" alt="100% Local-First" />
+  <img src="https://img.shields.io/badge/Flutter-%3E%3D3.27.0-02569B?logo=flutter" alt="Flutter >=3.27.0" />
+</p>
 
-Diti can be installed and updated with a single non-root command. All routines, sessions, and timer data are stored in `~/Documents/diti.db` (existing data from legacy `focus_flow.db` is migrated automatically) and sustained across updates.
+---
 
-### Install
-Run the installer script:
+## 🚀 Download & Install
+
+Get Diti running on your device in seconds:
+
+### 📱 Android
+Download the latest binaries directly from [**GitHub Releases**](https://github.com/Adamskiee/diti/releases/latest):
+
+- [**Universal APK**](https://github.com/Adamskiee/diti/releases/latest) — Compatible with all Android phones and tablets
+- [**ARM64-v8a APK**](https://github.com/Adamskiee/diti/releases/latest) — Optimized for modern 64-bit Android devices
+- [**App Bundle (.aab)**](https://github.com/Adamskiee/diti/releases/latest) — Play Store bundle format
+
+### 🐧 Linux Desktop
+Install and configure Diti with a single non-root command:
+
 ```bash
-./scripts/install-linux.sh
+# Direct installer (downloads and configures desktop entry & updater):
+curl -fsSL https://raw.githubusercontent.com/Adamskiee/diti/main/scripts/install-linux.sh | bash
+
+# Or build and install from a local checkout:
+./scripts/install-linux.sh --local
 ```
-*(Or to build and install directly from your local workspace: `./scripts/install-linux.sh --local`)*
 
-This configures:
-- **Executable:** `~/.local/bin/diti` (with `~/.local/bin/aditime` compatibility symlink)
-- **Application Menu:** Diti launcher and icon in `~/.local/share/applications/diti.desktop`
-- **Updater:** `~/.local/bin/diti-update` (or `diti --update`)
+This sets up:
+- **Executable:** `~/.local/bin/diti`
+- **Desktop Launcher:** Application menu icon in `~/.local/share/applications/diti.desktop`
+- **One-Command Updater:** Run `diti --update` (or `diti-update`) whenever a new release is published.
+- **Standalone Binaries:** Portable `.AppImage` and `.tar.gz` are also available on [**Releases**](https://github.com/Adamskiee/diti/releases/latest).
 
-### Updating
-Whenever a new release is published, update with one command:
+---
+
+## ✨ Why Diti?
+
+Most timer applications assume your day goes exactly according to plan. Diti is built for real life—giving you structure while flexing when interruptions happen.
+
+| Feature | What It Does | Why You'll Love It |
+|---|---|---|
+| ⏱️ **Multi-Phase Routines** | Chain custom work, deep focus, and rest phases with configurable durations and auto-advance. | Go beyond rigid Pomodoro timers. Tailor intervals to your actual flow state. |
+| ⏳ **Negative Overtime Tracking** | When a rest interval finishes, Diti counts into negative time until you continue. | Never wonder how much extra break time you took. Keeps you accountable without rigid alarms. |
+| 📅 **Plan vs. Reality Blocking** | Schedule routines across your daily agenda and compare intended duration against actual tracked time. | See where your time really went and calibrate realistic daily expectations. |
+| 🔄 **Manual Session Recovery** | Log sessions manually or retroactively recover untracked focus time directly from Plan and History. | Never lose credit for completed work if you forgot to start the timer. |
+| 🔒 **100% Local-First & Private** | All routines, plans, and session records live in a local SQLite database (`~/Documents/diti.db`). | Zero accounts, zero cloud dependencies, zero telemetry. Your data stays yours forever. |
+| 🛡️ **Crash-Proof State Engine** | Timer state snapshots survive app restarts, task kills, backgrounding, and system reboots. | Closing your laptop or swiping the app away will never destroy an active session. |
+| 📊 **Productivity Analytics** | Responsive breakdown of completed sessions, phase distribution, and day-by-day focus habits. | Gain clear insights into focus trends across mobile and desktop displays. |
+
+---
+
+## 🎬 See It in Action
+
+<p align="center">
+  <img src="assets/media/demo.gif" alt="Diti in Action" width="700" />
+</p>
+
+---
+
+## 🤝 Contributing
+
+**Everyone is welcome to contribute to Diti!** 
+
+Whether you want to build a new feature, fix a bug, polish the UI, improve the documentation, or share feedback on your daily routine workflow, we'd love to have you.
+
+- 📖 **New Contributors:** Please see our [**Contributing Guide (CONTRIBUTING.md)**](CONTRIBUTING.md) for step-by-step development setup, architectural walkthrough, and testing workflows.
+- 💬 **Discussions & Issues:** Have a suggestion or found an issue? Open a [GitHub Issue](https://github.com/Adamskiee/diti/issues).
+
+---
+
+## 🛠️ Quick Developer Overview
+
+For full instructions, read [**CONTRIBUTING.md**](CONTRIBUTING.md).
+
 ```bash
-diti-update
-# Or:
-diti --update
-```
-Your routines, plans, and history stored in `~/Documents/diti.db` remain fully intact.
+# Clone the repository
+git clone https://github.com/Adamskiee/diti.git
+cd diti
 
-## Getting Started
-
-### Prerequisites
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (>= 3.27.0)
-- Dart SDK (^3.6.0)
-
-### Local Setup
-Fetch dependencies across all packages and the root application:
-```bash
+# Install dependencies across all modular packages
 for pkg in packages/*; do
   if [ -f "$pkg/pubspec.yaml" ]; then
     (cd "$pkg" && flutter pub get)
   fi
 done
 flutter pub get
-```
 
-## Running Tests
-
-| Layer | Command |
-|---|---|
-| Unit + widget + golden | `flutter test test/` |
-| Update goldens | `flutter test --update-goldens test/goldens` (commit `goldens/ci/*.png`) |
-| Package tests | `cd packages/<name> && flutter test` |
-| Integration (Linux) | `flutter test integration_test -d linux` |
-| Integration (Android) | `flutter test integration_test -d <emulator-id>` |
-| Patrol E2E (Android, API 33+) | `dart pub global activate patrol_cli` then `patrol test` |
-
-### Quick Local Validation
-Run package tests, root test suite, and static analysis in one pass:
-```bash
-for pkg in packages/*; do
-  if [ -d "$pkg/test" ]; then
-    (cd "$pkg" && flutter test)
-  fi
-done
-flutter test test/
+# Run test suite & static analysis
+CI=true flutter test test/
 flutter analyze --fatal-infos
 ```
 
-### Continuous Integration (CI)
+---
 
-Our GitHub Actions pipeline runs on a staged, tier-based model to optimize PR feedback speed:
+## 🔒 Security & Quality Assurance
 
-1. **Fast PR Checks (~3–4 min):**
-   * Static analysis & linter (`flutter analyze --fatal-infos`)
-   * Package & root unit, widget, and golden tests (`flutter test`)
-   * Headless Linux desktop integration tests (`integration_test`)
-2. **Android Patrol & Device E2E Tests (~16 min):**
-   * Automatically triggered on PRs modifying `android/**`, `patrol_test/**`, `packages/diti_notifications/**`, `.github/workflows/ci.yml`, or `.github/actions/**`.
-   * Can be manually forced on any PR by adding the **ci:e2e** label (takes effect on next commit push or workflow dispatch) or running via `workflow_dispatch`.
-   * Automatically runs on all pushes to `main`.
-3. **Security CI (`security.yml`):**
-   * Fast secret scanning (`gitleaks`) and dependency vulnerability audit (`trivy`) run on every PR and push.
-   * Deep APK analysis (MobSF, Apktool manifest hardening, signature validation, obfuscation checks, and MASVS mapping) runs selectively on PRs altering Android/dependency paths or labeled **ci:security**.
-   * Mandatory release gate in `release.yml` blocking any unsuppressed high-severity vulnerabilities or debug-signed artifacts.
-4. **Pre-Release Gate:**
-   * Full Android Patrol E2E suite runs as a mandatory gate in `release.yml` before publishing production binaries.
+Diti enforces automated continuous integration and multi-layer security auditing on every change:
+- **Continuous Integration (`ci.yml`)**: Fast PR checks for unit, widget, golden, and Linux desktop integration tests.
+- **Security CI (`security.yml`)**: Secret scanning (`gitleaks`), dependency vulnerability audits (`trivy`), Android APK hardening checks (`MobSF`), and OWASP MASVS v2 mapping. See the [MASVS Coverage Matrix](docs/security/masvs-coverage.md) for compliance details.
+- **Pre-Release Verification (`release.yml`)**: Android Patrol E2E tests, obfuscation verification, and strict release signing.
 
-## CI/CD & Releases
+---
 
-Diti features automated CI/CD powered by GitHub Actions:
+## 📄 License
 
-- **Continuous Integration (`ci.yml`)**: Automatically validates linter rules (`flutter analyze --fatal-infos`) and executes tests across all packages on Pull Requests and pushes to `main`.
-- **Security CI (`security.yml`)**: Automated secret scanning, dependency vulnerability audits, Android APK hardening checks, and OWASP MASVS v2 mapping (see [MASVS Coverage Matrix](docs/security/masvs-coverage.md)).
-- **Automated Releases (`release.yml`)**: Builds, signs, and distributes multi-platform binaries upon pushing version tags (`v*.*.*`) or via manual `workflow_dispatch`.
-
-### Released Binaries
-Each GitHub Release includes:
-- **Android**:
-  - `diti-<version>-android-universal.apk` (universal device compatibility)
-  - `diti-<version>-android-arm64-v8a.apk` (optimized 64-bit ARM)
-  - `diti-<version>-android-armeabi-v7a.apk` (32-bit legacy ARM)
-  - `diti-<version>-android-x86_64.apk` (emulators & x86_64 tablets)
-  - `diti-<version>-android.aab` (Google Play App Bundle)
-- **Linux Desktop**:
-  - `diti-<version>-linux-x86_64.AppImage` (standalone portable executable)
-  - `diti-<version>-linux-x86_64.tar.gz` (bundled directory archive)
-- **Verification**:
-  - `checksums.txt` (SHA256 integrity hashes)
-
-### Android Keystore Configuration (GitHub Secrets)
-To configure production release signing in your GitHub repository, configure these repository secrets under **Settings > Secrets and variables > Actions**:
-- `ANDROID_KEYSTORE_BASE64`: Base64 string of the release keystore file (`base64 -w 0 your.keystore`).
-- `ANDROID_KEYSTORE_PASSWORD`: Keystore password.
-- `ANDROID_KEY_ALIAS`: Alias for the release key.
-- `ANDROID_KEY_PASSWORD`: Password for the key.
-
-*Note: If secrets are not configured, builds automatically and safely fall back to debug signing.*
+Diti is open-source software. All routines, user databases, and session histories remain 100% private and stored locally on your device.
