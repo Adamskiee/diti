@@ -1,4 +1,9 @@
 # Security suppressions registry.
 # Every entry MUST have a reason and a valid future expires date (YYYY-MM-DD).
 # Expired entries will automatically fail the security gate.
-suppressions: []
+suppressions:
+  - tool: "mobsf"
+    rule_id: "vulnerable_os_version"
+    location: "AndroidManifest.xml"
+    reason: "minSdk=24 supports Android 7.0+ devices; mitigated by app sandboxing and modern TLS"
+    expires: "2027-11-02"

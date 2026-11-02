@@ -160,25 +160,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup Flutter
-        if: github.event_name != 'workflow_call'
+        if: inputs.apk-artifact == ''
         uses: ./.github/actions/setup-flutter
       - name: Setup Gradle Cache
-        if: github.event_name != 'workflow_call'
+        if: inputs.apk-artifact == ''
         uses: gradle/actions/setup-gradle@v4
       - name: Build Scannable Release APK
-        if: github.event_name != 'workflow_call'
+        if: inputs.apk-artifact == ''
         run: |
           flutter build apk --release --obfuscate --split-debug-info=build/symbols
           mkdir -p staged-apk
           cp build/app/outputs/flutter-apk/app-release.apk staged-apk/scan-target.apk
       - name: Download Artifact from Caller
-        if: github.event_name == 'workflow_call'
+        if: inputs.apk-artifact != ''
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.apk-artifact }}
           path: caller-assets
       - name: Locate Caller APK
-        if: github.event_name == 'workflow_call'
+        if: inputs.apk-artifact != ''
         run: |
           mkdir -p staged-apk
           UNIVERSAL_APK=$(find caller-assets -name "*universal*.apk" | head -n1)
