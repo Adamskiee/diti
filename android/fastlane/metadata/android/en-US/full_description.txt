@@ -1,0 +1,7 @@
+Diti is your focused productivity and routine companion, built for seamless multi-phase tracking.
+
+Key Features:
+- Multi-phase routine timer: configure prep, work, and rest intervals effortlessly.
+- Negative rest timer awaiting continuation for realistic pacing.
+- Session analytics: break down your daily activity with full granular history.
+- Intuitive, distraction-free Flutter interface optimized for both mobile and desktop.

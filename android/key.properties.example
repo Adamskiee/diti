@@ -1,4 +1,8 @@
-storeFile=app/release.keystore
-storePassword=your-keystore-password
-keyAlias=your-key-alias
-keyPassword=your-key-password
+# Local Android Signing Keystore Configuration Example
+# Copy this file to android/key.properties and fill with your release keystore details.
+# DO NOT commit android/key.properties to version control.
+
+storeFile=release.keystore
+storePassword=your_keystore_password
+keyAlias=your_key_alias
+keyPassword=your_key_password

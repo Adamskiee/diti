@@ -106,12 +106,25 @@ jobs:
     name: Build Android Artifacts
     needs: [verify, verify-e2e-android]
     runs-on: ubuntu-latest
+    outputs:
+      has_supply_key: ${{ steps.check_supply.outputs.has_supply_key }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
+
+      - name: Check Play Store Supply Secret
+        id: check_supply
+        env:
+          SUPPLY_JSON_KEY: ${{ secrets.SUPPLY_JSON_KEY }}
+        run: |
+          if [ -n "$SUPPLY_JSON_KEY" ]; then
+            echo "has_supply_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_supply_key=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Configure Android NDK
         run: |
@@ -146,26 +159,37 @@ jobs:
           keyAlias=$KEY_ALIAS
           keyPassword=$KEY_PASSWORD
           EOF
+            {
+              echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/android/app/release.keystore"
+              echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "ANDROID_KEY_ALIAS=$KEY_ALIAS"
+              echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
           else
             echo "::error::ANDROID_KEYSTORE_BASE64 is missing! Production release builds must be signed."
             exit 1
           fi
 
-      - name: Build Universal APK
-        run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
+      - name: Install FastForge CLI
+        run: |
+          dart pub global activate fastforge
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
 
-      - name: Build Split per-ABI APKs
-        run: flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols
-
-      - name: Build Android App Bundle (AAB)
-        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
+      - name: Build Android Packages via FastForge
+        run: |
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          fastforge release --name release --jobs android-universal-apk
+          fastforge release --name release --jobs android-split-apk --skip-clean
+          fastforge release --name release --jobs android-aab --skip-clean
 
       - name: Upload Debug Symbols
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-symbols
           path: build/symbols
           retention-days: 7
+          if-no-files-found: ignore
 
       - name: Stage Android Release Assets
         id: stage
@@ -221,16 +245,46 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config \
             libgtk-3-dev liblzma-dev libsecret-1-dev wget file
+          # Install AppImageTool for FastForge AppImage maker (extracted to bypass FUSE in CI)
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+          (cd /tmp && ./appimagetool --appimage-extract)
+          sudo mv /tmp/squashfs-root /opt/appimagetool
+          sudo ln -sf /opt/appimagetool/AppRun /usr/local/bin/appimagetool
 
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
         with:
           java: 'false'
 
-      - name: Build Linux Bundle
-        run: flutter build linux --release
+      - name: Install FastForge CLI
+        run: |
+          dart pub global activate fastforge
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
 
-      - name: Stage Tarball and Build AppImage
+      - name: Configure FastForge AppImage Packaging
+        run: |
+          mkdir -p linux/packaging/appimage
+          cat << 'EOF' > linux/packaging/appimage/make_config.yaml
+          display_name: Diti
+          icon: assets/diti-256.png
+          metainfo: packaging/linux/com.adilabs.diti.metainfo.xml
+          categories:
+            - Utility
+            - Clock
+            - ProjectManagement
+          keywords:
+            - timer
+            - routine
+            - productivity
+          EOF
+
+      - name: Build Linux Packages via FastForge
+        run: |
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          fastforge release --name release --jobs linux-tar,linux-appimage
+
+      - name: Stage Linux Release Assets
         env:
           TAG_INPUT: ${{ github.event.inputs.tag_name }}
           REF_NAME: ${{ github.ref_name }}
@@ -247,53 +301,22 @@ jobs:
 
           echo "Using tag prefix: $RAW_TAG"
 
-          # 1. Package compressed tarball bundle
+          # 1. Stage AppImage built by FastForge
+          APPIMAGE_FILE=$(find dist -name "*.AppImage" -o -name "*.appimage" 2>/dev/null | head -n 1)
+          if [ -n "$APPIMAGE_FILE" ] && [ -f "$APPIMAGE_FILE" ]; then
+            cp "$APPIMAGE_FILE" "staging/linux/diti-${RAW_TAG}-linux-x86_64.AppImage"
+          else
+            echo "::error::FastForge failed to produce Linux AppImage in dist/"
+            exit 1
+          fi
+
+          # 2. Stage compressed tarball bundle
           TAR_DIR="diti-${RAW_TAG}-linux-x64"
           mkdir -p "staging/$TAR_DIR"
           cp -r build/linux/x64/release/bundle/* "staging/$TAR_DIR/"
           (cd "staging/$TAR_DIR" && ln -sf diti focus_flow && ln -sf diti aditime)
           tar -czf "staging/linux/diti-${RAW_TAG}-linux-x86_64.tar.gz" -C staging "$TAR_DIR"
           rm -rf "staging/$TAR_DIR"
-
-          # 2. Package AppImage using extracted appimagetool (bypasses FUSE in CI)
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
-          chmod +x appimagetool
-          ./appimagetool --appimage-extract
-
-          mkdir -p AppDir/usr/bin AppDir/usr/lib AppDir/usr/share/icons/hicolor/256x256/apps
-          cp -r build/linux/x64/release/bundle/lib/* AppDir/usr/lib/ || true
-          cp -r build/linux/x64/release/bundle/data AppDir/usr/bin/
-          cp build/linux/x64/release/bundle/diti AppDir/usr/bin/
-
-          # Create AppRun entrypoint
-          cat << 'EOF' > AppDir/AppRun
-          #!/bin/sh
-          HERE="$(dirname "$(readlink -f "${0}")")"
-          export LD_LIBRARY_PATH="$HERE/usr/lib:$LD_LIBRARY_PATH"
-          exec "$HERE/usr/bin/diti" "$@"
-          EOF
-          chmod +x AppDir/AppRun
-
-          # Create desktop entry
-          cat << 'EOF' > AppDir/diti.desktop
-          [Desktop Entry]
-          Name=Diti
-          Comment=Cross-platform daily planning and multi-phase routine timer.
-          Exec=diti
-          Icon=diti
-          Type=Application
-          Categories=Utility;Clock;
-          Terminal=false
-          StartupWMClass=com.adilabs.diti
-          EOF
-          mkdir -p AppDir/usr/share/applications
-          cp AppDir/diti.desktop AppDir/usr/share/applications/diti.desktop
-
-          # Copy icon
-          cp assets/diti-256.png AppDir/diti.png
-          cp AppDir/diti.png AppDir/usr/share/icons/hicolor/256x256/apps/diti.png
-
-          ARCH=x86_64 ./squashfs-root/AppRun AppDir "staging/linux/diti-${RAW_TAG}-linux-x86_64.AppImage"
 
           ls -la staging/linux/
 
@@ -304,9 +327,108 @@ jobs:
           path: staging/linux/*
           retention-days: 1
 
+  build-flatpak:
+    name: Build Flatpak Bundle
+    needs: [verify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux Build Dependencies and Flatpak
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libsecret-1-dev flatpak flatpak-builder elfutils
+
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          java: 'false'
+
+      - name: Build Linux Bundle
+        run: flutter build linux --release
+
+      - name: Install Freedesktop 24.08 Runtime and SDK
+        run: |
+          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+
+      - name: Build Flatpak Bundle
+        env:
+          TAG_INPUT: ${{ github.event.inputs.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          mkdir -p staging/flatpak
+          RAW_TAG="$TAG_INPUT"
+          if [ -z "$RAW_TAG" ]; then
+            RAW_TAG="$REF_NAME"
+          fi
+          # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
+          if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
+            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
+          fi
+
+          echo "Using tag prefix: $RAW_TAG"
+
+          flatpak-builder --force-clean --repo=repo build-dir packaging/linux/com.adilabs.diti.yml
+          flatpak build-bundle repo "staging/flatpak/diti-${RAW_TAG}-linux-x86_64.flatpak" com.adilabs.diti
+
+          ls -la staging/flatpak/
+
+      - name: Upload Flatpak Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-release-assets
+          path: staging/flatpak/*
+          retention-days: 1
+
+  publish-playstore:
+    name: Publish to Google Play Store
+    needs: [build-android]
+    if: needs.build-android.outputs.has_supply_key == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-assets
+          path: staging/android
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install Bundler and Fastlane
+        run: |
+          cd android
+          gem install bundler
+          bundle install
+
+      - name: Configure Fastlane Service Account
+        env:
+          SUPPLY_JSON_KEY: ${{ secrets.SUPPLY_JSON_KEY }}
+        run: |
+          mkdir -p android/fastlane
+          echo "$SUPPLY_JSON_KEY" > android/fastlane/service-account.json
+          cp android/fastlane/service-account.json android/service-account.json
+          echo "SUPPLY_JSON_KEY_FILE=$GITHUB_WORKSPACE/android/fastlane/service-account.json" >> "$GITHUB_ENV"
+
+      - name: Deploy to Google Play Internal Track
+        run: |
+          cd android
+          AAB_FILE=$(find ../staging/android -name "*.aab" | head -n 1)
+          mkdir -p ../dist
+          cp "$AAB_FILE" ../dist/diti.aab
+          bundle exec fastlane distribute_internal aab:"$AAB_FILE"
+
   publish-release:
     name: Publish GitHub Release
-    needs: [verify, build-android, build-linux, security]
+    needs: [verify, build-android, build-linux, build-flatpak, security]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -348,6 +470,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: linux-release-assets
+          path: dist
+
+      - name: Download Flatpak Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: flatpak-release-assets
           path: dist
 
       - name: Compute SHA-256 Checksums

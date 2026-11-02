@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.adilabs.diti</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Diti</name>
+  <summary>Cross-platform daily planning and multi-phase routine timer</summary>
+  <description>
+    <p>
+      Diti is a multi-phase productivity timer and daily routine tracker designed
+      for deep focus and session management.
+    </p>
+    <ul>
+      <li>Multi-phase routines with custom prep, work, and rest intervals</li>
+      <li>Local session history and analytics breakdown</li>
+      <li>Adaptive notification permission handling and desktop audio chimes</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">com.adilabs.diti.desktop</launchable>
+  <url type="homepage">https://github.com/adi-labs/diti</url>
+  <url type="bugtracker">https://github.com/adi-labs/diti/issues</url>
+  <provides>
+    <binary>diti</binary>
+  </provides>
+  <releases>
+    <release version="1.0.0" date="2026-11-01">
+      <description>
+        <p>Production release with complete cross-platform support.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1" />
+</component>
