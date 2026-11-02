@@ -231,7 +231,7 @@ jobs:
           fi
           # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
           if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
-            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
+            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | cut -d'+' -f1 | tr -d '\r')"
           fi
 
           echo "Using tag prefix: $RAW_TAG"
@@ -326,7 +326,7 @@ jobs:
           fi
           # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
           if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
-            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
+            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | cut -d'+' -f1 | tr -d '\r')"
           fi
 
           echo "Using tag prefix: $RAW_TAG"
@@ -396,7 +396,7 @@ jobs:
           fi
           # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
           if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
-            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
+            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | cut -d'+' -f1 | tr -d '\r')"
           fi
 
           echo "Using tag prefix: $RAW_TAG"
@@ -478,7 +478,7 @@ jobs:
           fi
           # If empty, or contains '/', or does not start with 'v' followed by a digit, fallback to pubspec version:
           if [ -z "$RAW_TAG" ] || [ "$RAW_TAG" = "main" ] || [[ "$RAW_TAG" == *"/"* ]] || [[ ! "$RAW_TAG" =~ ^v[0-9] ]]; then
-            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | tr -d '\r')"
+            RAW_TAG="v$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | cut -d'+' -f1 | tr -d '\r')"
           fi
 
           echo "tag=$RAW_TAG" >> "$GITHUB_OUTPUT"

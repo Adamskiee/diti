@@ -1,7 +1,7 @@
 name: diti
 description: Diti - Cross-platform daily planning and multi-phase routine timer.
 publish_to: none
-version: 2.3.0
+version: 2.3.0+1
 
 environment:
   sdk: ^3.6.0
