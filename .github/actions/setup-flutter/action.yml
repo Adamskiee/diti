@@ -26,5 +26,10 @@ runs:
       run: |
         echo "Resolving root dependencies..."
         flutter pub get
+        echo "Activating Melos CLI globally..."
+        dart pub global activate melos 6.3.2
+        PUB_BIN_DIR="${PUB_CACHE:-$HOME/.pub-cache}/bin"
+        echo "$PUB_BIN_DIR" >> "$GITHUB_PATH"
+        export PATH="$PUB_BIN_DIR:$PATH"
         echo "Bootstrapping Melos workspace..."
-        dart run melos bootstrap
+        melos bootstrap
