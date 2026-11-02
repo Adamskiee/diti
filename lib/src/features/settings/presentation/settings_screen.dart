@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:diti_notifications/diti_notifications.dart';
 import '../../../core/di/app_info_providers.dart';
 import '../../../core/di/notification_providers.dart';
+import '../../../core/di/tracker_provider.dart';
+import 'controllers/settings_controller.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -99,6 +101,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
               );
             },
+          ),
+          const SizedBox(height: 24),
+          const Text('Activity Tracking', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Card(
+            child: SwitchListTile(
+              title: const Text('Continuous Background Tracking'),
+              subtitle: const Text(
+                'Track active window history (rolling 24 hours) to include app usage when recovering untimed sessions.',
+              ),
+              value: ref.watch(continuousTrackingEnabledProvider),
+              onChanged: (val) {
+                ref.read(continuousTrackingEnabledProvider.notifier).toggle(val);
+                final tracker = ref.read(continuousActivityTrackerProvider);
+                if (val) {
+                  tracker.start();
+                } else {
+                  tracker.stop();
+                }
+              },
+            ),
           ),
           const SizedBox(height: 24),
           const Text('About Diti', style: TextStyle(fontWeight: FontWeight.bold)),

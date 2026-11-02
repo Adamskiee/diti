@@ -3,6 +3,7 @@ import 'schema_migration.dart';
 import 'v1_to_v2_migration.dart';
 import 'v2_to_v3_migration.dart';
 import 'v3_to_v4_migration.dart';
+import 'v4_to_v5_migration.dart';
 
 /// Registry maintaining and validating schema migration steps.
 class MigrationRegistry {
@@ -65,4 +66,5 @@ class MigrationRegistry {
 final defaultMigrationRegistry = MigrationRegistry()
   ..register(V1ToV2Migration())
   ..register(V2ToV3Migration())
-  ..register(V3ToV4Migration());
+  ..register(V3ToV4Migration())
+  ..register(V4ToV5Migration());

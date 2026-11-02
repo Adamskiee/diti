@@ -18,6 +18,7 @@ class PlanBlockCard extends StatelessWidget {
   final VoidCallback onStart;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onRecordPastSession;
 
   const PlanBlockCard({
     super.key,
@@ -26,6 +27,7 @@ class PlanBlockCard extends StatelessWidget {
     required this.onStart,
     required this.onEdit,
     required this.onDelete,
+    this.onRecordPastSession,
   });
 
   @override
@@ -131,13 +133,23 @@ class PlanBlockCard extends StatelessWidget {
             // Actions
             if (isScheduled) ...[
               const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: onStart,
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('Start Block'),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (onRecordPastSession != null) ...[
+                    IconButton(
+                      icon: const Icon(Icons.history),
+                      tooltip: 'Record Past Session',
+                      onPressed: onRecordPastSession,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  FilledButton.icon(
+                    onPressed: onStart,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Start Block'),
+                  ),
+                ],
               ),
             ] else if (isInProgress) ...[
               const SizedBox(height: 12),

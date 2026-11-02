@@ -6,3 +6,4 @@ export 'src/ports/process_runner.dart';
 export 'src/platforms/linux_x11_app_tracker.dart';
 export 'src/platforms/noop_app_tracker.dart';
 export 'src/services/session_app_tracker.dart';
+export 'src/services/continuous_activity_tracker.dart';

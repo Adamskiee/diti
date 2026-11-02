@@ -131,8 +131,8 @@ void main() {
       ).getSingle();
       expect(unlinkedBlock.data['status'], equals('cancelled'));
 
-      // Verify PRAGMA user_version was upgraded to 4
-      expect(raw.userVersion, equals(4));
+      // Verify PRAGMA user_version was upgraded to 5
+      expect(raw.userVersion, equals(5));
     });
   });
 }
