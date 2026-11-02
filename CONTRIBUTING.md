@@ -177,6 +177,13 @@ flutter analyze --fatal-infos
 > [!TIP]
 > Setting `CI=true` matches GitHub Actions by validating against cross-platform golden images. Alternatively, run `flutter test --update-goldens test/goldens` to generate local platform golden baselines.
 
+### Continuous Integration & Security Pipeline
+
+Our GitHub Actions workflows validate every PR:
+- **Quality CI (`ci.yml`)**: Enforces static analysis, package tests, unit/widget/golden tests, and Linux desktop integration tests.
+- **Security CI (`security.yml`)**: Fast secret scanning (`gitleaks`), dependency auditing (`trivy`), and Android APK hardening checks (`MobSF`) enforcing our [MASVS Coverage Matrix](docs/security/masvs-coverage.md).
+- **Android Patrol E2E**: Triggered automatically on Android-affecting changes, on pushes to `main`, or on demand by adding the `ci:e2e` label to a PR.
+
 ---
 
 ## Git & Pull Request Workflow
