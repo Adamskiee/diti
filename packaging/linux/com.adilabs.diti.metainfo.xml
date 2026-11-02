@@ -23,6 +23,17 @@
     <binary>diti</binary>
   </provides>
   <releases>
+    <release version="2.3.0" date="2026-11-02">
+      <description>
+        <p>Release v2.3.0 brings manual session recovery, background activity journaling, responsive laptop analytics, and security CI hardening.</p>
+        <ul>
+          <li>Manual session logging sheet to recover unrecorded routine sessions</li>
+          <li>Continuous activity tracking and SQLite schema v5 migration</li>
+          <li>Responsive laptop layout for the analytics dashboard</li>
+          <li>Multi-target release packaging for FastForge, Flatpak, and Google Play internal track</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-11-01">
       <description>
         <p>Production release with complete cross-platform support.</p>
