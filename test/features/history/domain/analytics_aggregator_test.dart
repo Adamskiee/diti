@@ -128,12 +128,14 @@ void main() {
       expect(summary.completionRate, closeTo(2 / 3, 0.001));
 
       // Monday bucket
-      final monday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Mon');
+      final monday =
+          summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Mon');
       expect(monday.totalDurationMs, 90 * 60 * 1000);
       expect(monday.sessionCount, 2);
 
       // Tuesday bucket
-      final tuesday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Tue');
+      final tuesday =
+          summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Tue');
       expect(tuesday.totalDurationMs, 30 * 60 * 1000);
       expect(tuesday.sessionCount, 1);
 
@@ -141,10 +143,12 @@ void main() {
       expect(summary.activityBreakdowns.length, 2);
       expect(summary.activityBreakdowns[0].routineName, 'Deep Work');
       expect(summary.activityBreakdowns[0].percentage, closeTo(0.75, 0.001));
-      expect(summary.activityBreakdowns[0].sessions.map((s) => s.sessionId), ['s2', 's1']);
+      expect(summary.activityBreakdowns[0].sessions.map((s) => s.sessionId),
+          ['s2', 's1']);
       expect(summary.activityBreakdowns[1].routineName, 'Reading');
       expect(summary.activityBreakdowns[1].percentage, closeTo(0.25, 0.001));
-      expect(summary.activityBreakdowns[1].sessions.map((s) => s.sessionId), ['s3']);
+      expect(summary.activityBreakdowns[1].sessions.map((s) => s.sessionId),
+          ['s3']);
     });
 
     test('attributes session crossing midnight to local start date', () {
@@ -163,14 +167,17 @@ void main() {
         now: now,
       );
 
-      final wednesday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Wed');
-      final thursday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Thu');
+      final wednesday =
+          summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Wed');
+      final thursday =
+          summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Thu');
 
       expect(wednesday.totalDurationMs, 45 * 60 * 1000);
       expect(thursday.totalDurationMs, 0);
     });
 
-    test('calculates planned vs actual metrics when linked plan blocks exist', () {
+    test('calculates planned vs actual metrics when linked plan blocks exist',
+        () {
       final planBlock = PlanBlock(
         id: 'block_1',
         planDate: '2026-10-16',
@@ -199,7 +206,8 @@ void main() {
       expect(summary.planVersusActual, isNotNull);
       expect(summary.planVersusActual!.totalPlannedMs, 45 * 60 * 1000);
       expect(summary.planVersusActual!.totalActualMs, 60 * 60 * 1000);
-      expect(summary.planVersusActual!.netVarianceMs, 15 * 60 * 1000); // 15m overrun
+      expect(summary.planVersusActual!.netVarianceMs,
+          15 * 60 * 1000); // 15m overrun
       expect(summary.planVersusActual!.linkedSessionCount, 1);
     });
 
@@ -221,7 +229,8 @@ void main() {
       );
 
       expect(summary.dailyBuckets.length, 24);
-      final nineAmBucket = summary.dailyBuckets.firstWhere((b) => b.dayLabel == '9am');
+      final nineAmBucket =
+          summary.dailyBuckets.firstWhere((b) => b.dayLabel == '9am');
       expect(nineAmBucket.totalDurationMs, 45 * 60 * 1000);
       expect(nineAmBucket.sessionCount, 1);
     });
@@ -396,7 +405,8 @@ void main() {
         now: now,
       );
 
-      final monday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Mon');
+      final monday =
+          summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Mon');
       expect(monday.focusDurationMs, (25 + 20) * 60 * 1000);
       expect(monday.restDurationMs, 5 * 60 * 1000);
       expect(
@@ -443,8 +453,10 @@ void main() {
         now: now,
       );
 
-      final wednesday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Wed');
-      final thursday = summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Thu');
+      final wednesday =
+          summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Wed');
+      final thursday =
+          summary.dailyBuckets.firstWhere((b) => b.dayLabel == 'Thu');
 
       expect(wednesday.totalDurationMs, 30 * 60 * 1000);
       expect(wednesday.focusDurationMs, 20 * 60 * 1000);
@@ -454,7 +466,9 @@ void main() {
       expect(thursday.restDurationMs, 0);
     });
 
-    test('aggregates appUsages across sessions in timeframe, summing durations and sorting descending', () {
+    test(
+        'aggregates appUsages across sessions in timeframe, summing durations and sorting descending',
+        () {
       final session1 = createSession(
         id: 's1',
         routineName: 'Coding',
@@ -517,15 +531,18 @@ void main() {
       // 1st: VS Code (1200000 + 600000 = 1800000ms)
       // 2nd: Brave YouTube (1800000ms)
       // 3rd: Terminal (600000ms)
-      final vsCode = summary.appUsages.firstWhere((u) => u.appName == 'VS Code');
+      final vsCode =
+          summary.appUsages.firstWhere((u) => u.appName == 'VS Code');
       expect(vsCode.durationMs, equals(1800000));
       expect(vsCode.category, equals('Development'));
 
-      final youtube = summary.appUsages.firstWhere((u) => u.category == 'YouTube');
+      final youtube =
+          summary.appUsages.firstWhere((u) => u.category == 'YouTube');
       expect(youtube.durationMs, equals(1800000));
       expect(youtube.appName, equals('Brave'));
 
-      final terminal = summary.appUsages.firstWhere((u) => u.category == 'Terminal');
+      final terminal =
+          summary.appUsages.firstWhere((u) => u.category == 'Terminal');
       expect(terminal.durationMs, equals(600000));
 
       expect(summary.appUsages.last.appName, equals('Terminal'));

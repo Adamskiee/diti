@@ -67,280 +67,285 @@ class TimerEngineImpl implements TimerEngine {
 
   @override
   Future<TimerCommandResult> start(String routineId) => _queue.run(() async {
-    if (_activeRun != null &&
-        (_activeRun!.status == RunStatus.running ||
-            _activeRun!.status == RunStatus.paused)) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.invalidTransition,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        if (_activeRun != null &&
+            (_activeRun!.status == RunStatus.running ||
+                _activeRun!.status == RunStatus.paused)) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.invalidTransition,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    final routine = await routineRepository.getRoutine(routineId);
-    if (routine == null) {
-      return const TimerCommandResult(
-        success: false,
-        error: TimerError.invalidConfiguration,
-        stateVersion: 0,
-      );
-    }
-    final configError = routine.validate();
-    if (configError != null) {
-      return TimerCommandResult(
-        success: false,
-        error: configError,
-        stateVersion: 0,
-      );
-    }
+        final routine = await routineRepository.getRoutine(routineId);
+        if (routine == null) {
+          return const TimerCommandResult(
+            success: false,
+            error: TimerError.invalidConfiguration,
+            stateVersion: 0,
+          );
+        }
+        final configError = routine.validate();
+        if (configError != null) {
+          return TimerCommandResult(
+            success: false,
+            error: configError,
+            stateVersion: 0,
+          );
+        }
 
-    final snapshot = routine.clone();
-    final nowUtc = wallClock.utcNow;
-    final nowMono = monotonicClock.nowMs;
-    final runId = 'run-${nowUtc.millisecondsSinceEpoch}';
+        final snapshot = routine.clone();
+        final nowUtc = wallClock.utcNow;
+        final nowMono = monotonicClock.nowMs;
+        final runId = 'run-${nowUtc.millisecondsSinceEpoch}';
 
-    final event = TimerEvent(
-      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
-      runId: runId,
-      type: TimerEventType.runStarted,
-      occurredAtUtc: nowUtc,
-    );
+        final event = TimerEvent(
+          eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+          runId: runId,
+          type: TimerEventType.runStarted,
+          occurredAtUtc: nowUtc,
+        );
 
-    final run = TimerRun(
-      runId: runId,
-      routineSnapshot: snapshot,
-      status: RunStatus.running,
-      phaseStatus: PhaseStatus.active,
-      currentPhaseIndex: 0,
-      repeatIndex: 0,
-      accumulatedMs: 0,
-      phaseStartedAtUtc: nowUtc,
-      phaseStartedMonotonicMs: nowMono,
-      stateVersion: 1,
-      lastEventId: event.eventId,
-      runStartedAtUtc: nowUtc,
-      phaseFirstStartedAtUtc: nowUtc,
-    );
+        final run = TimerRun(
+          runId: runId,
+          routineSnapshot: snapshot,
+          status: RunStatus.running,
+          phaseStatus: PhaseStatus.active,
+          currentPhaseIndex: 0,
+          repeatIndex: 0,
+          accumulatedMs: 0,
+          phaseStartedAtUtc: nowUtc,
+          phaseStartedMonotonicMs: nowMono,
+          stateVersion: 1,
+          lastEventId: event.eventId,
+          runStartedAtUtc: nowUtc,
+          phaseFirstStartedAtUtc: nowUtc,
+        );
 
-    try {
-      await persistencePort.persistRunAndEvents(run, [event]);
-    } catch (_) {
-      return const TimerCommandResult(
-        success: false,
-        error: TimerError.persistenceFailure,
-        stateVersion: 0,
-      );
-    }
+        try {
+          await persistencePort.persistRunAndEvents(run, [event]);
+        } catch (_) {
+          return const TimerCommandResult(
+            success: false,
+            error: TimerError.persistenceFailure,
+            stateVersion: 0,
+          );
+        }
 
-    _activeRun = run;
-    _scheduleBoundaryIfNeeded(run);
-    _emitState(run);
-    _eventController.add(event);
+        _activeRun = run;
+        _scheduleBoundaryIfNeeded(run);
+        _emitState(run);
+        _eventController.add(event);
 
-    return TimerCommandResult(success: true, stateVersion: run.stateVersion);
-  });
+        return TimerCommandResult(
+            success: true, stateVersion: run.stateVersion);
+      });
 
   @override
   Future<TimerCommandResult> pause(String runId) => _queue.run(() async {
-    if (_activeRun == null || _activeRun!.runId != runId) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.runNotFound,
-        stateVersion: _activeRun?.stateVersion ?? 0,
-      );
-    }
-    if (_activeRun!.status == RunStatus.paused) {
-      // Idempotent no-op
-      return TimerCommandResult(
-        success: true,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
-    if (_activeRun!.status != RunStatus.running) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.invalidTransition,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        if (_activeRun == null || _activeRun!.runId != runId) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.runNotFound,
+            stateVersion: _activeRun?.stateVersion ?? 0,
+          );
+        }
+        if (_activeRun!.status == RunStatus.paused) {
+          // Idempotent no-op
+          return TimerCommandResult(
+            success: true,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
+        if (_activeRun!.status != RunStatus.running) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.invalidTransition,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    final nowMono = monotonicClock.nowMs;
-    final nowUtc = wallClock.utcNow;
-    final segmentElapsed =
-        math.max(0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono));
-    final newAccumulated = _activeRun!.accumulatedMs + segmentElapsed;
+        final nowMono = monotonicClock.nowMs;
+        final nowUtc = wallClock.utcNow;
+        final segmentElapsed = math.max(
+            0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono));
+        final newAccumulated = _activeRun!.accumulatedMs + segmentElapsed;
 
-    final event = TimerEvent(
-      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
-      runId: runId,
-      type: TimerEventType.runPaused,
-      occurredAtUtc: nowUtc,
-      durationMs: segmentElapsed,
-    );
+        final event = TimerEvent(
+          eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+          runId: runId,
+          type: TimerEventType.runPaused,
+          occurredAtUtc: nowUtc,
+          durationMs: segmentElapsed,
+        );
 
-    final updatedRun = _activeRun!.copyWith(
-      status: RunStatus.paused,
-      accumulatedMs: newAccumulated,
-      phaseStartedMonotonicMs: () => null,
-      pausedAtUtc: () => nowUtc,
-      stateVersion: _activeRun!.stateVersion + 1,
-      lastEventId: () => event.eventId,
-    );
+        final updatedRun = _activeRun!.copyWith(
+          status: RunStatus.paused,
+          accumulatedMs: newAccumulated,
+          phaseStartedMonotonicMs: () => null,
+          pausedAtUtc: () => nowUtc,
+          stateVersion: _activeRun!.stateVersion + 1,
+          lastEventId: () => event.eventId,
+        );
 
-    try {
-      await persistencePort.persistRunAndEvents(updatedRun, [event]);
-    } catch (_) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.persistenceFailure,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        try {
+          await persistencePort.persistRunAndEvents(updatedRun, [event]);
+        } catch (_) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.persistenceFailure,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    try {
-      await notificationPort.cancelBoundaries(runId);
-    } catch (_) {}
+        try {
+          await notificationPort.cancelBoundaries(runId);
+        } catch (_) {}
 
-    _boundaryTimerToken?.cancel();
-    _activeRun = updatedRun;
-    _emitState(updatedRun);
-    _eventController.add(event);
+        _boundaryTimerToken?.cancel();
+        _activeRun = updatedRun;
+        _emitState(updatedRun);
+        _eventController.add(event);
 
-    return TimerCommandResult(success: true, stateVersion: updatedRun.stateVersion);
-  });
+        return TimerCommandResult(
+            success: true, stateVersion: updatedRun.stateVersion);
+      });
 
   @override
   Future<TimerCommandResult> resume(String runId) => _queue.run(() async {
-    if (_activeRun == null || _activeRun!.runId != runId) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.runNotFound,
-        stateVersion: _activeRun?.stateVersion ?? 0,
-      );
-    }
-    if (_activeRun!.status != RunStatus.paused) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.invalidTransition,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        if (_activeRun == null || _activeRun!.runId != runId) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.runNotFound,
+            stateVersion: _activeRun?.stateVersion ?? 0,
+          );
+        }
+        if (_activeRun!.status != RunStatus.paused) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.invalidTransition,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    final nowMono = monotonicClock.nowMs;
-    final nowUtc = wallClock.utcNow;
+        final nowMono = monotonicClock.nowMs;
+        final nowUtc = wallClock.utcNow;
 
-    final event = TimerEvent(
-      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
-      runId: runId,
-      type: TimerEventType.runResumed,
-      occurredAtUtc: nowUtc,
-    );
+        final event = TimerEvent(
+          eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+          runId: runId,
+          type: TimerEventType.runResumed,
+          occurredAtUtc: nowUtc,
+        );
 
-    final updatedRun = _activeRun!.copyWith(
-      status: RunStatus.running,
-      phaseStartedAtUtc: nowUtc,
-      phaseStartedMonotonicMs: () => nowMono,
-      pausedAtUtc: () => null,
-      stateVersion: _activeRun!.stateVersion + 1,
-      lastEventId: () => event.eventId,
-    );
+        final updatedRun = _activeRun!.copyWith(
+          status: RunStatus.running,
+          phaseStartedAtUtc: nowUtc,
+          phaseStartedMonotonicMs: () => nowMono,
+          pausedAtUtc: () => null,
+          stateVersion: _activeRun!.stateVersion + 1,
+          lastEventId: () => event.eventId,
+        );
 
-    try {
-      await persistencePort.persistRunAndEvents(updatedRun, [event]);
-    } catch (_) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.persistenceFailure,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        try {
+          await persistencePort.persistRunAndEvents(updatedRun, [event]);
+        } catch (_) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.persistenceFailure,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    _activeRun = updatedRun;
-    _scheduleBoundaryIfNeeded(updatedRun);
-    _emitState(updatedRun);
-    _eventController.add(event);
+        _activeRun = updatedRun;
+        _scheduleBoundaryIfNeeded(updatedRun);
+        _emitState(updatedRun);
+        _eventController.add(event);
 
-    return TimerCommandResult(success: true, stateVersion: updatedRun.stateVersion);
-  });
+        return TimerCommandResult(
+            success: true, stateVersion: updatedRun.stateVersion);
+      });
 
   @override
   Future<TimerCommandResult> stop(String runId) => _queue.run(() async {
-    if (_activeRun == null || _activeRun!.runId != runId) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.runNotFound,
-        stateVersion: _activeRun?.stateVersion ?? 0,
-      );
-    }
-    if (_activeRun!.status == RunStatus.cancelled) {
-      return TimerCommandResult(
-        success: true,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
-    if (_activeRun!.status != RunStatus.running &&
-        _activeRun!.status != RunStatus.paused) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.invalidTransition,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        if (_activeRun == null || _activeRun!.runId != runId) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.runNotFound,
+            stateVersion: _activeRun?.stateVersion ?? 0,
+          );
+        }
+        if (_activeRun!.status == RunStatus.cancelled) {
+          return TimerCommandResult(
+            success: true,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
+        if (_activeRun!.status != RunStatus.running &&
+            _activeRun!.status != RunStatus.paused) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.invalidTransition,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    final nowMono = monotonicClock.nowMs;
-    final nowUtc = wallClock.utcNow;
-    final segmentElapsed = _activeRun!.status == RunStatus.running
-        ? math.max(0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono))
-        : 0;
-    final actualPhaseElapsed = _activeRun!.accumulatedMs + segmentElapsed;
+        final nowMono = monotonicClock.nowMs;
+        final nowUtc = wallClock.utcNow;
+        final segmentElapsed = _activeRun!.status == RunStatus.running
+            ? math.max(
+                0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono))
+            : 0;
+        final actualPhaseElapsed = _activeRun!.accumulatedMs + segmentElapsed;
 
-    // The run ends here: the phase that was in progress becomes the last
-    // ledger entry and the accumulator is emptied with it.
-    final ledgerEntry = _ledgerEntryFor(
-      _activeRun!,
-      durationMs: actualPhaseElapsed,
-      outcome: PhaseStatus.finished,
-      endedAtUtc: nowUtc,
-    );
+        // The run ends here: the phase that was in progress becomes the last
+        // ledger entry and the accumulator is emptied with it.
+        final ledgerEntry = _ledgerEntryFor(
+          _activeRun!,
+          durationMs: actualPhaseElapsed,
+          outcome: PhaseStatus.finished,
+          endedAtUtc: nowUtc,
+        );
 
-    final event = TimerEvent(
-      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
-      runId: runId,
-      type: TimerEventType.runCancelled,
-      occurredAtUtc: nowUtc,
-      durationMs: _activeRun!.ledgerTotalMs + actualPhaseElapsed,
-    );
+        final event = TimerEvent(
+          eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+          runId: runId,
+          type: TimerEventType.runCancelled,
+          occurredAtUtc: nowUtc,
+          durationMs: _activeRun!.ledgerTotalMs + actualPhaseElapsed,
+        );
 
-    final updatedRun = _activeRun!.copyWith(
-      status: RunStatus.cancelled,
-      accumulatedMs: 0,
-      phaseLedger: [..._activeRun!.phaseLedger, ledgerEntry],
-      phaseStartedMonotonicMs: () => null,
-      stateVersion: _activeRun!.stateVersion + 1,
-      lastEventId: () => event.eventId,
-    );
+        final updatedRun = _activeRun!.copyWith(
+          status: RunStatus.cancelled,
+          accumulatedMs: 0,
+          phaseLedger: [..._activeRun!.phaseLedger, ledgerEntry],
+          phaseStartedMonotonicMs: () => null,
+          stateVersion: _activeRun!.stateVersion + 1,
+          lastEventId: () => event.eventId,
+        );
 
-    try {
-      await persistencePort.persistRunAndEvents(updatedRun, [event]);
-    } catch (_) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.persistenceFailure,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        try {
+          await persistencePort.persistRunAndEvents(updatedRun, [event]);
+        } catch (_) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.persistenceFailure,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    try {
-      await notificationPort.cancelBoundaries(runId);
-    } catch (_) {}
+        try {
+          await notificationPort.cancelBoundaries(runId);
+        } catch (_) {}
 
-    _boundaryTimerToken?.cancel();
-    _activeRun = updatedRun;
-    _emitState(updatedRun);
-    _eventController.add(event);
+        _boundaryTimerToken?.cancel();
+        _activeRun = updatedRun;
+        _emitState(updatedRun);
+        _eventController.add(event);
 
-    return TimerCommandResult(success: true, stateVersion: updatedRun.stateVersion);
-  });
+        return TimerCommandResult(
+            success: true, stateVersion: updatedRun.stateVersion);
+      });
 
   void _scheduleBoundaryIfNeeded(TimerRun run) {
     _boundaryTimerToken?.cancel();
@@ -356,12 +361,14 @@ class TimerEngineImpl implements TimerEngine {
     final expectedUtc =
         wallClock.utcNow.add(Duration(milliseconds: remainingMs));
     try {
-      unawaited(notificationPort.scheduleBoundaryNotification(
-        runId: run.runId,
-        phaseId: phase.id,
-        phaseName: phase.name,
-        expectedUtc: expectedUtc,
-      ).catchError((_) {}));
+      unawaited(notificationPort
+          .scheduleBoundaryNotification(
+            runId: run.runId,
+            phaseId: phase.id,
+            phaseName: phase.name,
+            expectedUtc: expectedUtc,
+          )
+          .catchError((_) {}));
     } catch (_) {}
 
     _boundaryTimerToken = monotonicClock.schedule(
@@ -420,7 +427,8 @@ class TimerEngineImpl implements TimerEngine {
     );
   }
 
-  Future<bool> _advancePhase(String runId, {required TimerEventType phaseOutcome}) async {
+  Future<bool> _advancePhase(String runId,
+      {required TimerEventType phaseOutcome}) async {
     final run = _activeRun;
     if (run == null || run.runId != runId) return false;
     final nowUtc = wallClock.utcNow;
@@ -435,7 +443,8 @@ class TimerEngineImpl implements TimerEngine {
 
     if (nextPhaseIndex >= numPhases) {
       final repeatRule = run.routineSnapshot.repeatRule;
-      if (repeatRule.mode == RepeatMode.forever || newRepeatIndex < repeatRule.count - 1) {
+      if (repeatRule.mode == RepeatMode.forever ||
+          newRepeatIndex < repeatRule.count - 1) {
         newPhaseIndex = 0;
         newRepeatIndex += 1;
       } else {
@@ -511,7 +520,8 @@ class TimerEngineImpl implements TimerEngine {
       // an ended run keeps the last phase's first start.
       phaseFirstStartedAtUtc: newStatus == RunStatus.running ? nowUtc : null,
       phaseStartedAtUtc: nowUtc,
-      phaseStartedMonotonicMs: () => newStatus == RunStatus.running ? nowMono : null,
+      phaseStartedMonotonicMs: () =>
+          newStatus == RunStatus.running ? nowMono : null,
       pausedAtUtc: () => null,
       stateVersion: run.stateVersion + 1,
       lastEventId: () => lastEventId,
@@ -545,136 +555,145 @@ class TimerEngineImpl implements TimerEngine {
 
   @override
   Future<TimerCommandResult> skipPhase(String runId) => _queue.run(() async {
-    if (_activeRun == null || _activeRun!.runId != runId) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.runNotFound,
-        stateVersion: _activeRun?.stateVersion ?? 0,
-      );
-    }
-    if (_activeRun!.status != RunStatus.running && _activeRun!.status != RunStatus.paused) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.invalidTransition,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
-    final success = await _advancePhase(runId, phaseOutcome: TimerEventType.phaseSkipped);
-    if (!success) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.persistenceFailure,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
-    return TimerCommandResult(success: true, stateVersion: _activeRun!.stateVersion);
-  });
+        if (_activeRun == null || _activeRun!.runId != runId) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.runNotFound,
+            stateVersion: _activeRun?.stateVersion ?? 0,
+          );
+        }
+        if (_activeRun!.status != RunStatus.running &&
+            _activeRun!.status != RunStatus.paused) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.invalidTransition,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
+        final success = await _advancePhase(runId,
+            phaseOutcome: TimerEventType.phaseSkipped);
+        if (!success) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.persistenceFailure,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
+        return TimerCommandResult(
+            success: true, stateVersion: _activeRun!.stateVersion);
+      });
 
   @override
   Future<TimerCommandResult> finishPhase(String runId) => _queue.run(() async {
-    if (_activeRun == null || _activeRun!.runId != runId) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.runNotFound,
-        stateVersion: _activeRun?.stateVersion ?? 0,
-      );
-    }
-    if (_activeRun!.status != RunStatus.running && _activeRun!.status != RunStatus.paused) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.invalidTransition,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
-    final success = await _advancePhase(runId, phaseOutcome: TimerEventType.phaseFinished);
-    if (!success) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.persistenceFailure,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
-    return TimerCommandResult(success: true, stateVersion: _activeRun!.stateVersion);
-  });
+        if (_activeRun == null || _activeRun!.runId != runId) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.runNotFound,
+            stateVersion: _activeRun?.stateVersion ?? 0,
+          );
+        }
+        if (_activeRun!.status != RunStatus.running &&
+            _activeRun!.status != RunStatus.paused) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.invalidTransition,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
+        final success = await _advancePhase(runId,
+            phaseOutcome: TimerEventType.phaseFinished);
+        if (!success) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.persistenceFailure,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
+        return TimerCommandResult(
+            success: true, stateVersion: _activeRun!.stateVersion);
+      });
 
   @override
   Future<TimerCommandResult> finishRun(String runId) => _queue.run(() async {
-    if (_activeRun == null || _activeRun!.runId != runId) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.runNotFound,
-        stateVersion: _activeRun?.stateVersion ?? 0,
-      );
-    }
-    if (_activeRun!.status == RunStatus.completed) {
-      return TimerCommandResult(
-        success: true,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
-    if (_activeRun!.status != RunStatus.running && _activeRun!.status != RunStatus.paused) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.invalidTransition,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        if (_activeRun == null || _activeRun!.runId != runId) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.runNotFound,
+            stateVersion: _activeRun?.stateVersion ?? 0,
+          );
+        }
+        if (_activeRun!.status == RunStatus.completed) {
+          return TimerCommandResult(
+            success: true,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
+        if (_activeRun!.status != RunStatus.running &&
+            _activeRun!.status != RunStatus.paused) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.invalidTransition,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    final nowMono = monotonicClock.nowMs;
-    final nowUtc = wallClock.utcNow;
-    final segmentElapsed = _activeRun!.status == RunStatus.running
-        ? math.max(0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono))
-        : 0;
-    final actualPhaseElapsed = _activeRun!.accumulatedMs + segmentElapsed;
+        final nowMono = monotonicClock.nowMs;
+        final nowUtc = wallClock.utcNow;
+        final segmentElapsed = _activeRun!.status == RunStatus.running
+            ? math.max(
+                0, nowMono - (_activeRun!.phaseStartedMonotonicMs ?? nowMono))
+            : 0;
+        final actualPhaseElapsed = _activeRun!.accumulatedMs + segmentElapsed;
 
-    // The run ends here: the phase that was in progress becomes the last
-    // ledger entry and the accumulator is emptied with it.
-    final ledgerEntry = _ledgerEntryFor(
-      _activeRun!,
-      durationMs: actualPhaseElapsed,
-      outcome: PhaseStatus.finished,
-      endedAtUtc: nowUtc,
-    );
+        // The run ends here: the phase that was in progress becomes the last
+        // ledger entry and the accumulator is emptied with it.
+        final ledgerEntry = _ledgerEntryFor(
+          _activeRun!,
+          durationMs: actualPhaseElapsed,
+          outcome: PhaseStatus.finished,
+          endedAtUtc: nowUtc,
+        );
 
-    final event = TimerEvent(
-      eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
-      runId: runId,
-      type: TimerEventType.runCompleted,
-      occurredAtUtc: nowUtc,
-      durationMs: _activeRun!.ledgerTotalMs + actualPhaseElapsed,
-    );
+        final event = TimerEvent(
+          eventId: 'evt-${nowUtc.millisecondsSinceEpoch}',
+          runId: runId,
+          type: TimerEventType.runCompleted,
+          occurredAtUtc: nowUtc,
+          durationMs: _activeRun!.ledgerTotalMs + actualPhaseElapsed,
+        );
 
-    final updatedRun = _activeRun!.copyWith(
-      status: RunStatus.completed,
-      phaseStatus: PhaseStatus.finished,
-      accumulatedMs: 0,
-      phaseLedger: [..._activeRun!.phaseLedger, ledgerEntry],
-      phaseStartedMonotonicMs: () => null,
-      stateVersion: _activeRun!.stateVersion + 1,
-      lastEventId: () => event.eventId,
-    );
+        final updatedRun = _activeRun!.copyWith(
+          status: RunStatus.completed,
+          phaseStatus: PhaseStatus.finished,
+          accumulatedMs: 0,
+          phaseLedger: [..._activeRun!.phaseLedger, ledgerEntry],
+          phaseStartedMonotonicMs: () => null,
+          stateVersion: _activeRun!.stateVersion + 1,
+          lastEventId: () => event.eventId,
+        );
 
-    try {
-      await persistencePort.persistRunAndEvents(updatedRun, [event]);
-    } catch (_) {
-      return TimerCommandResult(
-        success: false,
-        error: TimerError.persistenceFailure,
-        stateVersion: _activeRun!.stateVersion,
-      );
-    }
+        try {
+          await persistencePort.persistRunAndEvents(updatedRun, [event]);
+        } catch (_) {
+          return TimerCommandResult(
+            success: false,
+            error: TimerError.persistenceFailure,
+            stateVersion: _activeRun!.stateVersion,
+          );
+        }
 
-    try {
-      await notificationPort.cancelBoundaries(runId);
-    } catch (_) {}
+        try {
+          await notificationPort.cancelBoundaries(runId);
+        } catch (_) {}
 
-    _boundaryTimerToken?.cancel();
-    _activeRun = updatedRun;
-    _emitState(updatedRun);
-    _eventController.add(event);
+        _boundaryTimerToken?.cancel();
+        _activeRun = updatedRun;
+        _emitState(updatedRun);
+        _eventController.add(event);
 
-    return TimerCommandResult(success: true, stateVersion: updatedRun.stateVersion);
-  });
+        return TimerCommandResult(
+            success: true, stateVersion: updatedRun.stateVersion);
+      });
 
   void _emitState(TimerRun run) {
     _stateController
@@ -683,37 +702,38 @@ class TimerEngineImpl implements TimerEngine {
 
   @override
   Future<void> recover() => _queue.run(() async {
-    final activeRun = await persistencePort.getLatestActiveRun();
-    if (activeRun == null) return;
-    if (activeRun.status == RunStatus.completed ||
-        activeRun.status == RunStatus.cancelled) {
-      _activeRun = activeRun;
-      return;
-    }
+        final activeRun = await persistencePort.getLatestActiveRun();
+        if (activeRun == null) return;
+        if (activeRun.status == RunStatus.completed ||
+            activeRun.status == RunStatus.cancelled) {
+          _activeRun = activeRun;
+          return;
+        }
 
-    final recoveryManager = RecoveryManager(wallClock: wallClock);
-    final reconciled =
-        recoveryManager.reconcile(activeRun, monotonicClock.nowMs);
+        final recoveryManager = RecoveryManager(wallClock: wallClock);
+        final reconciled =
+            recoveryManager.reconcile(activeRun, monotonicClock.nowMs);
 
-    if (reconciled.events.isNotEmpty || reconciled.run != activeRun) {
-      await persistencePort.persistRunAndEvents(reconciled.run, reconciled.events);
-    }
+        if (reconciled.events.isNotEmpty || reconciled.run != activeRun) {
+          await persistencePort.persistRunAndEvents(
+              reconciled.run, reconciled.events);
+        }
 
-    _activeRun = reconciled.run;
-    if (_activeRun!.status == RunStatus.running) {
-      _scheduleBoundaryIfNeeded(_activeRun!);
-    } else {
-      _boundaryTimerToken?.cancel();
-      if (_activeRun!.status == RunStatus.completed ||
-          _activeRun!.status == RunStatus.cancelled) {
-        await notificationPort.cancelBoundaries(_activeRun!.runId);
-      }
-    }
-    _emitState(_activeRun!);
-    for (final event in reconciled.events) {
-      _eventController.add(event);
-    }
-  });
+        _activeRun = reconciled.run;
+        if (_activeRun!.status == RunStatus.running) {
+          _scheduleBoundaryIfNeeded(_activeRun!);
+        } else {
+          _boundaryTimerToken?.cancel();
+          if (_activeRun!.status == RunStatus.completed ||
+              _activeRun!.status == RunStatus.cancelled) {
+            await notificationPort.cancelBoundaries(_activeRun!.runId);
+          }
+        }
+        _emitState(_activeRun!);
+        for (final event in reconciled.events) {
+          _eventController.add(event);
+        }
+      });
 
   @override
   void cancelBoundaryTimer() {

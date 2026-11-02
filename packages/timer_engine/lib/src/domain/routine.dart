@@ -62,7 +62,11 @@ class Routine {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! Routine || runtimeType != other.runtimeType) return false;
-    if (id != other.id || name != other.name || repeatRule != other.repeatRule) return false;
+    if (id != other.id ||
+        name != other.name ||
+        repeatRule != other.repeatRule) {
+      return false;
+    }
     if (phases.length != other.phases.length) return false;
     for (var i = 0; i < phases.length; i++) {
       if (phases[i] != other.phases[i]) return false;

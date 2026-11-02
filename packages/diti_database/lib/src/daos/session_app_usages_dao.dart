@@ -11,17 +11,20 @@ class SessionAppUsagesDao extends DatabaseAccessor<DitiDatabase>
 
   Future<void> insertUsages(List<SessionAppUsagesCompanion> usages) async {
     await batch((batch) {
-      batch.insertAll(sessionAppUsages, usages, mode: InsertMode.insertOrReplace);
+      batch.insertAll(sessionAppUsages, usages,
+          mode: InsertMode.insertOrReplace);
     });
   }
 
   Future<List<SessionAppUsage>> getUsagesForSession(String sessionId) {
-    return (select(sessionAppUsages)..where((t) => t.sessionId.equals(sessionId)))
+    return (select(sessionAppUsages)
+          ..where((t) => t.sessionId.equals(sessionId)))
         .get();
   }
 
   Future<int> deleteUsagesForSession(String sessionId) {
-    return (delete(sessionAppUsages)..where((t) => t.sessionId.equals(sessionId)))
+    return (delete(sessionAppUsages)
+          ..where((t) => t.sessionId.equals(sessionId)))
         .go();
   }
 }

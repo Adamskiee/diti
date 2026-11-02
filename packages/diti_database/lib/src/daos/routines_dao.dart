@@ -6,7 +6,8 @@ import '../database/tables/routine_phases_table.dart';
 part 'routines_dao.g.dart';
 
 @DriftAccessor(tables: [Routines, RoutinePhases])
-class RoutinesDao extends DatabaseAccessor<DitiDatabase> with _$RoutinesDaoMixin {
+class RoutinesDao extends DatabaseAccessor<DitiDatabase>
+    with _$RoutinesDaoMixin {
   RoutinesDao(super.db);
 
   Future<void> upsertRoutineWithPhases(
@@ -15,7 +16,9 @@ class RoutinesDao extends DatabaseAccessor<DitiDatabase> with _$RoutinesDaoMixin
   ) {
     return transaction(() async {
       await into(routines).insertOnConflictUpdate(routine);
-      await (delete(routinePhases)..where((p) => p.routineId.equals(routine.id.value))).go();
+      await (delete(routinePhases)
+            ..where((p) => p.routineId.equals(routine.id.value)))
+          .go();
       for (final phase in phases) {
         await into(routinePhases).insert(phase);
       }

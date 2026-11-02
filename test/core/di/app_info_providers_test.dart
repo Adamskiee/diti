@@ -29,7 +29,9 @@ void main() {
   });
 
   group('appInfoProviders', () {
-    test('appVersionProvider returns formatted version from packageInfoProvider', () async {
+    test(
+        'appVersionProvider returns formatted version from packageInfoProvider',
+        () async {
       final container = ProviderContainer(
         overrides: [
           packageInfoProvider.overrideWith(

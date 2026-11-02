@@ -18,6 +18,7 @@ class TestNavObserver extends NavigatorObserver {
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     log.add('PUSH ${route.settings.name ?? route.runtimeType}');
   }
+
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     log.add('POP ${route.settings.name ?? route.runtimeType}');
@@ -145,7 +146,9 @@ void main() {
       ],
     );
 
-    await container.read(routineRepositoryProvider).saveRoutine(openFlowForever);
+    await container
+        .read(routineRepositoryProvider)
+        .saveRoutine(openFlowForever);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(

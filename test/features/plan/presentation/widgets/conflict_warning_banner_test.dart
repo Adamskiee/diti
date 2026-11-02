@@ -21,7 +21,8 @@ void main() {
       expect(find.text(description), findsOneWidget);
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
 
-      final icon = tester.widget<Icon>(find.byIcon(Icons.warning_amber_rounded));
+      final icon =
+          tester.widget<Icon>(find.byIcon(Icons.warning_amber_rounded));
       expect(icon.color, AppColors.pausedAmber);
       expect(icon.size, 16);
 

@@ -244,7 +244,8 @@ void main() {
     expect(state.totalActiveElapsedMs, equals(1500000 + 300000 + 2100000));
   });
 
-  test('recovered entries are ordered and their timestamps never exceed the recovery time',
+  test(
+      'recovered entries are ordered and their timestamps never exceed the recovery time',
       () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;

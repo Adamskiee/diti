@@ -14,7 +14,9 @@ import 'package:timer_engine/timer_engine.dart';
 import '../helpers/test_fakes.dart';
 
 void main() {
-  testWidgets('End-to-End: Start routine, record session, and verify in History and Analytics', (tester) async {
+  testWidgets(
+      'End-to-End: Start routine, record session, and verify in History and Analytics',
+      (tester) async {
     final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
     final db = createInMemoryTestDatabase();
     final fakeClient = FakeNotificationClient();

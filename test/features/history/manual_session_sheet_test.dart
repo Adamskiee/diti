@@ -31,7 +31,9 @@ class StubJournalRepo implements ActivityJournalRepository {
   });
 
   @override
-  Future<List<ActivityUsageSummaryRecord>> aggregateUsageBetween(DateTime s, DateTime e) async => usages;
+  Future<List<ActivityUsageSummaryRecord>> aggregateUsageBetween(
+          DateTime s, DateTime e) async =>
+      usages;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -46,12 +48,14 @@ class StubPlanRepo implements PlanBlockRepository {
 }
 
 void main() {
-  testWidgets('ManualSessionSheet displays activity fields and detected apps', (tester) async {
+  testWidgets('ManualSessionSheet displays activity fields and detected apps',
+      (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           sessionRepositoryProvider.overrideWithValue(StubSessionRepo()),
-          activityJournalRepositoryProvider.overrideWithValue(StubJournalRepo()),
+          activityJournalRepositoryProvider
+              .overrideWithValue(StubJournalRepo()),
           planBlockRepositoryProvider.overrideWithValue(StubPlanRepo()),
         ],
         child: const MaterialApp(
@@ -70,12 +74,14 @@ void main() {
     expect(find.text('Save Session'), findsOneWidget);
   });
 
-  testWidgets('ManualSessionSheet shows message when no detected apps', (tester) async {
+  testWidgets('ManualSessionSheet shows message when no detected apps',
+      (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           sessionRepositoryProvider.overrideWithValue(StubSessionRepo()),
-          activityJournalRepositoryProvider.overrideWithValue(StubJournalRepo(usages: const [])),
+          activityJournalRepositoryProvider
+              .overrideWithValue(StubJournalRepo(usages: const [])),
           planBlockRepositoryProvider.overrideWithValue(StubPlanRepo()),
         ],
         child: const MaterialApp(
@@ -88,15 +94,21 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('No background application activity detected in this time range.'), findsOneWidget);
+    expect(
+        find.text(
+            'No background application activity detected in this time range.'),
+        findsOneWidget);
   });
 
-  testWidgets('ManualSessionSheet displays validation error when saving without activity name', (tester) async {
+  testWidgets(
+      'ManualSessionSheet displays validation error when saving without activity name',
+      (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           sessionRepositoryProvider.overrideWithValue(StubSessionRepo()),
-          activityJournalRepositoryProvider.overrideWithValue(StubJournalRepo()),
+          activityJournalRepositoryProvider
+              .overrideWithValue(StubJournalRepo()),
           planBlockRepositoryProvider.overrideWithValue(StubPlanRepo()),
         ],
         child: const MaterialApp(
@@ -116,14 +128,16 @@ void main() {
     expect(find.text('Please enter an activity name.'), findsOneWidget);
   });
 
-  testWidgets('ManualSessionSheet saves session and closes on save button', (tester) async {
+  testWidgets('ManualSessionSheet saves session and closes on save button',
+      (tester) async {
     final sessionRepo = StubSessionRepo();
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           sessionRepositoryProvider.overrideWithValue(sessionRepo),
-          activityJournalRepositoryProvider.overrideWithValue(StubJournalRepo()),
+          activityJournalRepositoryProvider
+              .overrideWithValue(StubJournalRepo()),
           planBlockRepositoryProvider.overrideWithValue(StubPlanRepo()),
         ],
         child: MaterialApp(
@@ -134,7 +148,8 @@ void main() {
                   showModalBottomSheet<void>(
                     context: ctx,
                     isScrollControlled: true,
-                    builder: (_) => const ManualSessionSheet(initialRoutineName: 'Sprint Review'),
+                    builder: (_) => const ManualSessionSheet(
+                        initialRoutineName: 'Sprint Review'),
                   );
                 },
                 child: const Text('Open Sheet'),
@@ -164,7 +179,8 @@ void main() {
       ProviderScope(
         overrides: [
           sessionRepositoryProvider.overrideWithValue(StubSessionRepo()),
-          activityJournalRepositoryProvider.overrideWithValue(StubJournalRepo()),
+          activityJournalRepositoryProvider
+              .overrideWithValue(StubJournalRepo()),
           planBlockRepositoryProvider.overrideWithValue(StubPlanRepo()),
         ],
         child: MaterialApp(
@@ -175,7 +191,8 @@ void main() {
                   showModalBottomSheet<void>(
                     context: ctx,
                     isScrollControlled: true,
-                    builder: (_) => const ManualSessionSheet(initialRoutineName: 'Sprint Review'),
+                    builder: (_) => const ManualSessionSheet(
+                        initialRoutineName: 'Sprint Review'),
                   );
                 },
                 child: const Text('Open Sheet'),

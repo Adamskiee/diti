@@ -10,18 +10,24 @@ void main() {
       expect(starterRoutines.length, 3);
     });
 
-    test('all starter presets are valid according to routine validation rules', () {
+    test('all starter presets are valid according to routine validation rules',
+        () {
       for (final routine in starterRoutines) {
-        expect(routine.validate(), isNull, reason: '${routine.name} should be valid');
+        expect(routine.validate(), isNull,
+            reason: '${routine.name} should be valid');
         expect(routine.phases, isNotEmpty);
         for (final phase in routine.phases) {
-          expect(phase.isValid, isTrue, reason: 'Phase ${phase.name} in ${routine.name} should be valid');
+          expect(phase.isValid, isTrue,
+              reason: 'Phase ${phase.name} in ${routine.name} should be valid');
         }
       }
     });
 
-    test('defines Pomodoro, Deep Work, and Open Flow with expected configurations', () {
-      final pomodoro = starterRoutines.firstWhere((r) => r.id == 'pomodoro-default');
+    test(
+        'defines Pomodoro, Deep Work, and Open Flow with expected configurations',
+        () {
+      final pomodoro =
+          starterRoutines.firstWhere((r) => r.id == 'pomodoro-default');
       expect(pomodoro.name, 'Classic Pomodoro');
       expect(pomodoro.repeatRule.mode, RepeatMode.count);
       expect(pomodoro.repeatRule.count, 4);
@@ -33,7 +39,8 @@ void main() {
       expect(pomodoro.phases[1].durationMs, 300000); // 5 min
       expect(pomodoro.phases[1].transition, TransitionPolicy.manual);
 
-      final deepWork = starterRoutines.firstWhere((r) => r.id == 'deep-work-default');
+      final deepWork =
+          starterRoutines.firstWhere((r) => r.id == 'deep-work-default');
       expect(deepWork.name, 'Deep Work');
       expect(deepWork.repeatRule.mode, RepeatMode.count);
       expect(deepWork.repeatRule.count, 1);
@@ -45,7 +52,8 @@ void main() {
       expect(deepWork.phases[1].durationMs, 600000); // 10 min
       expect(deepWork.phases[1].transition, TransitionPolicy.manual);
 
-      final openFlow = starterRoutines.firstWhere((r) => r.id == 'open-flow-default');
+      final openFlow =
+          starterRoutines.firstWhere((r) => r.id == 'open-flow-default');
       expect(openFlow.name, 'Open Flow');
       expect(openFlow.repeatRule.mode, RepeatMode.count);
       expect(openFlow.repeatRule.count, 1);
@@ -59,15 +67,18 @@ void main() {
     });
 
     test('the starter routines tag their phases', () {
-      final pomodoro = starterRoutines.firstWhere((r) => r.id == 'pomodoro-default');
+      final pomodoro =
+          starterRoutines.firstWhere((r) => r.id == 'pomodoro-default');
       expect(pomodoro.phases[0].kind, PhaseKind.focus);
       expect(pomodoro.phases[1].kind, PhaseKind.rest);
 
-      final deepWork = starterRoutines.firstWhere((r) => r.id == 'deep-work-default');
+      final deepWork =
+          starterRoutines.firstWhere((r) => r.id == 'deep-work-default');
       expect(deepWork.phases[0].kind, PhaseKind.focus);
       expect(deepWork.phases[1].kind, PhaseKind.rest);
 
-      final openFlow = starterRoutines.firstWhere((r) => r.id == 'open-flow-default');
+      final openFlow =
+          starterRoutines.firstWhere((r) => r.id == 'open-flow-default');
       expect(openFlow.phases[0].kind, PhaseKind.focus);
       expect(openFlow.phases[1].kind, PhaseKind.rest);
     });
@@ -97,7 +108,9 @@ void main() {
       await db.close();
     });
 
-    test('seedStarterRoutines returns false and preserves existing routines if DB is not empty', () async {
+    test(
+        'seedStarterRoutines returns false and preserves existing routines if DB is not empty',
+        () async {
       final db = createInMemoryTestDatabase();
       final repo = DriftRoutineRepository(db);
 

@@ -17,7 +17,8 @@ void main() {
   });
 
   group('SessionsDao', () {
-    test('creates session with events atomically and retrieves by ID and range', () async {
+    test('creates session with events atomically and retrieves by ID and range',
+        () async {
       final start = DateTime.utc(2026, 10, 13, 9, 0);
       final end = DateTime.utc(2026, 10, 13, 9, 30);
 
@@ -77,7 +78,8 @@ void main() {
       expect(blockSessions.length, equals(1));
       expect(blockSessions.first.sessionId, equals('s-block'));
 
-      final otherBlockSessions = await dao.getSessionsForPlanBlock('other-block');
+      final otherBlockSessions =
+          await dao.getSessionsForPlanBlock('other-block');
       expect(otherBlockSessions, isEmpty);
     });
 

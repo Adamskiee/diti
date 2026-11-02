@@ -21,7 +21,8 @@ void main() {
     ],
   );
 
-  testWidgets('SessionDetailSheet displays routine name, duration and outcome', (tester) async {
+  testWidgets('SessionDetailSheet displays routine name, duration and outcome',
+      (tester) async {
     final session = SessionRecord(
       sessionId: 's_test_1',
       routineName: 'Deep Focus',
@@ -48,7 +49,9 @@ void main() {
     expect(find.text('Delete Session'), findsOneWidget);
   });
 
-  testWidgets('SessionDetailSheet displays Quick Timer fallback and linked block', (tester) async {
+  testWidgets(
+      'SessionDetailSheet displays Quick Timer fallback and linked block',
+      (tester) async {
     final session = SessionRecord(
       sessionId: 's_test_2',
       routineName: '   ',
@@ -76,7 +79,8 @@ void main() {
     expect(find.text('block_42'), findsOneWidget);
   });
 
-  testWidgets('the phase log lists each phase with its kind and duration', (tester) async {
+  testWidgets('the phase log lists each phase with its kind and duration',
+      (tester) async {
     // A session of one focus phase and one rest phase: the log shows each
     // phase's name, the kind it ran as and its own active time.
     final session = SessionRecord(
@@ -267,7 +271,8 @@ void main() {
     expect(find.byType(SessionDetailSheet), findsNothing);
   });
 
-  testWidgets('a phase renamed after the session keeps its recorded kind', (tester) async {
+  testWidgets('a phase renamed after the session keeps its recorded kind',
+      (tester) async {
     // The phase ran as a focus phase. It has since been renamed to
     // 'Short Break' - a name that would infer as rest - but the session
     // keeps the kind it was recorded with.
@@ -308,7 +313,8 @@ void main() {
     expect(find.text('Rest'), findsNothing);
   });
 
-  testWidgets('a long phase log scrolls instead of overflowing', (tester) async {
+  testWidgets('a long phase log scrolls instead of overflowing',
+      (tester) async {
     // A routine set to repeat forever grows a phase entry per occurrence, so
     // the log can be long enough to run past the bottom of the sheet.
     final session = SessionRecord(
@@ -350,7 +356,8 @@ void main() {
     expect(find.text('Sprint 1'), findsOneWidget);
   });
 
-  testWidgets('Tapping Delete Session opens confirmation dialog', (tester) async {
+  testWidgets('Tapping Delete Session opens confirmation dialog',
+      (tester) async {
     final session = SessionRecord(
       sessionId: 's_test_3',
       routineName: 'Deep Focus',

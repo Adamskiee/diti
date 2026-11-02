@@ -7,10 +7,14 @@ import 'package:diti_notifications/src/lifecycle/timer_lifecycle_coordinator.dar
 import 'package:diti_notifications/src/permissions/notification_permission_service.dart';
 
 class MockTimerEngine extends Mock implements TimerEngine {}
+
 class MockLocalNotificationPort extends Mock implements LocalNotificationPort {}
+
 class MockWallClock extends Mock implements WallClock {}
+
 class MockNotificationPermissionService extends Mock
     implements NotificationPermissionService {}
+
 class FakeTimerRun extends Fake implements TimerRun {}
 
 void main() {
@@ -57,7 +61,8 @@ void main() {
       verify(() => mockEngine.recover()).called(1);
     });
 
-    test('onResume cancels previous boundaries and invokes timerEngine.recover', () async {
+    test('onResume cancels previous boundaries and invokes timerEngine.recover',
+        () async {
       when(() => mockEngine.activeRunId).thenReturn('run-1');
       when(() => mockPort.cancelBoundaries(any())).thenAnswer((_) async {});
 
@@ -67,13 +72,18 @@ void main() {
       verify(() => mockEngine.recover()).called(1);
     });
 
-    test('onPause pre-schedules rolling boundaries if run is running', () async {
+    test('onPause pre-schedules rolling boundaries if run is running',
+        () async {
       const routine = Routine(
         id: 'r1',
         name: 'Work',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 1500000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Focus',
+              durationMs: 1500000,
+              transition: TransitionPolicy.auto),
         ],
       );
       final run = TimerRun(
@@ -108,13 +118,19 @@ void main() {
           )).called(1);
     });
 
-    test('onPause passes allowExactAlarms: false when exact alarms are not allowed', () async {
+    test(
+        'onPause passes allowExactAlarms: false when exact alarms are not allowed',
+        () async {
       const routine = Routine(
         id: 'r1',
         name: 'Work',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 1500000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Focus',
+              durationMs: 1500000,
+              transition: TransitionPolicy.auto),
         ],
       );
       final run = TimerRun(
@@ -170,7 +186,11 @@ void main() {
         name: 'Work',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 1500000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Focus',
+              durationMs: 1500000,
+              transition: TransitionPolicy.auto),
         ],
       );
       final run = TimerRun(

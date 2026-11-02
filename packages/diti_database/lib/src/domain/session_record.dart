@@ -31,7 +31,8 @@ class SessionEventRecord {
     this.durationMs = 0,
     this.outcome,
     this.kind = PhaseKind.focus,
-  }) : occurredAtUtc = occurredAtUtc.isUtc ? occurredAtUtc : occurredAtUtc.toUtc();
+  }) : occurredAtUtc =
+            occurredAtUtc.isUtc ? occurredAtUtc : occurredAtUtc.toUtc();
 }
 
 class SessionRecord {

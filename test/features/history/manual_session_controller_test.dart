@@ -9,7 +9,10 @@ import 'package:diti/src/core/di/repositories_provider.dart';
 class FakeSessionRepo implements SessionRepository {
   SessionRecord? saved;
   @override
-  Future<void> saveSession(SessionRecord s) async { saved = s; }
+  Future<void> saveSession(SessionRecord s) async {
+    saved = s;
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -17,15 +20,18 @@ class FakeSessionRepo implements SessionRepository {
 class FakePlanBlockRepo implements PlanBlockRepository {
   PlanBlock? updated;
   @override
-  Future<void> updatePlanBlock(PlanBlock b) async { updated = b; }
+  Future<void> updatePlanBlock(PlanBlock b) async {
+    updated = b;
+  }
+
   @override
   Future<PlanBlock?> getBlockById(String id) async => PlanBlock(
-    id: id,
-    planDate: '2026-11-01',
-    scheduledStartUtc: DateTime.utc(2026, 11, 1, 14, 0),
-    timezoneId: 'UTC',
-    plannedDurationMs: 1800000,
-  );
+        id: id,
+        planDate: '2026-11-01',
+        scheduledStartUtc: DateTime.utc(2026, 11, 1, 14, 0),
+        timezoneId: 'UTC',
+        plannedDurationMs: 1800000,
+      );
   Future<PlanBlock?> getPlanBlock(String id) async => getBlockById(id);
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -33,19 +39,23 @@ class FakePlanBlockRepo implements PlanBlockRepository {
 
 class FakeActivityJournalRepo implements ActivityJournalRepository {
   @override
-  Future<List<ActivityUsageSummaryRecord>> aggregateUsageBetween(DateTime s, DateTime e) async => [
-    const ActivityUsageSummaryRecord(
-      appName: 'VS Code',
-      category: 'Development',
-      durationMs: 1800000,
-    ),
-  ];
+  Future<List<ActivityUsageSummaryRecord>> aggregateUsageBetween(
+          DateTime s, DateTime e) async =>
+      [
+        const ActivityUsageSummaryRecord(
+          appName: 'VS Code',
+          category: 'Development',
+          durationMs: 1800000,
+        ),
+      ];
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
-  test('ManualSessionController calculates duration bidirectionally and saves session', () async {
+  test(
+      'ManualSessionController calculates duration bidirectionally and saves session',
+      () async {
     final fakeSessionRepo = FakeSessionRepo();
     final fakePlanRepo = FakePlanBlockRepo();
     final fakeJournal = FakeActivityJournalRepo();
@@ -74,7 +84,8 @@ void main() {
 
     // Changing duration should update end time to 15:00
     controller.setDurationMinutes(60);
-    expect(container.read(provider).endTime, equals(const TimeOfDay(hour: 15, minute: 0)));
+    expect(container.read(provider).endTime,
+        equals(const TimeOfDay(hour: 15, minute: 0)));
 
     controller.setRoutineName('Deep Work');
     controller.setPlanBlockId('block-123');
@@ -120,7 +131,8 @@ void main() {
     expect(fakeSessionRepo.saved, isNull);
   });
 
-  test('ManualSessionController rejects session with end time in the future', () async {
+  test('ManualSessionController rejects session with end time in the future',
+      () async {
     final fakeSessionRepo = FakeSessionRepo();
     final fakePlanRepo = FakePlanBlockRepo();
     final fakeJournal = FakeActivityJournalRepo();

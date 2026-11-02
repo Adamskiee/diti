@@ -28,7 +28,9 @@ void main() {
       ],
     );
 
-    test('calculates active elapsed and remaining correctly for running timed phase', () {
+    test(
+        'calculates active elapsed and remaining correctly for running timed phase',
+        () {
       final run = TimerRun(
         runId: 'test-run-1',
         routineSnapshot: routine,
@@ -78,7 +80,8 @@ void main() {
       expect(state.status, equals(RunStatus.paused));
     });
 
-    test('open-ended phase has null remainingMs and displays active elapsed', () {
+    test('open-ended phase has null remainingMs and displays active elapsed',
+        () {
       final run = TimerRun(
         runId: 'test-run-3',
         routineSnapshot: routine,
@@ -98,7 +101,9 @@ void main() {
       expect(state.currentRepetition, equals(2));
     });
 
-    test('clamps remaining to 0 when activeElapsed exceeds phase durationMs for focus phase', () {
+    test(
+        'clamps remaining to 0 when activeElapsed exceeds phase durationMs for focus phase',
+        () {
       final run = TimerRun(
         runId: 'test-run-overtime',
         routineSnapshot: routine,
@@ -118,7 +123,9 @@ void main() {
       expect(state.remainingMs, equals(0));
     });
 
-    test('runs remainingMs on negative when activeElapsed exceeds phase durationMs for rest phase', () {
+    test(
+        'runs remainingMs on negative when activeElapsed exceeds phase durationMs for rest phase',
+        () {
       final restRoutine = Routine(
         id: 'routine-with-rest',
         name: 'Routine with Rest',
@@ -153,7 +160,9 @@ void main() {
       expect(state.remainingMs, equals(-15000));
     });
 
-    test('protects against monotonic clock skew backwards (delta < 0 clamped to 0)', () {
+    test(
+        'protects against monotonic clock skew backwards (delta < 0 clamped to 0)',
+        () {
       final run = TimerRun(
         runId: 'test-run-skew',
         routineSnapshot: routine,
@@ -191,7 +200,9 @@ void main() {
       expect(run1.currentPhase.id, equals('p2'));
     });
 
-    test('TimerRun copyWith updates fields and supports setting null via callbacks', () {
+    test(
+        'TimerRun copyWith updates fields and supports setting null via callbacks',
+        () {
       final initial = TimerRun(
         runId: 'run-orig',
         routineSnapshot: routine,

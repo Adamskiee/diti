@@ -101,7 +101,8 @@ void main() {
     );
   }
 
-  testWidgets('renders single vertical column on compact screen (< 840dp)', (tester) async {
+  testWidgets('renders single vertical column on compact screen (< 840dp)',
+      (tester) async {
     tester.view.physicalSize = const Size(600, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -119,13 +120,16 @@ void main() {
 
     // On compact screen, there is no Row containing dual Expanded columns.
     final dualColumnRows = tester.widgetList<Row>(find.byType(Row)).where(
-      (r) => r.crossAxisAlignment == CrossAxisAlignment.start &&
-             r.children.whereType<Expanded>().length == 2,
-    );
+          (r) =>
+              r.crossAxisAlignment == CrossAxisAlignment.start &&
+              r.children.whereType<Expanded>().length == 2,
+        );
     expect(dualColumnRows, isEmpty);
   });
 
-  testWidgets('renders dual-column layout on wide screen (>= 840dp) when right items exist', (tester) async {
+  testWidgets(
+      'renders dual-column layout on wide screen (>= 840dp) when right items exist',
+      (tester) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -141,13 +145,16 @@ void main() {
 
     // On wide screen, dual-column Row is rendered with 2 Expanded children.
     final dualColumnRows = tester.widgetList<Row>(find.byType(Row)).where(
-      (r) => r.crossAxisAlignment == CrossAxisAlignment.start &&
-             r.children.whereType<Expanded>().length == 2,
-    );
+          (r) =>
+              r.crossAxisAlignment == CrossAxisAlignment.start &&
+              r.children.whereType<Expanded>().length == 2,
+        );
     expect(dualColumnRows, hasLength(1));
   });
 
-  testWidgets('falls back to full-width left column when right items are empty on wide screen', (tester) async {
+  testWidgets(
+      'falls back to full-width left column when right items are empty on wide screen',
+      (tester) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -163,13 +170,15 @@ void main() {
 
     // Dynamic fallback: No dual-column Row is rendered; left column items span full width.
     final dualColumnRows = tester.widgetList<Row>(find.byType(Row)).where(
-      (r) => r.crossAxisAlignment == CrossAxisAlignment.start &&
-             r.children.whereType<Expanded>().length == 2,
-    );
+          (r) =>
+              r.crossAxisAlignment == CrossAxisAlignment.start &&
+              r.children.whereType<Expanded>().length == 2,
+        );
     expect(dualColumnRows, isEmpty);
   });
 
-  testWidgets('centers empty state inside max-width container on wide screen', (tester) async {
+  testWidgets('centers empty state inside max-width container on wide screen',
+      (tester) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -195,11 +204,14 @@ void main() {
 
     expect(find.text('No activity recorded yet'), findsOneWidget);
     final emptyBox = tester.widget<ConstrainedBox>(
-      find.ancestor(
-        of: find.text('No activity recorded yet'),
-        matching: find.byType(ConstrainedBox),
-      ).first,
+      find
+          .ancestor(
+            of: find.text('No activity recorded yet'),
+            matching: find.byType(ConstrainedBox),
+          )
+          .first,
     );
-    expect(emptyBox.constraints.maxWidth, ResponsiveBreakpoints.maxContentWidth);
+    expect(
+        emptyBox.constraints.maxWidth, ResponsiveBreakpoints.maxContentWidth);
   });
 }

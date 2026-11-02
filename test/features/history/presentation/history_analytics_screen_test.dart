@@ -8,6 +8,7 @@ import 'package:timer_engine/timer_engine.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSessionRepository extends Mock implements SessionRepository {}
+
 class MockPlanBlockRepository extends Mock implements PlanBlockRepository {}
 
 void main() {
@@ -24,7 +25,8 @@ void main() {
         .thenAnswer((_) async => []);
   });
 
-  testWidgets('HistoryAnalyticsScreen renders SegmentedButton and toggles tabs', (tester) async {
+  testWidgets('HistoryAnalyticsScreen renders SegmentedButton and toggles tabs',
+      (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -51,7 +53,9 @@ void main() {
     expect(find.text('All'), findsOneWidget);
   });
 
-  testWidgets('HistoryAnalyticsScreen renders Tracked Activity card in Analytics tab when sessions have appUsages', (tester) async {
+  testWidgets(
+      'HistoryAnalyticsScreen renders Tracked Activity card in Analytics tab when sessions have appUsages',
+      (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);

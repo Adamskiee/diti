@@ -87,7 +87,8 @@ void main() {
       expect(container.read(selectedDateStringProvider), '2026-10-15');
     });
 
-    testWidgets('shows Today action chip when selected date is not today, tapping sets today',
+    testWidgets(
+        'shows Today action chip when selected date is not today, tapping sets today',
         (tester) async {
       final notToday = DateTime(2020, 1, 1);
       final container = ProviderContainer(
@@ -156,7 +157,8 @@ void main() {
       expect(find.widgetWithText(ActionChip, 'Today'), findsNothing);
     });
 
-    testWidgets('tapping date label opens date picker and selecting date updates selection',
+    testWidgets(
+        'tapping date label opens date picker and selecting date updates selection',
         (tester) async {
       final initialDate = DateTime(2026, 10, 16);
       final container = ProviderContainer(

@@ -19,7 +19,8 @@ void main() {
       expect(database.schemaVersion, equals(5));
     });
 
-    test('enforces foreign key constraints: rejecting orphaned child rows', () async {
+    test('enforces foreign key constraints: rejecting orphaned child rows',
+        () async {
       // Trying to insert RoutinePhase referencing non-existent Routine ID must fail
       expect(
         () async => database.into(database.routinePhases).insert(
@@ -35,7 +36,9 @@ void main() {
       );
     });
 
-    test('foreign key cascade deletes child routine phases when routine is deleted', () async {
+    test(
+        'foreign key cascade deletes child routine phases when routine is deleted',
+        () async {
       final now = DateTime.now().toUtc();
       await database.into(database.routines).insert(
             RoutinesCompanion.insert(

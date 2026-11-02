@@ -48,12 +48,12 @@ class FakeNotificationClient implements NotificationClient {
   }
 
   @override
-  Future<List<PendingNotificationRequest>> pendingNotificationRequests() async =>
-      <PendingNotificationRequest>[];
+  Future<List<PendingNotificationRequest>>
+      pendingNotificationRequests() async => <PendingNotificationRequest>[];
 
   @override
-  Future<NotificationAppLaunchDetails?> getNotificationAppLaunchDetails() async =>
-      null;
+  Future<NotificationAppLaunchDetails?>
+      getNotificationAppLaunchDetails() async => null;
 }
 
 class FakePermissionService implements NotificationPermissionService {
@@ -75,4 +75,3 @@ class FakePermissionService implements NotificationPermissionService {
   @override
   Future<bool> requestNotificationPermissions() async => true;
 }
-

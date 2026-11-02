@@ -10,7 +10,10 @@ import '../presentation/controllers/history_feed_controller.dart';
 import '../presentation/controllers/session_verification_controller.dart';
 
 export '../presentation/controllers/manual_session_controller.dart'
-    show manualSessionControllerProvider, ManualSessionController, ManualSessionParams;
+    show
+        manualSessionControllerProvider,
+        ManualSessionController,
+        ManualSessionParams;
 
 enum HistoryTab {
   analytics,
@@ -47,9 +50,8 @@ final analyticsControllerProvider =
   );
 });
 
-final historyFeedControllerProvider =
-    StateNotifierProvider<HistoryFeedController, AsyncValue<List<SessionRecord>>>(
-        (ref) {
+final historyFeedControllerProvider = StateNotifierProvider<
+    HistoryFeedController, AsyncValue<List<SessionRecord>>>((ref) {
   final sessionRepo = ref.watch(sessionRepositoryProvider);
   final filter = ref.watch(historyFeedFilterProvider);
   return HistoryFeedController(

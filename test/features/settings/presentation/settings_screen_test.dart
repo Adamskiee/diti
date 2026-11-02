@@ -13,12 +13,14 @@ import '../../../helpers/test_fakes.dart';
 
 void main() {
   group('SettingsScreen', () {
-    testWidgets('renders dynamic version from packageInfoProvider', (tester) async {
+    testWidgets('renders dynamic version from packageInfoProvider',
+        (tester) async {
       final fakePermission = FakePermissionService();
 
       final container = ProviderContainer(
         overrides: [
-          notificationPermissionServiceProvider.overrideWithValue(fakePermission),
+          notificationPermissionServiceProvider
+              .overrideWithValue(fakePermission),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',
@@ -48,12 +50,14 @@ void main() {
       expect(find.text('0.1.0 (Phase 4A)'), findsNothing);
     });
 
-    testWidgets('renders version with build number when present', (tester) async {
+    testWidgets('renders version with build number when present',
+        (tester) async {
       final fakePermission = FakePermissionService();
 
       final container = ProviderContainer(
         overrides: [
-          notificationPermissionServiceProvider.overrideWithValue(fakePermission),
+          notificationPermissionServiceProvider
+              .overrideWithValue(fakePermission),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',
@@ -87,7 +91,8 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          notificationPermissionServiceProvider.overrideWithValue(fakePermission),
+          notificationPermissionServiceProvider
+              .overrideWithValue(fakePermission),
           packageInfoProvider.overrideWith((ref) => completer.future),
         ],
       );
@@ -122,13 +127,16 @@ void main() {
       expect(find.text('2.2.0'), findsOneWidget);
     });
 
-    testWidgets('renders Unknown when appVersionProvider throws error', (tester) async {
+    testWidgets('renders Unknown when appVersionProvider throws error',
+        (tester) async {
       final fakePermission = FakePermissionService();
 
       final container = ProviderContainer(
         overrides: [
-          notificationPermissionServiceProvider.overrideWithValue(fakePermission),
-          appVersionProvider.overrideWith((ref) => Future.error('Failed to load version')),
+          notificationPermissionServiceProvider
+              .overrideWithValue(fakePermission),
+          appVersionProvider
+              .overrideWith((ref) => Future.error('Failed to load version')),
         ],
       );
       addTearDown(container.dispose);
@@ -147,14 +155,16 @@ void main() {
       expect(find.text('Unknown'), findsOneWidget);
     });
 
-    testWidgets('renders continuous tracking switch and toggles it', (tester) async {
+    testWidgets('renders continuous tracking switch and toggles it',
+        (tester) async {
       final fakePermission = FakePermissionService();
       final db = createInMemoryTestDatabase();
 
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
-          notificationPermissionServiceProvider.overrideWithValue(fakePermission),
+          notificationPermissionServiceProvider
+              .overrideWithValue(fakePermission),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',

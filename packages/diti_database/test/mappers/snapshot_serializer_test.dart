@@ -71,7 +71,11 @@ void main() {
     });
 
     test('serializes and deserializes metadata map', () {
-      final meta = {'source': 'manual_skip', 'reason': 'interrupted', 'index': 42};
+      final meta = {
+        'source': 'manual_skip',
+        'reason': 'interrupted',
+        'index': 42
+      };
       final jsonStr = SnapshotSerializer.metadataToJson(meta);
       final restored = SnapshotSerializer.metadataFromJson(jsonStr);
 
@@ -81,27 +85,42 @@ void main() {
     });
 
     test('throws FormatException on invalid json string', () {
-      expect(() => SnapshotSerializer.routineFromJson('not-json'), throwsFormatException);
-      expect(() => SnapshotSerializer.metadataFromJson('not-json'), throwsFormatException);
+      expect(() => SnapshotSerializer.routineFromJson('not-json'),
+          throwsFormatException);
+      expect(() => SnapshotSerializer.metadataFromJson('not-json'),
+          throwsFormatException);
     });
 
-    test('throws FormatException when schemaVersion is missing or unsupported', () {
+    test('throws FormatException when schemaVersion is missing or unsupported',
+        () {
       const missingVersion = '{"id":"r1","name":"Routine"}';
-      expect(() => SnapshotSerializer.routineFromJson(missingVersion), throwsFormatException);
+      expect(() => SnapshotSerializer.routineFromJson(missingVersion),
+          throwsFormatException);
 
-      const unsupportedVersion = '{"schemaVersion":3,"id":"r1","name":"Routine"}';
-      expect(() => SnapshotSerializer.routineFromJson(unsupportedVersion), throwsFormatException);
+      const unsupportedVersion =
+          '{"schemaVersion":3,"id":"r1","name":"Routine"}';
+      expect(() => SnapshotSerializer.routineFromJson(unsupportedVersion),
+          throwsFormatException);
     });
 
     test('writes schemaVersion 2 and preserves phase kinds', () {
       final routine = Routine(
-        id: 'r', name: 'R',
+        id: 'r',
+        name: 'R',
         repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
         phases: const [
-          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
-              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
-          RoutinePhase(id: 'b', name: 'Short Break', durationMs: 300000,
-              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+          RoutinePhase(
+              id: 'f',
+              name: 'Focus',
+              durationMs: 1500000,
+              transition: TransitionPolicy.auto,
+              kind: PhaseKind.focus),
+          RoutinePhase(
+              id: 'b',
+              name: 'Short Break',
+              durationMs: 300000,
+              transition: TransitionPolicy.auto,
+              kind: PhaseKind.rest),
         ],
       );
       final json = jsonDecode(SnapshotSerializer.routineToJson(routine));
@@ -111,13 +130,22 @@ void main() {
 
     test('round-trips phase kinds', () {
       final routine = Routine(
-        id: 'r', name: 'R',
+        id: 'r',
+        name: 'R',
         repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
         phases: const [
-          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
-              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
-          RoutinePhase(id: 'b', name: 'Short Break', durationMs: 300000,
-              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+          RoutinePhase(
+              id: 'f',
+              name: 'Focus',
+              durationMs: 1500000,
+              transition: TransitionPolicy.auto,
+              kind: PhaseKind.focus),
+          RoutinePhase(
+              id: 'b',
+              name: 'Short Break',
+              durationMs: 300000,
+              transition: TransitionPolicy.auto,
+              kind: PhaseKind.rest),
         ],
       );
       final jsonStr = SnapshotSerializer.routineToJson(routine);
@@ -128,10 +156,17 @@ void main() {
 
     test('loads a version 1 snapshot with every phase as focus', () {
       final json = jsonEncode({
-        'schemaVersion': 1, 'id': 'r', 'name': 'R',
+        'schemaVersion': 1,
+        'id': 'r',
+        'name': 'R',
         'repeatRule': {'mode': 'count', 'count': 1},
         'phases': [
-          {'id': 'f', 'name': 'Focus', 'durationMs': 1500000, 'transition': 'auto'},
+          {
+            'id': 'f',
+            'name': 'Focus',
+            'durationMs': 1500000,
+            'transition': 'auto'
+          },
         ],
       });
       final routine = SnapshotSerializer.routineFromJson(json);
@@ -140,11 +175,16 @@ void main() {
 
     test('a run keeps its own kinds when the live routine changes', () {
       final routine = Routine(
-        id: 'r', name: 'R',
+        id: 'r',
+        name: 'R',
         repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
         phases: const [
-          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
-              transition: TransitionPolicy.auto, kind: PhaseKind.focus),
+          RoutinePhase(
+              id: 'f',
+              name: 'Focus',
+              durationMs: 1500000,
+              transition: TransitionPolicy.auto,
+              kind: PhaseKind.focus),
         ],
       );
       // The run's snapshot is serialised once, when the run starts.
@@ -152,25 +192,33 @@ void main() {
 
       // Change the live routine's phase kind to rest.
       final updatedRoutine = Routine(
-        id: 'r', name: 'R',
+        id: 'r',
+        name: 'R',
         repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
         phases: const [
-          RoutinePhase(id: 'f', name: 'Focus', durationMs: 1500000,
-              transition: TransitionPolicy.auto, kind: PhaseKind.rest),
+          RoutinePhase(
+              id: 'f',
+              name: 'Focus',
+              durationMs: 1500000,
+              transition: TransitionPolicy.auto,
+              kind: PhaseKind.rest),
         ],
       );
       final updatedJson = SnapshotSerializer.routineToJson(updatedRoutine);
 
       // The run's snapshot still reports PhaseKind.focus for that phase.
-      final runPhases = (jsonDecode(runJson)['phases'] as List).cast<Map<String, dynamic>>();
+      final runPhases =
+          (jsonDecode(runJson)['phases'] as List).cast<Map<String, dynamic>>();
       expect(runPhases[0]['kind'], 'focus');
-      expect(SnapshotSerializer.routineFromJson(runJson).phases.first.kind, PhaseKind.focus);
+      expect(SnapshotSerializer.routineFromJson(runJson).phases.first.kind,
+          PhaseKind.focus);
 
       // The live routine now reports PhaseKind.rest.
-      final livePhases =
-          (jsonDecode(updatedJson)['phases'] as List).cast<Map<String, dynamic>>();
+      final livePhases = (jsonDecode(updatedJson)['phases'] as List)
+          .cast<Map<String, dynamic>>();
       expect(livePhases[0]['kind'], 'rest');
-      expect(SnapshotSerializer.routineFromJson(updatedJson).phases.first.kind, PhaseKind.rest);
+      expect(SnapshotSerializer.routineFromJson(updatedJson).phases.first.kind,
+          PhaseKind.rest);
     });
   });
 }

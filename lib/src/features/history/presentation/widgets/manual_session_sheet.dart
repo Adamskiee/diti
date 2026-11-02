@@ -40,7 +40,8 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
       initialPlanBlockId: widget.initialPlanBlockId,
     );
     ref.read(manualSessionControllerProvider(_params));
-    _titleController = TextEditingController(text: widget.initialRoutineName ?? '');
+    _titleController =
+        TextEditingController(text: widget.initialRoutineName ?? '');
     _durationController = TextEditingController(
       text: (widget.initialDurationMinutes ?? 30).toString(),
     );
@@ -56,7 +57,8 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(manualSessionControllerProvider(_params));
-    final controller = ref.read(manualSessionControllerProvider(_params).notifier);
+    final controller =
+        ref.read(manualSessionControllerProvider(_params).notifier);
     final theme = Theme.of(context);
     final timeFormat = DateFormat.jm();
     final dateFormat = DateFormat.yMMMd();
@@ -94,7 +96,8 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                 children: [
                   Text(
                     'Record Past Session',
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -137,7 +140,9 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                 subtitle: Text(dateFormat.format(state.selectedDate)),
                 onTap: () async {
                   final now = DateTime.now();
-                  final lastDate = state.selectedDate.isAfter(now) ? state.selectedDate : now;
+                  final lastDate = state.selectedDate.isAfter(now)
+                      ? state.selectedDate
+                      : now;
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: state.selectedDate,
@@ -153,7 +158,8 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                   Expanded(
                     child: ListTile(
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(color: theme.colorScheme.outlineVariant),
+                        side:
+                            BorderSide(color: theme.colorScheme.outlineVariant),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       leading: const Icon(Icons.play_arrow),
@@ -166,8 +172,10 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                         );
                         if (picked != null) {
                           controller.setStartTime(picked);
-                          _durationController.text =
-                              ref.read(manualSessionControllerProvider(_params)).durationMinutes.toString();
+                          _durationController.text = ref
+                              .read(manualSessionControllerProvider(_params))
+                              .durationMinutes
+                              .toString();
                         }
                       },
                     ),
@@ -176,7 +184,8 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                   Expanded(
                     child: ListTile(
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(color: theme.colorScheme.outlineVariant),
+                        side:
+                            BorderSide(color: theme.colorScheme.outlineVariant),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       leading: const Icon(Icons.stop),
@@ -189,8 +198,10 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                         );
                         if (picked != null) {
                           controller.setEndTime(picked);
-                          _durationController.text =
-                              ref.read(manualSessionControllerProvider(_params)).durationMinutes.toString();
+                          _durationController.text = ref
+                              .read(manualSessionControllerProvider(_params))
+                              .durationMinutes
+                              .toString();
                         }
                       },
                     ),
@@ -216,7 +227,8 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
               const SizedBox(height: 16),
               Text(
                 'Detected Application Activity',
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               if (state.isLoadingUsage)
@@ -225,10 +237,12 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('No background application activity detected in this time range.'),
+                  child: const Text(
+                      'No background application activity detected in this time range.'),
                 )
               else
                 Card(
@@ -241,10 +255,13 @@ class _ManualSessionSheetState extends ConsumerState<ManualSessionSheet> {
                       final app = state.detectedAppUsages[idx];
                       return ListTile(
                         dense: true,
-                        title: Text(app.appName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        title: Text(app.appName,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(app.category),
                         trailing: Text(
-                          DurationFormatter.formatDurationSummary(app.durationMs),
+                          DurationFormatter.formatDurationSummary(
+                              app.durationMs),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       );

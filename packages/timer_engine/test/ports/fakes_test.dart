@@ -65,13 +65,15 @@ void main() {
       expect(fetched, equals(routine));
     });
 
-    test('InMemoryRoutineRepository returns null for unknown routine id', () async {
+    test('InMemoryRoutineRepository returns null for unknown routine id',
+        () async {
       final repo = InMemoryRoutineRepository();
       final fetched = await repo.getRoutine('non-existent');
       expect(fetched, isNull);
     });
 
-    test('InMemoryPersistencePort stores run and events successfully', () async {
+    test('InMemoryPersistencePort stores run and events successfully',
+        () async {
       final port = InMemoryPersistencePort();
       final run = anyRun('run-123');
       final event1 = anyEvent(eventId: 'e-1', runId: 'run-123');
@@ -85,7 +87,8 @@ void main() {
       expect(latest, equals(run));
     });
 
-    test('InMemoryPersistencePort simulates persistence failure on write', () async {
+    test('InMemoryPersistencePort simulates persistence failure on write',
+        () async {
       final port = InMemoryPersistencePort()..shouldFail = true;
       expect(
         () => port.persistRunAndEvents(anyRun(), []),
@@ -93,7 +96,8 @@ void main() {
       );
     });
 
-    test('InMemoryPersistencePort simulates persistence failure on read', () async {
+    test('InMemoryPersistencePort simulates persistence failure on read',
+        () async {
       final port = InMemoryPersistencePort()..shouldFail = true;
       expect(
         () => port.getLatestActiveRun(),
@@ -101,7 +105,8 @@ void main() {
       );
     });
 
-    test('InMemoryNotificationPort records scheduled and cancelled calls', () async {
+    test('InMemoryNotificationPort records scheduled and cancelled calls',
+        () async {
       final notif = InMemoryNotificationPort();
       await notif.scheduleBoundaryNotification(
         runId: 'run-1',
@@ -122,7 +127,8 @@ void main() {
       expect(notif.scheduledBoundaries.isEmpty, isTrue);
     });
 
-    test('InMemoryNotificationPort cancelBoundaries only removes target runId', () async {
+    test('InMemoryNotificationPort cancelBoundaries only removes target runId',
+        () async {
       final notif = InMemoryNotificationPort();
       await notif.scheduleBoundaryNotification(
         runId: 'run-1',
@@ -145,13 +151,16 @@ void main() {
 
     test('PersistenceException toString contains message', () {
       const defaultException = PersistenceException();
-      expect(defaultException.toString(), contains('Persistence operation failed'));
+      expect(defaultException.toString(),
+          contains('Persistence operation failed'));
 
       const customException = PersistenceException('Custom disk write failure');
       expect(customException.toString(), contains('Custom disk write failure'));
     });
 
-    test('TimerEvent equality respects metadata and normalizes occurredAtUtc to UTC', () {
+    test(
+        'TimerEvent equality respects metadata and normalizes occurredAtUtc to UTC',
+        () {
       final localTime = DateTime(2026, 10, 13, 10, 0, 0);
       final utcTime = localTime.toUtc();
 

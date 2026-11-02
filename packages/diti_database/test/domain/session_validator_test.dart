@@ -30,7 +30,8 @@ void main() {
       List<SessionEventRecord> events = const [],
     }) {
       final start = startedAtUtc ?? DateTime.utc(2026, 10, 20, 10, 0);
-      final end = endedAtUtc ?? start.add(Duration(milliseconds: totalDurationMs));
+      final end =
+          endedAtUtc ?? start.add(Duration(milliseconds: totalDurationMs));
       return SessionRecord(
         sessionId: sessionId,
         routineId: routineId,
@@ -148,7 +149,8 @@ void main() {
             eventId: 'evt-1',
             sessionId: 'sess-1',
             eventType: 'phaseCompleted',
-            occurredAtUtc: DateTime.utc(2026, 10, 20, 9, 0), // Outside session range
+            occurredAtUtc:
+                DateTime.utc(2026, 10, 20, 9, 0), // Outside session range
             durationMs: -50, // Negative duration
           ),
         ],

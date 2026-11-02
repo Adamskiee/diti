@@ -66,7 +66,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Permissions', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Permissions',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           FutureBuilder<NotificationPermissionStatus>(
             future: _statusFuture,
@@ -83,7 +84,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                           const SizedBox(width: 12),
                           const Text('Notifications: '),
                           const Spacer(),
-                          Text(status?.notificationsEnabled == true ? 'Enabled' : 'Disabled'),
+                          Text(status?.notificationsEnabled == true
+                              ? 'Enabled'
+                              : 'Disabled'),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -93,7 +96,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                           const SizedBox(width: 12),
                           const Text('Exact Alarms: '),
                           const Spacer(),
-                          Text(status?.exactAlarmsAllowed == true ? 'Allowed' : 'Disallowed'),
+                          Text(status?.exactAlarmsAllowed == true
+                              ? 'Allowed'
+                              : 'Disallowed'),
                         ],
                       ),
                     ],
@@ -103,7 +108,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             },
           ),
           const SizedBox(height: 24),
-          const Text('Activity Tracking', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Activity Tracking',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Card(
             child: SwitchListTile(
@@ -113,7 +119,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               ),
               value: ref.watch(continuousTrackingEnabledProvider),
               onChanged: (val) {
-                ref.read(continuousTrackingEnabledProvider.notifier).toggle(val);
+                ref
+                    .read(continuousTrackingEnabledProvider.notifier)
+                    .toggle(val);
                 final tracker = ref.read(continuousActivityTrackerProvider);
                 if (val) {
                   tracker.start();
@@ -124,7 +132,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ),
           ),
           const SizedBox(height: 24),
-          const Text('About Diti', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('About Diti',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Card(
             child: ListTile(

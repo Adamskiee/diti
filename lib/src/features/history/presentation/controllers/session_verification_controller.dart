@@ -142,8 +142,8 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
   }
 
   void setDurationMs(int durationMs) {
-    final target = durationMs
-        .clamp(SessionValidator.minDurationMs, SessionValidator.maxDurationMs);
+    final target = durationMs.clamp(
+        SessionValidator.minDurationMs, SessionValidator.maxDurationMs);
     _applyTotal(target);
   }
 
@@ -249,7 +249,8 @@ class SessionVerificationController extends StateNotifier<DraftSessionState> {
 
     final breakdown = state.phaseBreakdown;
     if (breakdown.isEmpty) {
-      state = state.copyWith(draftDurationMs: target, clearValidationError: true);
+      state =
+          state.copyWith(draftDurationMs: target, clearValidationError: true);
       return;
     }
 

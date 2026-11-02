@@ -5,7 +5,8 @@ import 'scheduled_boundary.dart';
 class BoundaryWindowCalculator {
   const BoundaryWindowCalculator();
 
-  static int generateNotificationId(String runId, int phaseIndex, int sequence) {
+  static int generateNotificationId(
+      String runId, int phaseIndex, int sequence) {
     final hash = runId.hashCode ^ (phaseIndex * 31 + sequence);
     final positive = hash & 0x7FFFFFFF;
     return positive == 0 ? 1 : positive;
@@ -28,9 +29,11 @@ class BoundaryWindowCalculator {
     int currentPhaseIdx = run.currentPhaseIndex;
     int currentRepeatIdx = run.repeatIndex;
     final activeElapsedInCurrentPhase = run.status == RunStatus.running
-        ? math.max(0, currentUtc.difference(run.phaseStartedAtUtc).inMilliseconds)
+        ? math.max(
+            0, currentUtc.difference(run.phaseStartedAtUtc).inMilliseconds)
         : 0;
-    int accumulatedTimeInPhase = run.accumulatedMs + activeElapsedInCurrentPhase;
+    int accumulatedTimeInPhase =
+        run.accumulatedMs + activeElapsedInCurrentPhase;
     DateTime timelineUtc = currentUtc;
     Duration totalLookaheadDuration = Duration.zero;
     int sequence = 0;
@@ -99,7 +102,8 @@ class BoundaryWindowCalculator {
       }
 
       boundaries.add(ScheduledBoundary(
-        notificationId: generateNotificationId(run.runId, currentPhaseIdx, sequence),
+        notificationId:
+            generateNotificationId(run.runId, currentPhaseIdx, sequence),
         runId: run.runId,
         phaseIndex: currentPhaseIdx,
         phaseId: phase.id,

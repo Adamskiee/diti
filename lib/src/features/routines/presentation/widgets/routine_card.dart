@@ -33,7 +33,8 @@ class RoutineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final durationText = DurationFormatter.formatDurationSummary(totalDurationMs);
+    final durationText =
+        DurationFormatter.formatDurationSummary(totalDurationMs);
 
     final repeatLabel = switch (routine.repeatRule.mode) {
       RepeatMode.count when routine.repeatRule.count == 1 => 'Once',
@@ -80,7 +81,8 @@ class RoutineCard extends StatelessWidget {
                       ),
                       const PopupMenuItem(
                         value: 'delete',
-                        child: Text('Delete', style: TextStyle(color: Colors.red)),
+                        child:
+                            Text('Delete', style: TextStyle(color: Colors.red)),
                       ),
                     ],
                   ),

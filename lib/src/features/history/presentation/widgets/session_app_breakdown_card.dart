@@ -86,8 +86,9 @@ class SessionAppBreakdownCard extends StatelessWidget {
                   ? (usage.durationMs / totalDurationMs).clamp(0.0, 1.0)
                   : 0.0;
               final color = _colorForCategory(context, usage.category);
-              final displayName =
-                  usage.category.toLowerCase() == 'youtube' ? 'YouTube' : usage.appName;
+              final displayName = usage.category.toLowerCase() == 'youtube'
+                  ? 'YouTube'
+                  : usage.appName;
 
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),

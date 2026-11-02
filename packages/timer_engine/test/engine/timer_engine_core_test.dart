@@ -50,7 +50,9 @@ void main() {
   });
 
   group('Core TimerEngine Operations', () {
-    test('T-001: Start a valid routine starts first phase and sets status to running', () async {
+    test(
+        'T-001: Start a valid routine starts first phase and sets status to running',
+        () async {
       final result = await engine.start('study-routine');
       expect(result.success, isTrue);
       expect(result.error, isNull);
@@ -60,7 +62,9 @@ void main() {
       expect(state.currentPhase.id, equals('p1'));
     });
 
-    test('getActiveRun returns null initially and returns active TimerRun after start', () async {
+    test(
+        'getActiveRun returns null initially and returns active TimerRun after start',
+        () async {
       expect(engine.getActiveRun(), isNull);
       await engine.start('study-routine');
       final activeRun = engine.getActiveRun();
@@ -69,7 +73,9 @@ void main() {
       expect(activeRun.status, equals(RunStatus.running));
     });
 
-    test('T-002: Start a routine with no phases rejects with invalidConfiguration', () async {
+    test(
+        'T-002: Start a routine with no phases rejects with invalidConfiguration',
+        () async {
       const emptyRoutine = Routine(
         id: 'empty',
         name: 'Empty',
@@ -103,7 +109,9 @@ void main() {
       expect(resumedElapsed, equals(const Duration(minutes: 13)));
     });
 
-    test('T-005: Pause an already paused run is an idempotent no-op without duplicating time', () async {
+    test(
+        'T-005: Pause an already paused run is an idempotent no-op without duplicating time',
+        () async {
       await engine.start('study-routine');
       final runId = engine.activeRunId!;
 
@@ -118,13 +126,17 @@ void main() {
       expect(elapsed, equals(const Duration(minutes: 5)));
     });
 
-    test('T-013: Invalid state transition returns typed error without mutating state', () async {
+    test(
+        'T-013: Invalid state transition returns typed error without mutating state',
+        () async {
       final result = await engine.resume('non-existent-run');
       expect(result.success, isFalse);
       expect(result.error, equals(TimerError.runNotFound));
     });
 
-    test('T-014: Routine edited after run starts does not affect active run snapshot', () async {
+    test(
+        'T-014: Routine edited after run starts does not affect active run snapshot',
+        () async {
       await engine.start('study-routine');
       final runId = engine.activeRunId!;
 
@@ -151,7 +163,9 @@ void main() {
       expect(state.currentPhase.kind, equals(PhaseKind.focus));
     });
 
-    test('T-016: Persistence failure surfaces error and rolls back in-memory mutation', () async {
+    test(
+        'T-016: Persistence failure surfaces error and rolls back in-memory mutation',
+        () async {
       await engine.start('study-routine');
       final runId = engine.activeRunId!;
 
@@ -166,7 +180,9 @@ void main() {
       expect(state!.status, equals(RunStatus.running));
     });
 
-    test('Stop transitions run to cancelled, cancels boundaries, and emits cancelled event', () async {
+    test(
+        'Stop transitions run to cancelled, cancels boundaries, and emits cancelled event',
+        () async {
       final emittedStates = <TimerRunState>[];
       final emittedEvents = <TimerEvent>[];
       final stateSub = engine.stateStream.listen(emittedStates.add);
@@ -184,7 +200,8 @@ void main() {
       expect(notifications.scheduledBoundaries, isEmpty);
 
       // Verify event emission
-      expect(emittedEvents.any((e) => e.type == TimerEventType.runCancelled), isTrue);
+      expect(emittedEvents.any((e) => e.type == TimerEventType.runCancelled),
+          isTrue);
 
       await stateSub.cancel();
       await eventSub.cancel();
@@ -215,7 +232,8 @@ void main() {
       expect(pauseResult.error, equals(TimerError.invalidTransition));
     });
 
-    test('Calling start() while run is running returns invalidTransition', () async {
+    test('Calling start() while run is running returns invalidTransition',
+        () async {
       final start1 = await engine.start('study-routine');
       expect(start1.success, isTrue);
 
@@ -224,7 +242,8 @@ void main() {
       expect(start2.error, equals(TimerError.invalidTransition));
     });
 
-    test('Calling start() while run is paused returns invalidTransition', () async {
+    test('Calling start() while run is paused returns invalidTransition',
+        () async {
       await engine.start('study-routine');
       final runId = engine.activeRunId!;
       await engine.pause(runId);
@@ -249,7 +268,9 @@ void main() {
       expect(notifications.scheduledBoundaries, hasLength(1));
     });
 
-    test('lastEventId is updated on TimerRun after start, pause, resume, and stop', () async {
+    test(
+        'lastEventId is updated on TimerRun after start, pause, resume, and stop',
+        () async {
       final events = <TimerEvent>[];
       final eventSub = engine.eventStream.listen(events.add);
 

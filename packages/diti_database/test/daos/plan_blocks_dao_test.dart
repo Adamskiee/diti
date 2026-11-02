@@ -16,7 +16,8 @@ void main() {
   });
 
   group('PlanBlocksDao', () {
-    test('inserts and retrieves plan blocks ordered by scheduled start time', () async {
+    test('inserts and retrieves plan blocks ordered by scheduled start time',
+        () async {
       final t1 = DateTime.utc(2026, 10, 13, 9, 0);
       final t2 = DateTime.utc(2026, 10, 13, 14, 0);
 

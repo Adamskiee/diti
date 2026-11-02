@@ -5,7 +5,8 @@ import 'package:diti_database/diti_database.dart';
 
 void main() {
   group('PlanBlockCard retroactive entry point', () {
-    testWidgets('renders Record Past Session action for scheduled block and triggers callback',
+    testWidgets(
+        'renders Record Past Session action for scheduled block and triggers callback',
         (tester) async {
       var recorded = false;
       final block = PlanBlock(
@@ -42,7 +43,8 @@ void main() {
       expect(recorded, isTrue);
     });
 
-    testWidgets('does not render Record Past Session action for completed block',
+    testWidgets(
+        'does not render Record Past Session action for completed block',
         (tester) async {
       final block = PlanBlock(
         id: 'block-retro-2',

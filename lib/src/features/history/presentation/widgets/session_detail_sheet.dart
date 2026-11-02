@@ -68,7 +68,8 @@ class SessionDetailSheet extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: outcomeColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -220,8 +221,7 @@ class SessionDetailSheet extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              backgroundColor:
-                  theme.colorScheme.onSurfaceVariant.withAlpha(30),
+              backgroundColor: theme.colorScheme.onSurfaceVariant.withAlpha(30),
               padding: EdgeInsets.zero,
               labelPadding: const EdgeInsets.symmetric(horizontal: 8),
               visualDensity: VisualDensity.compact,
@@ -240,7 +240,8 @@ class SessionDetailSheet extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isDuration = false}) {
+  Widget _buildDetailRow(String label, String value,
+      {bool isDuration = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -279,8 +280,10 @@ class SessionDetailSheet extends ConsumerWidget {
             ),
             onPressed: () async {
               final scaffoldMessenger = ScaffoldMessenger.of(context);
-              final historyController = ref.read(historyFeedControllerProvider.notifier);
-              final analyticsController = ref.read(analyticsControllerProvider.notifier);
+              final historyController =
+                  ref.read(historyFeedControllerProvider.notifier);
+              final analyticsController =
+                  ref.read(analyticsControllerProvider.notifier);
               Navigator.of(ctx).pop();
               Navigator.of(context).pop();
               await historyController.deleteSession(session.sessionId);

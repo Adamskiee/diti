@@ -51,7 +51,8 @@ void main() {
       expect(result, equals('recovered'));
     });
 
-    test('continues executing pre-queued tasks when an earlier task throws', () async {
+    test('continues executing pre-queued tasks when an earlier task throws',
+        () async {
       final queue = CommandQueue();
       final executed = <int>[];
 

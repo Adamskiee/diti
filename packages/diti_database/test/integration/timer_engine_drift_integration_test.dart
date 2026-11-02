@@ -35,15 +35,25 @@ void main() {
   });
 
   group('TimerEngine + Drift SQLite E2E Integration', () {
-    test('executes full timer run, crash recovery, and session recording against SQLite', () async {
+    test(
+        'executes full timer run, crash recovery, and session recording against SQLite',
+        () async {
       // 1. Save Routine in Drift
       const routine = Routine(
         id: 'routine-e2e',
         name: 'Sprint Cycle',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p-work', name: 'Work', durationMs: 1000, transition: TransitionPolicy.auto),
-          RoutinePhase(id: 'p-rest', name: 'Rest', durationMs: 500, transition: TransitionPolicy.manual),
+          RoutinePhase(
+              id: 'p-work',
+              name: 'Work',
+              durationMs: 1000,
+              transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p-rest',
+              name: 'Rest',
+              durationMs: 500,
+              transition: TransitionPolicy.manual),
         ],
       );
       await routineRepo.saveRoutine(routine);
@@ -107,7 +117,8 @@ void main() {
         sessionId: 'session-e2e',
         routineId: routine.id,
         routineName: routine.name,
-        startedAtUtc: DateTime.now().toUtc().subtract(const Duration(seconds: 10)),
+        startedAtUtc:
+            DateTime.now().toUtc().subtract(const Duration(seconds: 10)),
         endedAtUtc: DateTime.now().toUtc(),
         totalDurationMs: 1500,
         outcome: SessionOutcome.completed,

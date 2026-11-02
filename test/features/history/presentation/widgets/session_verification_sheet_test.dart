@@ -542,8 +542,7 @@ void main() {
       expect(find.text('Total Focus Time'), findsNothing);
     });
 
-    testWidgets('adjusting the duration updates the phase row',
-        (tester) async {
+    testWidgets('adjusting the duration updates the phase row', (tester) async {
       await prepareTwoPhaseDraft();
 
       await tester.pumpWidget(createTestWidget());

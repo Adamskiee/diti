@@ -19,7 +19,8 @@ void main() {
         'DitiApp bootstraps routines, initializes notifications, and renders AppShell',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
       final fakeClient = FakeNotificationClient();
 
       final container = ProviderContainer(
@@ -56,7 +57,8 @@ void main() {
         'E2E: Start seeded Pomodoro, tick, pause, minimize, switch tabs, cancel',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
       final fakeClient = FakeNotificationClient();
 
       final container = ProviderContainer(
@@ -113,7 +115,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // 7. Verify mini-player is visible on the bottom
-      expect(find.byKey(const Key('mini_player_toggle_button')), findsOneWidget);
+      expect(
+          find.byKey(const Key('mini_player_toggle_button')), findsOneWidget);
       expect(find.text('20:00'), findsOneWidget);
 
       // 8. Switch to Settings tab
@@ -125,7 +128,8 @@ void main() {
 
       // Verify mini-player persists across tabs
       expect(find.text('Settings & Diagnostics'), findsOneWidget);
-      expect(find.byKey(const Key('mini_player_toggle_button')), findsOneWidget);
+      expect(
+          find.byKey(const Key('mini_player_toggle_button')), findsOneWidget);
 
       // 9. Stop timer
       await container.read(activeTimerControllerProvider.notifier).stop();
@@ -147,7 +151,8 @@ void main() {
         'E2E: Rest timer runs on negative when user does not continue after rest ended',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 10, 0));
       final fakeClient = FakeNotificationClient();
 
       final container = ProviderContainer(

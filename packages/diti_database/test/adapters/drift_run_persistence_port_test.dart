@@ -18,13 +18,19 @@ void main() {
   });
 
   group('DriftRunPersistencePort', () {
-    test('persists run and events atomically and restores active run across boundary', () async {
+    test(
+        'persists run and events atomically and restores active run across boundary',
+        () async {
       const routine = Routine(
         id: 'r-persist',
         name: 'Work',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 60000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Focus',
+              durationMs: 60000,
+              transition: TransitionPolicy.auto),
         ],
       );
 
@@ -74,8 +80,16 @@ void main() {
         name: 'Ledger Work',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 60000, transition: TransitionPolicy.auto),
-          RoutinePhase(id: 'p2', name: 'Short Break', durationMs: 30000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Focus',
+              durationMs: 60000,
+              transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p2',
+              name: 'Short Break',
+              durationMs: 30000,
+              transition: TransitionPolicy.auto),
         ],
       );
 
@@ -125,7 +139,8 @@ void main() {
       expect(restored.phaseLedger, equals(run.phaseLedger));
       expect(restored.phaseLedger.first.kind, equals(PhaseKind.focus));
       expect(restored.phaseLedger.last.kind, equals(PhaseKind.rest));
-      expect(restored.runStartedAtUtc, equals(DateTime.utc(2026, 10, 21, 9, 0)));
+      expect(
+          restored.runStartedAtUtc, equals(DateTime.utc(2026, 10, 21, 9, 0)));
       expect(
         restored.phaseFirstStartedAtUtc,
         equals(DateTime.utc(2026, 10, 21, 9, 25)),
@@ -138,7 +153,11 @@ void main() {
         name: 'Corrupt Work',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 60000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Focus',
+              durationMs: 60000,
+              transition: TransitionPolicy.auto),
         ],
       );
 
@@ -173,7 +192,11 @@ void main() {
         name: 'Work Paused',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 60000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Focus',
+              durationMs: 60000,
+              transition: TransitionPolicy.auto),
         ],
       );
 

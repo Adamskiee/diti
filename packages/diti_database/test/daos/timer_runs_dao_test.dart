@@ -16,7 +16,9 @@ void main() {
   });
 
   group('TimerRunsDao', () {
-    test('upserts run and retrieves latest active run ordered by started timestamp', () async {
+    test(
+        'upserts run and retrieves latest active run ordered by started timestamp',
+        () async {
       final t1 = DateTime.utc(2026, 10, 13, 10, 0);
       final t2 = DateTime.utc(2026, 10, 13, 11, 0);
 
@@ -53,7 +55,8 @@ void main() {
       expect(latest!.runId, equals('run-2'));
     });
 
-    test('ignores completed and cancelled runs when querying active run', () async {
+    test('ignores completed and cancelled runs when querying active run',
+        () async {
       await dao.upsertRun(
         TimerRunsCompanion.insert(
           runId: 'run-completed',
@@ -72,7 +75,8 @@ void main() {
       expect(active, isNull);
     });
 
-    test('batch inserts journal events and ignores duplicate event IDs', () async {
+    test('batch inserts journal events and ignores duplicate event IDs',
+        () async {
       final now = DateTime.now().toUtc();
       await dao.upsertRun(
         TimerRunsCompanion.insert(

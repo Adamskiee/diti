@@ -28,7 +28,8 @@ class DriftActivityJournalRepository implements ActivityJournalRepository {
     DateTime startUtc,
     DateTime endUtc,
   ) async {
-    final rows = await _db.activityJournalDao.getSamplesBetween(startUtc, endUtc);
+    final rows =
+        await _db.activityJournalDao.getSamplesBetween(startUtc, endUtc);
     final Map<String, ActivityUsageSummaryRecord> aggregated = {};
 
     for (final row in rows) {

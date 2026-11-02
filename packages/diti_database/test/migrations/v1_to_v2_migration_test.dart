@@ -333,7 +333,8 @@ void main() {
       raw.close();
     });
 
-    test('the step survives a re-run after a crash before the version was written',
+    test(
+        'the step survives a re-run after a crash before the version was written',
         () async {
       final raw = _openV1Database();
 

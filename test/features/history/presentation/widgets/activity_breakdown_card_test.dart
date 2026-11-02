@@ -22,7 +22,8 @@ void main() {
     ],
   );
 
-  testWidgets('ActivityBreakdownCard renders nothing when breakdowns is empty', (tester) async {
+  testWidgets('ActivityBreakdownCard renders nothing when breakdowns is empty',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -34,7 +35,8 @@ void main() {
     expect(find.text('Activity Breakdown'), findsNothing);
   });
 
-  testWidgets('ActivityBreakdownCard renders breakdown items and percentages', (tester) async {
+  testWidgets('ActivityBreakdownCard renders breakdown items and percentages',
+      (tester) async {
     final breakdowns = [
       const ActivityBreakdown(
         routineName: 'Deep Work',
@@ -63,7 +65,9 @@ void main() {
     expect(find.textContaining('Reading (25% · 20:00)'), findsOneWidget);
   });
 
-  testWidgets('ActivityBreakdownCard displays session count and expands to reveal sessions', (tester) async {
+  testWidgets(
+      'ActivityBreakdownCard displays session count and expands to reveal sessions',
+      (tester) async {
     final session1 = SessionRecord(
       sessionId: 's1',
       routineName: 'Deep Work',
@@ -120,7 +124,8 @@ void main() {
     expect(find.byIcon(Icons.cancel_outlined), findsOneWidget);
   });
 
-  testWidgets('Tapping an expanded session opens SessionDetailSheet', (tester) async {
+  testWidgets('Tapping an expanded session opens SessionDetailSheet',
+      (tester) async {
     final session = SessionRecord(
       sessionId: 's_tap_1',
       routineName: 'Deep Work',

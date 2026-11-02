@@ -78,7 +78,8 @@ class V1ToV2Migration implements SchemaMigration {
     final exists = columns.any((row) => row.read<String>('name') == column);
     if (exists) return false;
 
-    await db.customStatement('ALTER TABLE $table ADD COLUMN $column $definition');
+    await db
+        .customStatement('ALTER TABLE $table ADD COLUMN $column $definition');
     return true;
   }
 

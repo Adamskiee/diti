@@ -62,9 +62,8 @@ class TimerDisplayState {
       progress: progress ?? this.progress,
       formattedTime: formattedTime ?? this.formattedTime,
       cycleDescription: cycleDescription ?? this.cycleDescription,
-      nextPhasePreview: nextPhasePreview != null
-          ? nextPhasePreview()
-          : this.nextPhasePreview,
+      nextPhasePreview:
+          nextPhasePreview != null ? nextPhasePreview() : this.nextPhasePreview,
     );
   }
 

@@ -25,7 +25,8 @@ class MigrationRunner {
         }
 
         // Verify referential integrity before committing the transaction.
-        final violations = await db.customSelect('PRAGMA foreign_key_check;').get();
+        final violations =
+            await db.customSelect('PRAGMA foreign_key_check;').get();
         if (violations.isNotEmpty) {
           final summary = violations.map((row) => row.data.toString()).toList();
           throw MigrationIntegrityException(summary);

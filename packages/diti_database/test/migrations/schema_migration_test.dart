@@ -32,9 +32,12 @@ void main() {
     });
 
     test('MigrationIntegrityException formats violations correctly', () {
-      final violations = ['table routines has orphaned child in routine_phases'];
+      final violations = [
+        'table routines has orphaned child in routine_phases'
+      ];
       final exception = MigrationIntegrityException(violations);
-      expect(exception.toString(), contains('Foreign key integrity check failed'));
+      expect(
+          exception.toString(), contains('Foreign key integrity check failed'));
       expect(exception.violations, equals(violations));
     });
   });

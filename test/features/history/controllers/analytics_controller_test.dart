@@ -5,6 +5,7 @@ import 'package:diti_database/diti_database.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSessionRepository extends Mock implements SessionRepository {}
+
 class MockPlanBlockRepository extends Mock implements PlanBlockRepository {}
 
 void main() {
@@ -25,7 +26,8 @@ void main() {
         .thenAnswer((_) async => []);
   });
 
-  test('AnalyticsController loads summary and responds to timeframe changes', () async {
+  test('AnalyticsController loads summary and responds to timeframe changes',
+      () async {
     final controller = AnalyticsController(
       sessionRepository: mockSessionRepo,
       planBlockRepository: mockPlanBlockRepo,

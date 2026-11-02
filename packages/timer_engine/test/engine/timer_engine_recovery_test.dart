@@ -23,10 +23,26 @@ void main() {
     name: 'Multi Phase Routine',
     repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
     phases: const [
-      RoutinePhase(id: 'work-1', name: 'Work 1', durationMs: 1500000, transition: TransitionPolicy.auto), // 25 min
-      RoutinePhase(id: 'break-1', name: 'Break 1', durationMs: 300000, transition: TransitionPolicy.auto), // 5 min
-      RoutinePhase(id: 'work-2', name: 'Work 2', durationMs: 1500000, transition: TransitionPolicy.manual), // 25 min manual
-      RoutinePhase(id: 'break-2', name: 'Break 2', durationMs: 600000, transition: TransitionPolicy.auto),
+      RoutinePhase(
+          id: 'work-1',
+          name: 'Work 1',
+          durationMs: 1500000,
+          transition: TransitionPolicy.auto), // 25 min
+      RoutinePhase(
+          id: 'break-1',
+          name: 'Break 1',
+          durationMs: 300000,
+          transition: TransitionPolicy.auto), // 5 min
+      RoutinePhase(
+          id: 'work-2',
+          name: 'Work 2',
+          durationMs: 1500000,
+          transition: TransitionPolicy.manual), // 25 min manual
+      RoutinePhase(
+          id: 'break-2',
+          name: 'Break 2',
+          durationMs: 600000,
+          transition: TransitionPolicy.auto),
     ],
   );
 
@@ -46,7 +62,9 @@ void main() {
     );
   });
 
-  test('T-015: recover() invoked twice is strictly idempotent with no duplicated transitions or events', () async {
+  test(
+      'T-015: recover() invoked twice is strictly idempotent with no duplicated transitions or events',
+      () async {
     await engine.start('multi-routine');
 
     engine.dispose();
@@ -70,7 +88,9 @@ void main() {
     expect(secondRecoveryCount, equals(firstRecoveryCount));
   });
 
-  test('T-015: recover() invoked twice after multi-phase elapsed is strictly idempotent', () async {
+  test(
+      'T-015: recover() invoked twice after multi-phase elapsed is strictly idempotent',
+      () async {
     await engine.start('multi-routine');
 
     engine.dispose();
@@ -97,7 +117,9 @@ void main() {
     expect(secondStateVersion, equals(firstStateVersion));
   });
 
-  test('T-017 & T-018: Backward wall clock and timezone shifts do not corrupt active elapsed calculation', () async {
+  test(
+      'T-017 & T-018: Backward wall clock and timezone shifts do not corrupt active elapsed calculation',
+      () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;
 
@@ -110,7 +132,9 @@ void main() {
     expect(elapsed, equals(const Duration(minutes: 10)));
   });
 
-  test('T-019: App suspended across multiple phases stops at manual phase barrier upon recovery', () async {
+  test(
+      'T-019: App suspended across multiple phases stops at manual phase barrier upon recovery',
+      () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;
 
@@ -136,7 +160,9 @@ void main() {
     expect(state.activeElapsedMs, equals(600000)); // 10 min into work-2
   });
 
-  test('T-019: Suspension past manual phase boundary transitions phase to awaitingAction', () async {
+  test(
+      'T-019: Suspension past manual phase boundary transitions phase to awaitingAction',
+      () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;
 
@@ -162,7 +188,9 @@ void main() {
     expect(state.remainingMs, equals(0)); // clamped to 0
   });
 
-  test('recovery halts at awaitingAction on rest phase and reports negative remainingMs', () async {
+  test(
+      'recovery halts at awaitingAction on rest phase and reports negative remainingMs',
+      () async {
     final restRecoveryRoutine = Routine(
       id: 'rest-recovery-routine',
       name: 'Rest Recovery Routine',
@@ -213,11 +241,14 @@ void main() {
 
     expect(state!.currentPhase.id, equals('rest-1'));
     expect(state.phaseStatus, equals(PhaseStatus.awaitingAction));
-    expect(state.activeElapsedMs, equals(900000)); // 15 min total in rest-1 (5m + 10m overtime)
+    expect(state.activeElapsedMs,
+        equals(900000)); // 15 min total in rest-1 (5m + 10m overtime)
     expect(state.remainingMs, equals(-600000)); // -10 min = -600,000ms
   });
 
-  test('T-020: Multiple commands arriving concurrently execute sequentially in FIFO order', () async {
+  test(
+      'T-020: Multiple commands arriving concurrently execute sequentially in FIFO order',
+      () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;
 
@@ -233,7 +264,8 @@ void main() {
     expect(state.currentPhaseIndex, equals(1));
   });
 
-  test('T-020: Concurrency flood executes strictly serialized in FIFO order', () async {
+  test('T-020: Concurrency flood executes strictly serialized in FIFO order',
+      () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;
 
@@ -280,7 +312,9 @@ void main() {
     expect(state.currentPhaseIndex, equals(0));
   });
 
-  test('Recovery reconciles all phases and transitions run to completed if total duration elapsed', () async {
+  test(
+      'Recovery reconciles all phases and transitions run to completed if total duration elapsed',
+      () async {
     await engine.start('multi-routine');
 
     // Complete routine has work-1 (25m auto), break-1 (5m auto), work-2 (25m manual), break-2 (10m auto)
@@ -291,8 +325,16 @@ void main() {
       name: 'All Auto Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'P1', durationMs: 60000, transition: TransitionPolicy.auto),
-        RoutinePhase(id: 'p2', name: 'P2', durationMs: 60000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'P1',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p2',
+            name: 'P2',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(allAutoRoutine);
@@ -326,13 +368,19 @@ void main() {
     expect(state.phaseStatus, equals(PhaseStatus.finished));
   });
 
-  test('Recovery on open-ended phase accumulates wall-clock elapsed without advancing', () async {
+  test(
+      'Recovery on open-ended phase accumulates wall-clock elapsed without advancing',
+      () async {
     final openEndedRoutine = Routine(
       id: 'open-ended-routine',
       name: 'Open Ended Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'open', name: 'Open Phase', durationMs: null, transition: TransitionPolicy.manual),
+        RoutinePhase(
+            id: 'open',
+            name: 'Open Phase',
+            durationMs: null,
+            transition: TransitionPolicy.manual),
       ],
     );
     await routineRepo.saveRoutine(openEndedRoutine);
@@ -371,13 +419,19 @@ void main() {
     expect(secondState!.activeElapsedMs, equals(900000));
   });
 
-  test('Recovery after Pause -> Resume excludes paused duration and computes exact active elapsed time', () async {
+  test(
+      'Recovery after Pause -> Resume excludes paused duration and computes exact active elapsed time',
+      () async {
     final longRoutine = Routine(
       id: 'long-routine',
       name: 'Long Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'work-long', name: 'Work Long', durationMs: 1800000, transition: TransitionPolicy.auto), // 30 min
+        RoutinePhase(
+            id: 'work-long',
+            name: 'Work Long',
+            durationMs: 1800000,
+            transition: TransitionPolicy.auto), // 30 min
       ],
     );
     await routineRepo.saveRoutine(longRoutine);
@@ -425,7 +479,9 @@ void main() {
     expect(state.status, equals(RunStatus.running));
   });
 
-  test('Intra-phase recovery increments stateVersion when time elapses and preserves version on second call', () async {
+  test(
+      'Intra-phase recovery increments stateVersion when time elapses and preserves version on second call',
+      () async {
     await engine.start('multi-routine');
     final runId = engine.activeRunId!;
     final initialVersion = engine.getState(runId)!.stateVersion;

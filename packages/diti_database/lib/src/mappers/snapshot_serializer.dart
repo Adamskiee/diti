@@ -34,7 +34,8 @@ class SnapshotSerializer {
 
     final schemaVersion = decoded['schemaVersion'];
     if (schemaVersion != 1 && schemaVersion != 2) {
-      throw FormatException('Unsupported or missing snapshot schemaVersion: $schemaVersion');
+      throw FormatException(
+          'Unsupported or missing snapshot schemaVersion: $schemaVersion');
     }
     // Version 1 predates the kind tag, so only version 2 snapshots carry it.
     final carriesKind = schemaVersion == 2;
@@ -44,7 +45,8 @@ class SnapshotSerializer {
 
     final repeatMap = decoded['repeatRule'] as Map<String, dynamic>? ?? {};
     final repeatModeStr = repeatMap['mode'] as String? ?? 'count';
-    final repeatMode = repeatModeStr == 'forever' ? RepeatMode.forever : RepeatMode.count;
+    final repeatMode =
+        repeatModeStr == 'forever' ? RepeatMode.forever : RepeatMode.count;
     final repeatCount = (repeatMap['count'] as num?)?.toInt() ?? 1;
 
     final phasesRaw = decoded['phases'] as List<dynamic>? ?? [];
@@ -54,11 +56,15 @@ class SnapshotSerializer {
       final pName = pMap['name'] as String? ?? '';
       final pDuration = (pMap['durationMs'] as num?)?.toInt();
       final pTransStr = pMap['transition'] as String? ?? 'auto';
-      final pTrans = pTransStr == 'manual' ? TransitionPolicy.manual : TransitionPolicy.auto;
+      final pTrans = pTransStr == 'manual'
+          ? TransitionPolicy.manual
+          : TransitionPolicy.auto;
 
       // A version 1 phase was never tagged, so it is always focus.
       final kind = carriesKind
-          ? ((pMap['kind'] as String?) == 'rest' ? PhaseKind.rest : PhaseKind.focus)
+          ? ((pMap['kind'] as String?) == 'rest'
+              ? PhaseKind.rest
+              : PhaseKind.focus)
           : PhaseKind.focus;
 
       return RoutinePhase(

@@ -8,14 +8,19 @@ void main() {
     test('round-trips a ledger', () {
       final entries = [
         PhaseLedgerEntry(
-          phaseId: 'f', phaseName: 'Focus', kind: PhaseKind.focus,
-          phaseIndex: 0, repeatIndex: 1, durationMs: 1500000,
+          phaseId: 'f',
+          phaseName: 'Focus',
+          kind: PhaseKind.focus,
+          phaseIndex: 0,
+          repeatIndex: 1,
+          durationMs: 1500000,
           outcome: PhaseStatus.finished,
           startedAtUtc: DateTime.utc(2026, 10, 21, 9, 0),
           endedAtUtc: DateTime.utc(2026, 10, 21, 9, 25),
         ),
       ];
-      final restored = PhaseLedgerSerializer.fromJson(PhaseLedgerSerializer.toJson(entries));
+      final restored =
+          PhaseLedgerSerializer.fromJson(PhaseLedgerSerializer.toJson(entries));
       expect(restored.length, 1);
       expect(restored.first.phaseId, 'f');
       expect(restored.first.kind, PhaseKind.focus);
@@ -26,7 +31,10 @@ void main() {
 
     test('returns an empty list for malformed json', () {
       expect(PhaseLedgerSerializer.fromJson('not json'), isEmpty);
-      expect(PhaseLedgerSerializer.fromJson('{"schemaVersion":1,"entries":"nope"}'), isEmpty);
+      expect(
+          PhaseLedgerSerializer.fromJson(
+              '{"schemaVersion":1,"entries":"nope"}'),
+          isEmpty);
     });
 
     test('returns an empty list for an empty string', () {
@@ -41,7 +49,8 @@ void main() {
     });
 
     test('writes schemaVersion 1 and one entry per phase', () {
-      final json = jsonDecode(PhaseLedgerSerializer.toJson(const [])) as Map<String, dynamic>;
+      final json = jsonDecode(PhaseLedgerSerializer.toJson(const []))
+          as Map<String, dynamic>;
       expect(json['schemaVersion'], 1);
       expect(json['entries'], isEmpty);
     });
@@ -49,15 +58,20 @@ void main() {
     test('keeps every field of an entry', () {
       final entries = [
         PhaseLedgerEntry(
-          phaseId: 'b', phaseName: 'Short Break', kind: PhaseKind.rest,
-          phaseIndex: 1, repeatIndex: 0, durationMs: 300000,
+          phaseId: 'b',
+          phaseName: 'Short Break',
+          kind: PhaseKind.rest,
+          phaseIndex: 1,
+          repeatIndex: 0,
+          durationMs: 300000,
           outcome: PhaseStatus.skipped,
           startedAtUtc: DateTime.utc(2026, 10, 21, 9, 25),
           endedAtUtc: DateTime.utc(2026, 10, 21, 9, 30),
         ),
       ];
 
-      final restored = PhaseLedgerSerializer.fromJson(PhaseLedgerSerializer.toJson(entries));
+      final restored =
+          PhaseLedgerSerializer.fromJson(PhaseLedgerSerializer.toJson(entries));
 
       expect(restored.length, 1);
       expect(restored.first, equals(entries.first));
@@ -71,18 +85,25 @@ void main() {
     test('keeps millisecond precision in the timestamps', () {
       final entries = [
         PhaseLedgerEntry(
-          phaseId: 'f', phaseName: 'Focus', kind: PhaseKind.focus,
-          phaseIndex: 0, repeatIndex: 0, durationMs: 1234,
+          phaseId: 'f',
+          phaseName: 'Focus',
+          kind: PhaseKind.focus,
+          phaseIndex: 0,
+          repeatIndex: 0,
+          durationMs: 1234,
           outcome: PhaseStatus.finished,
           startedAtUtc: DateTime.utc(2026, 10, 21, 9, 0, 0, 123),
           endedAtUtc: DateTime.utc(2026, 10, 21, 9, 0, 1, 456),
         ),
       ];
 
-      final restored = PhaseLedgerSerializer.fromJson(PhaseLedgerSerializer.toJson(entries));
+      final restored =
+          PhaseLedgerSerializer.fromJson(PhaseLedgerSerializer.toJson(entries));
 
-      expect(restored.first.startedAtUtc, DateTime.utc(2026, 10, 21, 9, 0, 0, 123));
-      expect(restored.first.endedAtUtc, DateTime.utc(2026, 10, 21, 9, 0, 1, 456));
+      expect(restored.first.startedAtUtc,
+          DateTime.utc(2026, 10, 21, 9, 0, 0, 123));
+      expect(
+          restored.first.endedAtUtc, DateTime.utc(2026, 10, 21, 9, 0, 1, 456));
     });
 
     test('defaults a missing kind to focus and a missing duration to zero', () {

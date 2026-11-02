@@ -26,11 +26,16 @@ void main() {
       name: 'Work Block',
       repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
       phases: [
-        RoutinePhase(id: 'p1', name: 'Focus', durationMs: 60000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
       ],
     );
 
-    test('records and retrieves session record with snapshot and events', () async {
+    test('records and retrieves session record with snapshot and events',
+        () async {
       final session = SessionRecord(
         sessionId: 'session-123',
         routineId: 'r-sess',
@@ -172,7 +177,9 @@ void main() {
       expect(fetched, isNull);
     });
 
-    test('recordSession throws SessionValidationException when session is invalid', () async {
+    test(
+        'recordSession throws SessionValidationException when session is invalid',
+        () async {
       final invalidSession = SessionRecord(
         sessionId: 'inv-1',
         routineId: 'r1',
@@ -190,7 +197,9 @@ void main() {
       );
     });
 
-    test('recordSession upserts existing sessionId without duplicating or failing', () async {
+    test(
+        'recordSession upserts existing sessionId without duplicating or failing',
+        () async {
       final sessionInitial = SessionRecord(
         sessionId: 'session-idempotent',
         routineId: 'r1',
@@ -221,7 +230,9 @@ void main() {
       expect(retrieved.totalDurationMs, equals(1800000));
     });
 
-    test('retrieves sessions in UTC range ordered descending by started timestamp', () async {
+    test(
+        'retrieves sessions in UTC range ordered descending by started timestamp',
+        () async {
       final session1 = SessionRecord(
         sessionId: 's-early',
         routineName: 'Early',

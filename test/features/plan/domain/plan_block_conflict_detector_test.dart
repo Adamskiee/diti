@@ -151,8 +151,7 @@ void main() {
       );
     });
 
-    test(
-        'checkTentativeConflict detects overlap and respects excludeBlockId',
+    test('checkTentativeConflict detects overlap and respects excludeBlockId',
         () {
       final existing = createBlock(
         id: 'b1',

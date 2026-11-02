@@ -94,8 +94,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify block in SQLite transitioned to inProgress
-    final inProgressBlocks =
-        await container.read(planBlockRepositoryProvider).getBlocksForDate('2026-10-16');
+    final inProgressBlocks = await container
+        .read(planBlockRepositoryProvider)
+        .getBlocksForDate('2026-10-16');
     final inProgressPomodoro =
         inProgressBlocks.firstWhere((b) => b.routineId == 'Classic Pomodoro');
     expect(inProgressPomodoro.status, PlanBlockStatus.inProgress);
@@ -127,8 +128,9 @@ void main() {
 
     // 8. Back on Daily Plan screen: block is Completed with actual duration
     expect(find.text('Completed'), findsOneWidget);
-    final blocks =
-        await container.read(planBlockRepositoryProvider).getBlocksForDate('2026-10-16');
+    final blocks = await container
+        .read(planBlockRepositoryProvider)
+        .getBlocksForDate('2026-10-16');
     final completedBlock =
         blocks.firstWhere((b) => b.routineId == 'Classic Pomodoro');
     expect(completedBlock.status, PlanBlockStatus.completed);

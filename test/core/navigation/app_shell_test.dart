@@ -52,7 +52,8 @@ void main() {
         'AppShell switches tabs, renders placeholders, and renders SettingsScreen',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
       final fakePermission = FakePermissionService();
       final fakeCoordinator = FakeCoordinator();
@@ -65,8 +66,7 @@ void main() {
           notificationClientProvider.overrideWithValue(fakeClient),
           notificationPermissionServiceProvider
               .overrideWithValue(fakePermission),
-          timerLifecycleCoordinatorProvider
-              .overrideWithValue(fakeCoordinator),
+          timerLifecycleCoordinatorProvider.overrideWithValue(fakeCoordinator),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',
@@ -136,8 +136,8 @@ void main() {
       await tester.tap(find.byIcon(Icons.timer_outlined));
       await tester.pumpAndSettle();
 
-      expect(find.text('No routines found. Tap + to create one!'),
-          findsOneWidget);
+      expect(
+          find.text('No routines found. Tap + to create one!'), findsOneWidget);
 
       await db.close();
       container.dispose();
@@ -147,7 +147,8 @@ void main() {
         'AppShell responds to lifecycle events via WidgetsBindingObserver',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
       final fakeCoordinator = FakeCoordinator();
 
@@ -157,8 +158,7 @@ void main() {
           monotonicClockProvider.overrideWithValue(fakeClock),
           wallClockProvider.overrideWithValue(fakeClock),
           notificationClientProvider.overrideWithValue(fakeClient),
-          timerLifecycleCoordinatorProvider
-              .overrideWithValue(fakeCoordinator),
+          timerLifecycleCoordinatorProvider.overrideWithValue(fakeCoordinator),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',
@@ -205,7 +205,8 @@ void main() {
     testWidgets('AppShell shows ActiveTimerMiniPlayer when timer is active',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
       final fakeCoordinator = FakeCoordinator();
       const testRoutine = Routine(
@@ -228,8 +229,7 @@ void main() {
           monotonicClockProvider.overrideWithValue(fakeClock),
           wallClockProvider.overrideWithValue(fakeClock),
           notificationClientProvider.overrideWithValue(fakeClient),
-          timerLifecycleCoordinatorProvider
-              .overrideWithValue(fakeCoordinator),
+          timerLifecycleCoordinatorProvider.overrideWithValue(fakeCoordinator),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',
@@ -273,7 +273,8 @@ void main() {
     testWidgets('AppShell navigates to RoutineEditorScreen on add/edit',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
       final fakeCoordinator = FakeCoordinator();
 
@@ -283,8 +284,7 @@ void main() {
           monotonicClockProvider.overrideWithValue(fakeClock),
           wallClockProvider.overrideWithValue(fakeClock),
           notificationClientProvider.overrideWithValue(fakeClient),
-          timerLifecycleCoordinatorProvider
-              .overrideWithValue(fakeCoordinator),
+          timerLifecycleCoordinatorProvider.overrideWithValue(fakeCoordinator),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',
@@ -320,10 +320,12 @@ void main() {
       container.dispose();
     });
 
-    testWidgets('AppShell starts routine and opens ActiveTimerScreen onStartRoutine',
+    testWidgets(
+        'AppShell starts routine and opens ActiveTimerScreen onStartRoutine',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
       final fakeCoordinator = FakeCoordinator();
 
@@ -348,8 +350,7 @@ void main() {
           monotonicClockProvider.overrideWithValue(fakeClock),
           wallClockProvider.overrideWithValue(fakeClock),
           notificationClientProvider.overrideWithValue(fakeClient),
-          timerLifecycleCoordinatorProvider
-              .overrideWithValue(fakeCoordinator),
+          timerLifecycleCoordinatorProvider.overrideWithValue(fakeCoordinator),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',
@@ -391,7 +392,8 @@ void main() {
     testWidgets('AppShell shows SnackBar if startRoutine fails',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
       final fakeCoordinator = FakeCoordinator();
 
@@ -408,8 +410,7 @@ void main() {
           monotonicClockProvider.overrideWithValue(fakeClock),
           wallClockProvider.overrideWithValue(fakeClock),
           notificationClientProvider.overrideWithValue(fakeClient),
-          timerLifecycleCoordinatorProvider
-              .overrideWithValue(fakeCoordinator),
+          timerLifecycleCoordinatorProvider.overrideWithValue(fakeCoordinator),
           packageInfoProvider.overrideWith(
             (ref) => PackageInfo(
               appName: 'Diti',

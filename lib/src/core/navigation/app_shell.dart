@@ -25,7 +25,8 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver {
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
   AppTab _currentTab = AppTab.routines;
   bool _isVerificationSheetOpen = false;
   ContinuousActivityTracker? _activityTracker;
@@ -57,7 +58,8 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final coordinator = ref.read(timerLifecycleCoordinatorProvider);
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
       coordinator.onPause();
     } else if (state == AppLifecycleState.resumed) {
       coordinator.onResume();

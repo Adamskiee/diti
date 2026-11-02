@@ -17,7 +17,8 @@ void main() {
   });
 
   group('RoutinesDao', () {
-    test('upserts routine with phases atomically and preserves phase ordering', () async {
+    test('upserts routine with phases atomically and preserves phase ordering',
+        () async {
       final now = DateTime.now().toUtc();
       await dao.upsertRoutineWithPhases(
         RoutinesCompanion.insert(
@@ -60,7 +61,8 @@ void main() {
       expect(phases[1].orderIndex, equals(1));
     });
 
-    test('updates existing routine and replaces phases on subsequent upsert', () async {
+    test('updates existing routine and replaces phases on subsequent upsert',
+        () async {
       final now = DateTime.now().toUtc();
       await dao.upsertRoutineWithPhases(
         RoutinesCompanion.insert(

@@ -65,11 +65,13 @@ void main() {
       expect(prunedCutoff, equals(DateTime.utc(2026, 10, 31, 12, 0, 0)));
     });
 
-    test('tick gracefully catches exceptions during sampling without throwing', () async {
+    test('tick gracefully catches exceptions during sampling without throwing',
+        () async {
       final port = MockTrackerPort();
       final tracker = ContinuousActivityTracker(
         trackerPort: port,
-        onSample: (_, __, ___, ____, _____) async => throw Exception('sample failed'),
+        onSample: (_, __, ___, ____, _____) async =>
+            throw Exception('sample failed'),
       );
 
       final t1 = DateTime.utc(2026, 11, 1, 10, 0, 0);

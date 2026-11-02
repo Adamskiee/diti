@@ -59,7 +59,8 @@ void main() {
 
     test('rolls back entire transaction on step error', () async {
       registry.register(_ExecutableStep(1, 2, (m, database) async {
-        await database.customStatement('CREATE TABLE test_rollback (id TEXT PRIMARY KEY);');
+        await database.customStatement(
+            'CREATE TABLE test_rollback (id TEXT PRIMARY KEY);');
         throw Exception('Simulated failure during migration');
       }));
 
@@ -70,13 +71,17 @@ void main() {
       );
 
       // Verify test_rollback table does not exist due to rollback
-      final checkTable = await db.customSelect(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='test_rollback';",
-      ).get();
+      final checkTable = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='test_rollback';",
+          )
+          .get();
       expect(checkTable, isEmpty);
     });
 
-    test('detects foreign key violation and rolls back with MigrationIntegrityException', () async {
+    test(
+        'detects foreign key violation and rolls back with MigrationIntegrityException',
+        () async {
       registry.register(_ExecutableStep(1, 2, (m, database) async {
         // Insert orphaned routine phase referencing non-existent routine
         await database.customStatement(
@@ -92,7 +97,8 @@ void main() {
       );
 
       // Verify phase was rolled back
-      final phases = await db.customSelect("SELECT * FROM routine_phases;").get();
+      final phases =
+          await db.customSelect("SELECT * FROM routine_phases;").get();
       expect(phases, isEmpty);
     });
   });

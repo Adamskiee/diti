@@ -9,7 +9,8 @@ import '../ports/notification_client.dart';
 class LocalNotificationPort implements NotificationPort {
   static const String channelId = 'diti_phase_boundary';
   static const String channelName = 'Timer Phase Boundaries';
-  static const String channelDescription = 'Alerts when a focus or break phase completes.';
+  static const String channelDescription =
+      'Alerts when a focus or break phase completes.';
 
   static const InitializationSettings defaultInitializationSettings =
       InitializationSettings(
@@ -85,7 +86,8 @@ class LocalNotificationPort implements NotificationPort {
     );
 
     for (final boundary in boundaries) {
-      await _scheduleSingleBoundary(boundary, allowExactAlarms: allowExactAlarms);
+      await _scheduleSingleBoundary(boundary,
+          allowExactAlarms: allowExactAlarms);
     }
   }
 
@@ -151,7 +153,8 @@ class LocalNotificationPort implements NotificationPort {
         androidScheduleMode: allowExactAlarms
             ? AndroidScheduleMode.exactAllowWhileIdle
             : AndroidScheduleMode.inexactAllowWhileIdle,
-        matchDateTimeComponents: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents:
+            UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
       );
 

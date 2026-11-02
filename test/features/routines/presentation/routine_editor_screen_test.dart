@@ -109,7 +109,8 @@ void main() {
       await db.close();
     });
 
-    testWidgets('edits existing routine, modifies repeat count, edits and deletes a phase',
+    testWidgets(
+        'edits existing routine, modifies repeat count, edits and deletes a phase',
         (tester) async {
       final db = createInMemoryTestDatabase();
       final container = ProviderContainer(
@@ -138,7 +139,9 @@ void main() {
         ],
       );
 
-      await container.read(routineRepositoryProvider).saveRoutine(initialRoutine);
+      await container
+          .read(routineRepositoryProvider)
+          .saveRoutine(initialRoutine);
 
       await tester.pumpWidget(
         UncontrolledProviderScope(
@@ -178,7 +181,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Edit Phase'), findsOneWidget);
-      await tester.enterText(find.byKey(const Key('phase_name_field')), 'Deep Study');
+      await tester.enterText(
+          find.byKey(const Key('phase_name_field')), 'Deep Study');
       // Increase minutes from 20 to 21
       await tester.tap(find.byIcon(Icons.add).last);
       await tester.pumpAndSettle();
@@ -284,7 +288,9 @@ void main() {
         ],
       );
 
-      await container.read(routineRepositoryProvider).saveRoutine(initialRoutine);
+      await container
+          .read(routineRepositoryProvider)
+          .saveRoutine(initialRoutine);
 
       await tester.pumpWidget(
         UncontrolledProviderScope(
@@ -388,7 +394,8 @@ void main() {
                 onPressed: () async {
                   createdPhase = await showDialog<RoutinePhase>(
                     context: context,
-                    builder: (ctx) => const PhaseEditDialog(phase: initialPhase),
+                    builder: (ctx) =>
+                        const PhaseEditDialog(phase: initialPhase),
                   );
                 },
                 child: const Text('Open Dialog'),
@@ -404,8 +411,8 @@ void main() {
       expect(find.text('1 min'), findsOneWidget);
 
       // Minus button should be disabled (onPressed is null)
-      final minusButton =
-          tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.remove));
+      final minusButton = tester
+          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.remove));
       expect(minusButton.onPressed, isNull);
 
       // Tap Done
@@ -415,7 +422,8 @@ void main() {
       expect(createdPhase!.durationMs, 60000);
     });
 
-    testWidgets('cancel button dismisses without returning phase', (tester) async {
+    testWidgets('cancel button dismisses without returning phase',
+        (tester) async {
       RoutinePhase? createdPhase;
 
       await tester.pumpWidget(
@@ -612,7 +620,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final theme = Theme.of(tester.element(find.byType(SegmentedButton<PhaseKind>)));
+      final theme =
+          Theme.of(tester.element(find.byType(SegmentedButton<PhaseKind>)));
       expect(_segmentLabelColor(tester, 'Focus'), theme.colorScheme.primary);
       expect(_segmentLabelColor(tester, 'Rest'), theme.colorScheme.tertiary);
     });
@@ -691,7 +700,8 @@ void main() {
   });
 
   group('PhaseListTile', () {
-    testWidgets('renders timed phase and responds to edit and delete', (tester) async {
+    testWidgets('renders timed phase and responds to edit and delete',
+        (tester) async {
       var editCalled = false;
       var deleteCalled = false;
 
@@ -724,7 +734,8 @@ void main() {
       expect(deleteCalled, isTrue);
     });
 
-    testWidgets('renders open-ended phase as Open-ended · Manual', (tester) async {
+    testWidgets('renders open-ended phase as Open-ended · Manual',
+        (tester) async {
       const phase = RoutinePhase(
         id: 'phase-open',
         name: 'Free Writing',

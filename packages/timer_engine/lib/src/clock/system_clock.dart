@@ -29,4 +29,3 @@ class SystemClock implements MonotonicClock, WallClock {
 
 typedef SystemMonotonicClock = SystemClock;
 typedef SystemWallClock = SystemClock;
-

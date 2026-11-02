@@ -7,8 +7,8 @@ void main() {
   testWidgets('PlanVsActualCard renders overrun correctly', (tester) async {
     const metrics = PlanVersusActualMetrics(
       totalPlannedMs: 3600000, // 01:00:00
-      totalActualMs: 4200000,  // 01:10:00
-      netVarianceMs: 600000,   // +10:00
+      totalActualMs: 4200000, // 01:10:00
+      netVarianceMs: 600000, // +10:00
       linkedSessionCount: 2,
     );
 
@@ -29,8 +29,8 @@ void main() {
   testWidgets('PlanVsActualCard renders saved time correctly', (tester) async {
     const metrics = PlanVersusActualMetrics(
       totalPlannedMs: 3600000, // 01:00:00
-      totalActualMs: 3000000,  // 50:00
-      netVarianceMs: -600000,  // -10:00
+      totalActualMs: 3000000, // 50:00
+      netVarianceMs: -600000, // -10:00
       linkedSessionCount: 2,
     );
 

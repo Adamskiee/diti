@@ -18,7 +18,9 @@ void main() {
   });
 
   group('DriftRoutineRepository', () {
-    test('implements RoutineRepository contract and saves/retrieves domain Routine', () async {
+    test(
+        'implements RoutineRepository contract and saves/retrieves domain Routine',
+        () async {
       final routine = Routine(
         id: 'routine-study',
         name: 'Study Session',
@@ -157,7 +159,11 @@ void main() {
         name: 'R1',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'P1', durationMs: 1000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'P1',
+              durationMs: 1000,
+              transition: TransitionPolicy.auto),
         ],
       );
       await repository.saveRoutine(routine1);
@@ -173,7 +179,11 @@ void main() {
         name: 'To Delete',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p-del', name: 'Phase Del', durationMs: 5000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p-del',
+              name: 'Phase Del',
+              durationMs: 5000,
+              transition: TransitionPolicy.auto),
         ],
       );
       await repository.saveRoutine(routine);

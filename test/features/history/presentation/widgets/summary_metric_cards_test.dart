@@ -5,7 +5,9 @@ import 'package:diti/src/features/history/domain/analytics_timeframe.dart';
 import 'package:diti/src/features/history/presentation/widgets/summary_metric_cards.dart';
 
 void main() {
-  testWidgets('SummaryMetricCards renders total duration and completion metrics', (tester) async {
+  testWidgets(
+      'SummaryMetricCards renders total duration and completion metrics',
+      (tester) async {
     final summary = AnalyticsSummary(
       timeframe: AnalyticsTimeframe.thisWeek,
       dateRange: DateTimeRange(
@@ -72,7 +74,8 @@ void main() {
     expect(find.text('1 (100%)'), findsOneWidget);
   });
 
-  testWidgets('never labels a duration that includes rest as focus', (tester) async {
+  testWidgets('never labels a duration that includes rest as focus',
+      (tester) async {
     final summary = AnalyticsSummary(
       timeframe: AnalyticsTimeframe.thisWeek,
       dateRange: DateTimeRange(
@@ -100,7 +103,8 @@ void main() {
     expect(find.text('Total Focus'), findsNothing);
   });
 
-  testWidgets('lays out without overflowing on a narrow screen', (tester) async {
+  testWidgets('lays out without overflowing on a narrow screen',
+      (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -132,7 +136,8 @@ void main() {
     expect(find.text('Completed'), findsOneWidget);
   });
 
-  testWidgets('the tiles follow the app\'s focus and rest colour convention', (tester) async {
+  testWidgets('the tiles follow the app\'s focus and rest colour convention',
+      (tester) async {
     final summary = AnalyticsSummary(
       timeframe: AnalyticsTimeframe.thisWeek,
       dateRange: DateTimeRange(
@@ -207,7 +212,8 @@ void main() {
       matching: find.byType(Row),
     ));
 
-    final wideLayoutRow = rows.where((r) => r.children.whereType<Expanded>().length == 4);
+    final wideLayoutRow =
+        rows.where((r) => r.children.whereType<Expanded>().length == 4);
     expect(wideLayoutRow, hasLength(1));
   });
 
@@ -247,7 +253,8 @@ void main() {
       matching: find.byType(Row),
     ));
 
-    final compactLayoutRows = rows.where((r) => r.children.whereType<Expanded>().length == 2);
+    final compactLayoutRows =
+        rows.where((r) => r.children.whereType<Expanded>().length == 2);
     expect(compactLayoutRows, hasLength(2));
   });
 }

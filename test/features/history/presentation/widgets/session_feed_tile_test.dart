@@ -19,7 +19,9 @@ void main() {
     ],
   );
 
-  testWidgets('SessionFeedTile renders routine name, duration and responds to tap', (tester) async {
+  testWidgets(
+      'SessionFeedTile renders routine name, duration and responds to tap',
+      (tester) async {
     var tapped = false;
     final session = SessionRecord(
       sessionId: 's_test_1',
@@ -50,7 +52,8 @@ void main() {
     expect(tapped, isTrue);
   });
 
-  testWidgets('SessionFeedTile renders Quick Timer fallback and cancel icon', (tester) async {
+  testWidgets('SessionFeedTile renders Quick Timer fallback and cancel icon',
+      (tester) async {
     final session = SessionRecord(
       sessionId: 's_test_2',
       routineName: '',
@@ -137,7 +140,8 @@ void main() {
     expect(spans[2].style?.color, theme.colorScheme.tertiary);
   });
 
-  testWidgets('a session with no breakdown shows only the total', (tester) async {
+  testWidgets('a session with no breakdown shows only the total',
+      (tester) async {
     // A session recorded before the per-phase breakdown existed has no
     // events, so it shows its total alone - there is no empty split.
     // The routine is named so that neither word appears in it: the
@@ -169,7 +173,8 @@ void main() {
     expect(find.textContaining('rest'), findsNothing);
   });
 
-  testWidgets('a phase renamed after the session keeps its recorded kind', (tester) async {
+  testWidgets('a phase renamed after the session keeps its recorded kind',
+      (tester) async {
     // 'Short Break' was recorded as a focus phase, so it counts towards the
     // focus time even though its name would infer as rest.
     final session = SessionRecord(
@@ -221,7 +226,8 @@ void main() {
     expect(find.textContaining('05:00 rest'), findsOneWidget);
   });
 
-  testWidgets('lays out without overflowing on a narrow screen', (tester) async {
+  testWidgets('lays out without overflowing on a narrow screen',
+      (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);

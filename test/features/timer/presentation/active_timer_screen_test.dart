@@ -18,7 +18,8 @@ void main() {
         'renders countdown, pause button, and handles stop dialog confirmation',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -86,10 +87,10 @@ void main() {
       await db.close();
     });
 
-    testWidgets('tapping stop button cancels the active run',
-        (tester) async {
+    testWidgets('tapping stop button cancels the active run', (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -141,10 +142,12 @@ void main() {
       await db.close();
     });
 
-    testWidgets('stopping active timer with elapsed time triggers session verification',
+    testWidgets(
+        'stopping active timer with elapsed time triggers session verification',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -208,7 +211,8 @@ void main() {
     testWidgets('resumes from pause, skips phase, and finishes phase',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -299,7 +303,8 @@ void main() {
     testWidgets('renders awaitingAction state with prominent Start Next Phase',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -332,8 +337,7 @@ void main() {
       );
 
       await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
-      final controller =
-          container.read(activeTimerControllerProvider.notifier);
+      final controller = container.read(activeTimerControllerProvider.notifier);
       await controller.startRoutine('r_manual');
 
       // Advance clock by 10s so phase A completes and awaits manual action
@@ -371,10 +375,12 @@ void main() {
       await db.close();
     });
 
-    testWidgets('renders overtime state with negative timer and OVERTIME badge for rest phase',
+    testWidgets(
+        'renders overtime state with negative timer and OVERTIME badge for rest phase',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -409,8 +415,7 @@ void main() {
       );
 
       await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
-      final controller =
-          container.read(activeTimerControllerProvider.notifier);
+      final controller = container.read(activeTimerControllerProvider.notifier);
       await controller.startRoutine('r_overtime_rest');
 
       // Advance clock by 15s (5s overtime)
@@ -443,9 +448,11 @@ void main() {
       await db.close();
     });
 
-    testWidgets('renders open-ended phase with Open Flow badge', (tester) async {
+    testWidgets('renders open-ended phase with Open Flow badge',
+        (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(

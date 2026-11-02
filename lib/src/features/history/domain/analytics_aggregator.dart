@@ -27,7 +27,8 @@ class AnalyticsAggregator {
     // 1. Filter sessions falling into [range.start, range.end)
     final filteredSessions = sessions.where((s) {
       final startLocal = s.startedAtUtc.toLocal();
-      return !startLocal.isBefore(range.start) && startLocal.isBefore(range.end);
+      return !startLocal.isBefore(range.start) &&
+          startLocal.isBefore(range.end);
     }).toList();
 
     int completed = 0;
@@ -183,7 +184,8 @@ class AnalyticsAggregator {
     final Map<String, List<SessionRecord>> sessionsByRoutine = {};
     for (final s in sessions) {
       final name = s.routineName.trim().isEmpty ? 'Quick Timer' : s.routineName;
-      durationByRoutine[name] = (durationByRoutine[name] ?? 0) + s.totalDurationMs;
+      durationByRoutine[name] =
+          (durationByRoutine[name] ?? 0) + s.totalDurationMs;
       sessionsByRoutine.putIfAbsent(name, () => []).add(s);
     }
 
@@ -246,7 +248,14 @@ class AnalyticsAggregator {
   static List<AppUsageSummary> _buildAppUsages(List<SessionRecord> sessions) {
     if (sessions.isEmpty) return const [];
 
-    final Map<String, ({String appName, String category, String? sampleTitle, int durationMs})> grouped = {};
+    final Map<
+        String,
+        ({
+          String appName,
+          String category,
+          String? sampleTitle,
+          int durationMs
+        })> grouped = {};
 
     for (final s in sessions) {
       for (final u in s.appUsages) {

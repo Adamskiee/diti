@@ -11,9 +11,11 @@ class V2ToV3Migration implements SchemaMigration {
 
   @override
   Future<void> migrate(Migrator m, DitiDatabase db) async {
-    final tables = await db.customSelect(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='session_app_usages'",
-    ).get();
+    final tables = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='session_app_usages'",
+        )
+        .get();
     if (tables.isEmpty) {
       await m.createTable(db.sessionAppUsages);
     }

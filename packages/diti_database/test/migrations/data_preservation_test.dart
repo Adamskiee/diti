@@ -32,7 +32,8 @@ void main() {
       await db.close();
     });
 
-    test('preserves all rows, relations, and timestamps across schema upgrades', () async {
+    test('preserves all rows, relations, and timestamps across schema upgrades',
+        () async {
       final now = DateTime.utc(2026, 10, 21, 10, 0, 0);
 
       // 1. Populate seed data across tables in v1

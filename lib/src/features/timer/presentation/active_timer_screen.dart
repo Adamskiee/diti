@@ -185,7 +185,8 @@ class ActiveTimerScreen extends ConsumerWidget {
     );
   }
 
-  void _handleStop(BuildContext context, ActiveTimerController controller) async {
+  void _handleStop(
+      BuildContext context, ActiveTimerController controller) async {
     final nav = Navigator.of(context);
     nav.pop();
     await controller.stop();

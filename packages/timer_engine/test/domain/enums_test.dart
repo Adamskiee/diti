@@ -36,7 +36,8 @@ void main() {
       expect(a, isNot(equals(c)));
       expect(
         a.toString(),
-        equals('TimerCommandResult(success: true, error: null, stateVersion: 1)'),
+        equals(
+            'TimerCommandResult(success: true, error: null, stateVersion: 1)'),
       );
     });
 

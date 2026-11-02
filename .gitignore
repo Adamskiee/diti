@@ -12,6 +12,7 @@ build/
 .metadata
 coverage/
 *.lock
+pubspec_overrides.yaml
 
 # IDE
 .idea/
