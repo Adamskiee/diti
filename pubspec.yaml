@@ -37,6 +37,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   patrol: ^4.10.0
+  melos: ^6.3.2
 
 flutter:
   uses-material-design: true

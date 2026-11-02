@@ -1,0 +1,43 @@
+name: diti_workspace
+repository: https://github.com/Adamskiee/diti
+
+packages:
+  - .
+  - packages/*
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  analyze:
+    run: melos exec -- flutter analyze --fatal-infos
+    description: Run static analysis across root app and all packages with fatal infos.
+
+  test:
+    run: melos exec --concurrency=4 --fail-fast --dir-exists=test -- flutter test --coverage
+    description: Run unit and widget tests in parallel across all packages with coverage collection.
+
+  test:fast:
+    run: melos exec --concurrency=4 --fail-fast --dir-exists=test -- flutter test
+    description: Run parallel tests across all packages without coverage collection for fast verification.
+
+  test:root:
+    run: flutter test test/ --coverage
+    description: Run root application test suite directly.
+
+  coverage:merge:
+    run: dart run tool/merge_lcov.dart
+    description: Consolidate individual package lcov.info files and root coverage into a single coverage/lcov.info.
+
+  format:
+    run: melos exec -- dart format --set-exit-if-changed .
+    description: Check Dart code formatting across the entire monorepo.
+
+  format:fix:
+    run: melos exec -- dart format .
+    description: Automatically format Dart files across the entire monorepo.
+
+  clean:
+    run: melos exec -- flutter clean
+    description: Clean build directories and caches across root and subpackages.
