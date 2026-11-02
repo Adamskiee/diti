@@ -1,0 +1,58 @@
+name: "Lint PR"
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+jobs:
+  validate-pr:
+    name: Validate PR Title & Format
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Validate PR Title Length
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          LENGTH=${#TITLE}
+          echo "PR Title: $TITLE"
+          echo "Title length: $LENGTH characters"
+          if [ "$LENGTH" -gt 72 ]; then
+            echo "::error::PR title exceeds 72 characters ($LENGTH chars). Titles must be strictly under 72 characters per repository PR guidelines."
+            exit 1
+          fi
+
+      - name: Validate Conventional Commit Title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          scopes: |
+            app
+            database
+            notifications
+            tracker
+            timer_engine
+            ci
+            deps
+            docs
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: "The commit subject must not start with an uppercase character."
