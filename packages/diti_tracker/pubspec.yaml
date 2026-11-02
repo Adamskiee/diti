@@ -1,6 +1,6 @@
 name: diti_tracker
 description: Active application and website usage tracking for Diti.
-version: 2.2.0
+version: 2.3.0
 publish_to: none
 
 environment:

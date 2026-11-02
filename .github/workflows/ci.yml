@@ -90,6 +90,10 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      - name: Generate Quality & Test Summary
+        if: always()
+        run: python3 tool/ci/test_summary.py
+
   integration-linux:
     name: Integration Tests (Linux)
     needs: [quality]
@@ -148,6 +152,9 @@ jobs:
 
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
+
+      - name: Setup Gradle Cache
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Install Patrol CLI
         run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"

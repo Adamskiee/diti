@@ -1,1 +1,5 @@
-Initial production release with multi-phase routine timers and local analytics.
+What's new in v2.3.0:
+• Manual session recovery sheet to log past routine sessions directly from history
+• Background activity journaling with schema v5 database migration
+• Responsive laptop analytics dashboard
+• Hardened Android security posture and performance improvements
