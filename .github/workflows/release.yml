@@ -11,6 +11,10 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: write
+  pull-requests: read
+
 jobs:
   verify:
     name: Pre-Release Quality Gate
@@ -234,6 +238,9 @@ jobs:
     name: Release Security Gate
     needs: [build-android]
     uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+      pull-requests: read
     with:
       mode: release
       apk-artifact: android-release-assets
