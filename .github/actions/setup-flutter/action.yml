@@ -24,11 +24,7 @@ runs:
     - name: Install Dependencies
       shell: bash
       run: |
-        for pkg in packages/*; do
-          if [ -f "$pkg/pubspec.yaml" ]; then
-            echo "Resolving dependencies for $pkg..."
-            (cd "$pkg" && flutter pub get)
-          fi
-        done
         echo "Resolving root dependencies..."
         flutter pub get
+        echo "Bootstrapping Melos workspace..."
+        dart run melos bootstrap

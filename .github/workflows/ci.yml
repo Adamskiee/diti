@@ -64,19 +64,13 @@ jobs:
         uses: ./.github/actions/setup-flutter
 
       - name: Static Analysis & Linter
-        run: flutter analyze --fatal-infos
+        run: dart run melos run analyze
 
-      - name: Run Package Tests
-        run: |
-          for pkg in packages/*; do
-            if [ -d "$pkg/test" ]; then
-              echo "Running tests in $pkg..."
-              (cd "$pkg" && flutter test)
-            fi
-          done
+      - name: Run Monorepo Tests (Parallel with Coverage)
+        run: dart run melos run test
 
-      - name: Run Root Tests (unit, widget, golden)
-        run: flutter test test/ --coverage
+      - name: Consolidate Monorepo Coverage
+        run: dart run melos run coverage:merge
 
       - name: Upload Coverage
         if: always()
