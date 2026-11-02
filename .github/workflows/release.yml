@@ -205,6 +205,7 @@ jobs:
       - name: Build Android Packages via FastForge
         run: |
           export PATH="$PATH:$HOME/.pub-cache/bin"
+          mkdir -p build/symbols
           fastforge release --name release --jobs android-universal-apk
           fastforge release --name release --jobs android-split-apk --skip-clean
           fastforge release --name release --jobs android-aab --skip-clean

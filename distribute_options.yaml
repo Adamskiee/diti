@@ -9,6 +9,8 @@ releases:
           target: apk
           build_args:
             release: true
+            obfuscate: true
+            split-debug-info: build/symbols
 
       - name: android-split-apk
         package:
@@ -17,6 +19,8 @@ releases:
           build_args:
             release: true
             split-per-abi: true
+            obfuscate: true
+            split-debug-info: build/symbols
 
       - name: android-aab
         package:
@@ -24,6 +28,8 @@ releases:
           target: aab
           build_args:
             release: true
+            obfuscate: true
+            split-debug-info: build/symbols
 
       - name: linux-appimage
         package:
