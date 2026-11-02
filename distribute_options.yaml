@@ -7,34 +7,34 @@ releases:
         package:
           platform: android
           target: apk
-        build_args:
-          release: true
+          build_args:
+            release: true
 
       - name: android-split-apk
         package:
           platform: android
           target: apk
-        build_args:
-          release: true
-          split-per-abi: true
+          build_args:
+            release: true
+            split-per-abi: true
 
       - name: android-aab
         package:
           platform: android
           target: aab
-        build_args:
-          release: true
+          build_args:
+            release: true
 
       - name: linux-appimage
         package:
           platform: linux
           target: appimage
-        build_args:
-          release: true
+          build_args:
+            release: true
 
       - name: linux-tar
         package:
           platform: linux
           target: zip
-        build_args:
-          release: true
+          build_args:
+            release: true
