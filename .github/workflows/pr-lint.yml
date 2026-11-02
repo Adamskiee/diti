@@ -17,10 +17,11 @@ jobs:
       statuses: write
     steps:
       - name: Validate PR Title Length
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          TITLE="${{ github.event.pull_request.title }}"
-          LENGTH=${#TITLE}
-          echo "PR Title: $TITLE"
+          LENGTH=${#PR_TITLE}
+          echo "PR Title: $PR_TITLE"
           echo "Title length: $LENGTH characters"
           if [ "$LENGTH" -gt 72 ]; then
             echo "::error::PR title exceeds 72 characters ($LENGTH chars). Titles must be strictly under 72 characters per repository PR guidelines."
