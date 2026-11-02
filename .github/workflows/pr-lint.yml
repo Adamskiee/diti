@@ -47,6 +47,13 @@ jobs:
             revert
           scopes: |
             app
+            core
+            repo
+            routines
+            plan
+            timer
+            history
+            settings
             database
             notifications
             tracker

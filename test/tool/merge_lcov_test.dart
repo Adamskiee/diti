@@ -76,4 +76,95 @@ end_of_record
     final content = await rootLcov.readAsString();
     expect(content, contains('SF:lib/main.dart'));
   });
+
+  test('calling mergeLcovFiles multiple times is idempotent', () async {
+    final rootCoverageDir = Directory('${tempDir.path}/coverage');
+    await rootCoverageDir.create(recursive: true);
+    final rootLcov = File('${rootCoverageDir.path}/lcov.info');
+    await rootLcov.writeAsString('''
+SF:lib/main.dart
+DA:1,1
+end_of_record
+''');
+
+    final pkgCoverageDir = Directory(
+      '${tempDir.path}/packages/diti_database/coverage',
+    );
+    await pkgCoverageDir.create(recursive: true);
+    final pkgLcov = File('${pkgCoverageDir.path}/lcov.info');
+    await pkgLcov.writeAsString('''
+SF:lib/src/database.dart
+DA:10,1
+end_of_record
+''');
+
+    // First merge
+    await merger.mergeLcovFiles(
+      rootDir: tempDir.path,
+      outputFilePath: rootLcov.path,
+    );
+    final firstContent = await rootLcov.readAsString();
+
+    // Second merge
+    await merger.mergeLcovFiles(
+      rootDir: tempDir.path,
+      outputFilePath: rootLcov.path,
+    );
+    final secondContent = await rootLcov.readAsString();
+
+    // Third merge
+    await merger.mergeLcovFiles(
+      rootDir: tempDir.path,
+      outputFilePath: rootLcov.path,
+    );
+    final thirdContent = await rootLcov.readAsString();
+
+    expect(secondContent, equals(firstContent));
+    expect(thirdContent, equals(firstContent));
+
+    final mainMatches =
+        RegExp(r'SF:lib/main\.dart').allMatches(thirdContent).length;
+    final pkgMatches = RegExp(
+      r'SF:packages/diti_database/lib/src/database\.dart',
+    ).allMatches(thirdContent).length;
+    expect(mainMatches, equals(1));
+    expect(pkgMatches, equals(1));
+  });
+
+  test(
+    'normalizes Windows backslashes in package source paths to POSIX',
+    () async {
+      final rootCoverageDir = Directory('${tempDir.path}/coverage');
+      await rootCoverageDir.create(recursive: true);
+      final rootLcov = File('${rootCoverageDir.path}/lcov.info');
+      await rootLcov.writeAsString('''
+SF:lib/main.dart
+DA:1,1
+end_of_record
+''');
+
+      final pkgCoverageDir = Directory(
+        '${tempDir.path}/packages/diti_tracker/coverage',
+      );
+      await pkgCoverageDir.create(recursive: true);
+      final pkgLcov = File('${pkgCoverageDir.path}/lcov.info');
+      await pkgLcov.writeAsString(r'''
+SF:lib\src\tracker.dart
+DA:5,1
+end_of_record
+''');
+
+      await merger.mergeLcovFiles(
+        rootDir: tempDir.path,
+        outputFilePath: rootLcov.path,
+      );
+
+      final content = await rootLcov.readAsString();
+      expect(
+        content,
+        contains('SF:packages/diti_tracker/lib/src/tracker.dart'),
+      );
+      expect(content.contains(r'\'), isFalse);
+    },
+  );
 }

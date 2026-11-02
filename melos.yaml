@@ -11,7 +11,7 @@ command:
 
 scripts:
   analyze:
-    run: melos exec -- flutter analyze --fatal-infos
+    run: melos exec --concurrency=1 -- flutter analyze --fatal-infos
     description: Run static analysis across root app and all packages with fatal infos.
 
   test:

@@ -7,6 +7,7 @@ updates:
       interval: "weekly"
     groups:
       dependencies:
+        dependency-type: "production"
         patterns: ["*"]
         update-types: ["minor", "patch"]
       dev-dependencies:

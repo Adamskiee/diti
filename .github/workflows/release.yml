@@ -15,6 +15,7 @@ jobs:
   verify:
     name: Pre-Release Quality Gate
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
