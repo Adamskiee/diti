@@ -26,8 +26,7 @@ class PhaseLedgerEntry {
     required this.outcome,
     required DateTime startedAtUtc,
     required DateTime endedAtUtc,
-  })  : startedAtUtc =
-            startedAtUtc.isUtc ? startedAtUtc : startedAtUtc.toUtc(),
+  })  : startedAtUtc = startedAtUtc.isUtc ? startedAtUtc : startedAtUtc.toUtc(),
         endedAtUtc = endedAtUtc.isUtc ? endedAtUtc : endedAtUtc.toUtc();
 
   @override

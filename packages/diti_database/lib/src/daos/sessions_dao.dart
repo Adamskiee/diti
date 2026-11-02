@@ -6,7 +6,8 @@ import '../database/tables/session_events_table.dart';
 part 'sessions_dao.g.dart';
 
 @DriftAccessor(tables: [Sessions, SessionEvents])
-class SessionsDao extends DatabaseAccessor<DitiDatabase> with _$SessionsDaoMixin {
+class SessionsDao extends DatabaseAccessor<DitiDatabase>
+    with _$SessionsDaoMixin {
   SessionsDao(super.db);
 
   Future<void> createSessionWithEvents(
@@ -22,7 +23,8 @@ class SessionsDao extends DatabaseAccessor<DitiDatabase> with _$SessionsDaoMixin
   }
 
   Future<SessionData?> getSessionById(String sessionId) {
-    return (select(sessions)..where((s) => s.sessionId.equals(sessionId))).getSingleOrNull();
+    return (select(sessions)..where((s) => s.sessionId.equals(sessionId)))
+        .getSingleOrNull();
   }
 
   Future<List<SessionEventData>> getEventsForSession(String sessionId) {
@@ -37,7 +39,9 @@ class SessionsDao extends DatabaseAccessor<DitiDatabase> with _$SessionsDaoMixin
     required DateTime endUtc,
   }) {
     return (select(sessions)
-          ..where((s) => s.startedAtUtc.isBiggerOrEqualValue(startUtc) & s.startedAtUtc.isSmallerOrEqualValue(endUtc))
+          ..where((s) =>
+              s.startedAtUtc.isBiggerOrEqualValue(startUtc) &
+              s.startedAtUtc.isSmallerOrEqualValue(endUtc))
           ..orderBy([(s) => OrderingTerm.desc(s.startedAtUtc)]))
         .get();
   }

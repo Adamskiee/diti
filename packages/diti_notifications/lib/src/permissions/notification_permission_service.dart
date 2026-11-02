@@ -46,7 +46,8 @@ class FlutterNotificationPermissionService
       [FlutterLocalNotificationsPlugin? plugin])
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
-  factory FlutterNotificationPermissionService.withClient({NotificationClient? client}) {
+  factory FlutterNotificationPermissionService.withClient(
+      {NotificationClient? client}) {
     return FlutterNotificationPermissionService();
   }
 

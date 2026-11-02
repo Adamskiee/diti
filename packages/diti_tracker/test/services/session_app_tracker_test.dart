@@ -88,10 +88,12 @@ void main() {
       await tracker.tick(now: DateTime.utc(2026, 10, 26, 10, 0, 12));
 
       final results = await tracker.stopSession();
-      expect(results.first.durationMs, equals(4000)); // 2s before pause + 2s after resume
+      expect(results.first.durationMs,
+          equals(4000)); // 2s before pause + 2s after resume
     });
 
-    test('caps large sample gap (e.g. system suspend) to sampleInterval', () async {
+    test('caps large sample gap (e.g. system suspend) to sampleInterval',
+        () async {
       stub.currentSample = ActiveAppSample(
         rawClass: 'alacritty',
         rawTitle: 'bash',
@@ -104,7 +106,8 @@ void main() {
       await tracker.tick(now: DateTime.utc(2026, 10, 26, 10, 1, 0));
 
       final results = await tracker.stopSession();
-      expect(results.first.durationMs, equals(2000)); // capped to sampleInterval (2s)
+      expect(results.first.durationMs,
+          equals(2000)); // capped to sampleInterval (2s)
     });
 
     test('handles null sample without accumulating duration', () async {
@@ -154,7 +157,9 @@ void main() {
       expect(results.first.appName, equals('Terminal'));
     });
 
-    test('retains active app for short test session stopped before sampleInterval', () async {
+    test(
+        'retains active app for short test session stopped before sampleInterval',
+        () async {
       stub.currentSample = ActiveAppSample(
         rawClass: 'brave-browser',
         rawTitle: 'YouTube - Brave',
@@ -167,7 +172,8 @@ void main() {
         minTrackedDuration: const Duration(seconds: 5),
       );
 
-      shortTracker.startSession('session-short', now: DateTime.utc(2026, 10, 26, 10, 0, 0));
+      shortTracker.startSession('session-short',
+          now: DateTime.utc(2026, 10, 26, 10, 0, 0));
       // Stopped after 1.5 seconds (less than sampleInterval and minTrackedDuration)
       final results = await shortTracker.stopSession(
         now: DateTime.utc(2026, 10, 26, 10, 0, 1, 500),

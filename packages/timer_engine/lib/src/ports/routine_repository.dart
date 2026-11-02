@@ -6,4 +6,3 @@ abstract interface class RoutineRepository {
   Future<void> saveRoutine(Routine routine);
   Future<void> deleteRoutine(String routineId);
 }
-

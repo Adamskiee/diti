@@ -34,7 +34,8 @@ class RoutineListScreen extends ConsumerWidget {
             );
           }
           return RefreshIndicator(
-            onRefresh: () => ref.read(routineListControllerProvider.notifier).refresh(),
+            onRefresh: () =>
+                ref.read(routineListControllerProvider.notifier).refresh(),
             child: ListView.builder(
               itemCount: routines.length,
               itemBuilder: (context, index) {

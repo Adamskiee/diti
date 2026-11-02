@@ -13,7 +13,8 @@ class RoutineEditorScreen extends ConsumerStatefulWidget {
   const RoutineEditorScreen({super.key, this.routineId});
 
   @override
-  ConsumerState<RoutineEditorScreen> createState() => _RoutineEditorScreenState();
+  ConsumerState<RoutineEditorScreen> createState() =>
+      _RoutineEditorScreenState();
 }
 
 class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
@@ -91,7 +92,8 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
 
     final validationError = routine.validate();
     if (validationError != null) {
-      setState(() => _errorMessage = 'Invalid routine configuration: $validationError');
+      setState(() =>
+          _errorMessage = 'Invalid routine configuration: $validationError');
       return;
     }
 
@@ -118,7 +120,8 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Save',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

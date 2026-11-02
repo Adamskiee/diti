@@ -22,7 +22,8 @@ class FakeProcessRunner implements ProcessRunner {
 
 void main() {
   group('LinuxX11AppTracker', () {
-    test('extracts WM_CLASS and window title correctly from xprop output', () async {
+    test('extracts WM_CLASS and window title correctly from xprop output',
+        () async {
       final fakeRunner = FakeProcessRunner({
         'xprop -root _NET_ACTIVE_WINDOW': ProcessResult(
           0,
@@ -34,7 +35,7 @@ void main() {
           0,
           0,
           'WM_CLASS(STRING) = "google-chrome", "Google-chrome"\n'
-          '_NET_WM_NAME(UTF8_STRING) = "The Beatles - Let It Be - YouTube - Google Chrome"\n',
+              '_NET_WM_NAME(UTF8_STRING) = "The Beatles - Let It Be - YouTube - Google Chrome"\n',
           '',
         ),
       });
@@ -44,7 +45,8 @@ void main() {
 
       expect(sample, isNotNull);
       expect(sample!.rawClass, equals('google-chrome Google-chrome'));
-      expect(sample.rawTitle, equals('The Beatles - Let It Be - YouTube - Google Chrome'));
+      expect(sample.rawTitle,
+          equals('The Beatles - Let It Be - YouTube - Google Chrome'));
     });
 
     test('extracts multi-string WM_CLASS such as Navigator firefox', () async {
@@ -59,7 +61,7 @@ void main() {
           0,
           0,
           'WM_CLASS(STRING) = "Navigator", "firefox"\n'
-          '_NET_WM_NAME(UTF8_STRING) = "Mozilla Firefox"\n',
+              '_NET_WM_NAME(UTF8_STRING) = "Mozilla Firefox"\n',
           '',
         ),
       });

@@ -182,7 +182,8 @@ void main() {
       expect(result!.plannedDurationMs, 50 * 60000);
     });
 
-    testWidgets('duration stepper adjusts duration by 5 minutes and disables at 5m',
+    testWidgets(
+        'duration stepper adjusts duration by 5 minutes and disables at 5m',
         (tester) async {
       await tester.pumpWidget(
         UncontrolledProviderScope(
@@ -226,11 +227,13 @@ void main() {
       expect(find.text('5m'), findsOneWidget);
 
       // Subtract button should now be disabled (IconButton onPressed is null)
-      final removeButton = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.remove));
+      final removeButton = tester
+          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.remove));
       expect(removeButton.onPressed, isNull);
     });
 
-    testWidgets('displays ConflictWarningBanner when tentative time overlaps existing block',
+    testWidgets(
+        'displays ConflictWarningBanner when tentative time overlaps existing block',
         (tester) async {
       // Seed an existing plan block from 10:00 to 11:00 UTC
       final planRepo = container.read(planBlockRepositoryProvider);
@@ -415,7 +418,8 @@ void main() {
       expect(result!.sessionId, 'session-xyz');
     });
 
-    testWidgets('picks new start time using time picker and updates block start time',
+    testWidgets(
+        'picks new start time using time picker and updates block start time',
         (tester) async {
       PlanBlock? result;
 

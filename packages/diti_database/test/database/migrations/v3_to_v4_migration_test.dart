@@ -90,7 +90,9 @@ void main() {
       expect(steps.single.toVersion, equals(4));
     });
 
-    test('migrates raw v3 database to v4 updating cancelled sessions and linked plan blocks to completed', () async {
+    test(
+        'migrates raw v3 database to v4 updating cancelled sessions and linked plan blocks to completed',
+        () async {
       final raw = _openV3Database();
       final db = DitiDatabase(
         NativeDatabase.opened(raw, closeUnderlyingOnClose: false),

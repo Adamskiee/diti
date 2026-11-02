@@ -90,7 +90,8 @@ class AnalyticsSummary {
     this.appUsages = const [],
   });
 
-  double get completionRate => (completedCount + interruptedOrCancelledCount) == 0
-      ? 0.0
-      : completedCount / (completedCount + interruptedOrCancelledCount);
+  double get completionRate =>
+      (completedCount + interruptedOrCancelledCount) == 0
+          ? 0.0
+          : completedCount / (completedCount + interruptedOrCancelledCount);
 }

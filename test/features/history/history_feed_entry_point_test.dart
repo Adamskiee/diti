@@ -7,7 +7,9 @@ import 'package:diti/src/core/di/repositories_provider.dart';
 
 class MockSessionRepo implements SessionRepository {
   @override
-  Future<List<SessionRecord>> getSessionsInRange(DateTime startUtc, DateTime endUtc) async => [];
+  Future<List<SessionRecord>> getSessionsInRange(
+          DateTime startUtc, DateTime endUtc) async =>
+      [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

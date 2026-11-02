@@ -14,9 +14,11 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Riverpod DI Providers', () {
-    test('Riverpod container instantiates all DI providers with test overrides', () async {
+    test('Riverpod container instantiates all DI providers with test overrides',
+        () async {
       final inMemoryDb = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       final container = ProviderContainer(
@@ -33,7 +35,8 @@ void main() {
       final sessionRepo = container.read(sessionRepositoryProvider);
       final planBlockRepo = container.read(planBlockRepositoryProvider);
       final notificationPort = container.read(localNotificationPortProvider);
-      final permissionService = container.read(notificationPermissionServiceProvider);
+      final permissionService =
+          container.read(notificationPermissionServiceProvider);
       final persistencePort = container.read(runPersistencePortProvider);
       final engine = container.read(timerEngineProvider);
       final coordinator = container.read(timerLifecycleCoordinatorProvider);
@@ -65,7 +68,8 @@ void main() {
       container.dispose();
     });
 
-    test('FakeNotificationClient tracks schedule and cancel operations', () async {
+    test('FakeNotificationClient tracks schedule and cancel operations',
+        () async {
       final fake = FakeNotificationClient();
 
       expect(await fake.initialize(settings: null), isTrue);
@@ -99,7 +103,9 @@ void main() {
       expect(fake.cancelledIds, contains(99));
     });
 
-    test('resolveDatabasePath resolves fallback in test environment and differentiates debug/release', () async {
+    test(
+        'resolveDatabasePath resolves fallback in test environment and differentiates debug/release',
+        () async {
       final debugPath = await resolveDatabasePath(isDebug: true);
       expect(debugPath, 'diti_debug.db');
 
@@ -110,8 +116,11 @@ void main() {
       expect(defaultPath, 'diti_debug.db');
     });
 
-    test('resolveDatabasePath copies legacy focus_flow.db to diti.db if legacy exists', () async {
-      final tempDir = await Directory.systemTemp.createTemp('diti_test_migration_');
+    test(
+        'resolveDatabasePath copies legacy focus_flow.db to diti.db if legacy exists',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('diti_test_migration_');
       try {
         final legacyFile = File('${tempDir.path}/focus_flow.db');
         final targetFile = File('${tempDir.path}/diti.db');

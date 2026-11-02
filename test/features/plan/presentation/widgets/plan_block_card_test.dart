@@ -29,7 +29,8 @@ void main() {
   }
 
   group('PlanBlockCard', () {
-    testWidgets('renders times with tabular figures, status, conflict warning, and overrun',
+    testWidgets(
+        'renders times with tabular figures, status, conflict warning, and overrun',
         (tester) async {
       final startUtc = DateTime.utc(2026, 10, 16, 9, 0);
       final block = PlanBlock(
@@ -62,8 +63,8 @@ void main() {
 
       final timeFormat = DateFormat.jm();
       final expectedStart = timeFormat.format(startUtc.toLocal());
-      final expectedEnd =
-          timeFormat.format(startUtc.toLocal().add(const Duration(milliseconds: 3000000)));
+      final expectedEnd = timeFormat.format(
+          startUtc.toLocal().add(const Duration(milliseconds: 3000000)));
 
       expect(find.text('Deep Focus'), findsOneWidget);
       expect(find.text(expectedStart), findsOneWidget);
@@ -89,7 +90,8 @@ void main() {
       expect(find.byType(ConflictWarningBanner), findsOneWidget);
     });
 
-    testWidgets('renders scheduled block with Start Block action and invokes callback',
+    testWidgets(
+        'renders scheduled block with Start Block action and invokes callback',
         (tester) async {
       var started = false;
       final block = PlanBlock(
@@ -160,7 +162,7 @@ void main() {
         scheduledStartUtc: DateTime.utc(2026, 10, 16, 11, 0),
         timezoneId: 'UTC',
         plannedDurationMs: 3600000, // 1h
-        actualDurationMs: 2400000,  // 40m (-20m under)
+        actualDurationMs: 2400000, // 40m (-20m under)
         routineId: 'Reading',
         status: PlanBlockStatus.completed,
       );
@@ -173,7 +175,8 @@ void main() {
       expect(tagWidget.style?.color, AppColors.successGreen);
     });
 
-    testWidgets('renders on target time difference tag when difference is within 1 minute',
+    testWidgets(
+        'renders on target time difference tag when difference is within 1 minute',
         (tester) async {
       final block = PlanBlock(
         id: 'b5',
@@ -181,7 +184,7 @@ void main() {
         scheduledStartUtc: DateTime.utc(2026, 10, 16, 11, 0),
         timezoneId: 'UTC',
         plannedDurationMs: 1800000, // 30m
-        actualDurationMs: 1830000,  // 30m 30s (+30s)
+        actualDurationMs: 1830000, // 30m 30s (+30s)
         routineId: 'Writing',
         status: PlanBlockStatus.completed,
       );

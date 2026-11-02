@@ -36,15 +36,18 @@ void main() {
     expect(find.text('20:00'), findsOneWidget);
     expect(find.text('10:00'), findsOneWidget);
 
-    final indicators = tester.widgetList<LinearProgressIndicator>(
-      find.byType(LinearProgressIndicator),
-    ).toList();
+    final indicators = tester
+        .widgetList<LinearProgressIndicator>(
+          find.byType(LinearProgressIndicator),
+        )
+        .toList();
     expect(indicators, hasLength(2));
     expect(indicators[0].value, closeTo(1200000 / 1800000, 0.001));
     expect(indicators[1].value, closeTo(600000 / 1800000, 0.001));
   });
 
-  testWidgets('renders category icons and falls back to apps icon', (tester) async {
+  testWidgets('renders category icons and falls back to apps icon',
+      (tester) async {
     final usages = [
       const AppUsageSummary(
         appName: 'VS Code',

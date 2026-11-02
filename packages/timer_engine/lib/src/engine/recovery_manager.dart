@@ -43,8 +43,8 @@ class RecoveryManager {
     }
 
     final nowUtc = wallClock.utcNow;
-    final totalWallElapsedMs =
-        math.max(0, nowUtc.difference(activeRun.phaseStartedAtUtc).inMilliseconds);
+    final totalWallElapsedMs = math.max(
+        0, nowUtc.difference(activeRun.phaseStartedAtUtc).inMilliseconds);
     int remainingDeltaMs = activeRun.accumulatedMs + totalWallElapsedMs;
 
     var currentRun = activeRun;
@@ -123,7 +123,8 @@ class RecoveryManager {
 
       if (nextPhaseIndex >= numPhases) {
         final repeatRule = routine.repeatRule;
-        if (repeatRule.mode == RepeatMode.forever || newRepeatIndex < repeatRule.count - 1) {
+        if (repeatRule.mode == RepeatMode.forever ||
+            newRepeatIndex < repeatRule.count - 1) {
           newPhaseIndex = 0;
           newRepeatIndex += 1;
         } else {
@@ -135,7 +136,8 @@ class RecoveryManager {
       final isCompleted = newStatus == RunStatus.completed;
       if (isCompleted) {
         final phaseEvent = TimerEvent(
-          eventId: 'reconciled-${events.length}-${nowUtc.millisecondsSinceEpoch}',
+          eventId:
+              'reconciled-${events.length}-${nowUtc.millisecondsSinceEpoch}',
           runId: currentRun.runId,
           type: TimerEventType.phaseFinished,
           occurredAtUtc: nowUtc,
@@ -143,7 +145,8 @@ class RecoveryManager {
           metadata: const {'reconciled': true},
         );
         final runCompletedEvent = TimerEvent(
-          eventId: 'reconciled-${events.length + 1}-${nowUtc.millisecondsSinceEpoch}',
+          eventId:
+              'reconciled-${events.length + 1}-${nowUtc.millisecondsSinceEpoch}',
           runId: currentRun.runId,
           type: TimerEventType.runCompleted,
           occurredAtUtc: nowUtc,
@@ -152,7 +155,8 @@ class RecoveryManager {
         events.addAll([phaseEvent, runCompletedEvent]);
       } else {
         events.add(TimerEvent(
-          eventId: 'reconciled-${events.length}-${nowUtc.millisecondsSinceEpoch}',
+          eventId:
+              'reconciled-${events.length}-${nowUtc.millisecondsSinceEpoch}',
           runId: currentRun.runId,
           type: TimerEventType.phaseFinished,
           occurredAtUtc: nowUtc,
@@ -169,7 +173,8 @@ class RecoveryManager {
           phaseStartUtc.add(Duration(milliseconds: duration));
       // The reconstruction can never place a phase's end after the moment
       // recovery ran.
-      phaseEndUtc = phaseEndCandidate.isAfter(nowUtc) ? nowUtc : phaseEndCandidate;
+      phaseEndUtc =
+          phaseEndCandidate.isAfter(nowUtc) ? nowUtc : phaseEndCandidate;
 
       ledgerEntries.add(PhaseLedgerEntry(
         phaseId: currentPhase.id,
@@ -197,7 +202,8 @@ class RecoveryManager {
         // start of the phase that just ended.
         phaseFirstStartedAtUtc: isCompleted ? phaseStartUtc : phaseEndUtc,
         phaseStartedAtUtc: nowUtc,
-        phaseStartedMonotonicMs: () => newStatus == RunStatus.running ? nowMonoMs : null,
+        phaseStartedMonotonicMs: () =>
+            newStatus == RunStatus.running ? nowMonoMs : null,
         stateVersion: currentRun.stateVersion + 1,
         lastEventId: () => events.last.eventId,
       );

@@ -14,10 +14,12 @@ import '../../../../test/helpers/test_fakes.dart';
 
 void main() {
   group('ActiveTimerMiniPlayer', () {
-    testWidgets('renders when active, toggles pause/resume, and expands to ActiveTimerScreen',
+    testWidgets(
+        'renders when active, toggles pause/resume, and expands to ActiveTimerScreen',
         (tester) async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -70,7 +72,9 @@ void main() {
       expect(find.byKey(const Key('mini_player_toggle_button')), findsNothing);
 
       // 2. Start routine -> becomes active
-      await container.read(activeTimerControllerProvider.notifier).startRoutine('r1');
+      await container
+          .read(activeTimerControllerProvider.notifier)
+          .startRoutine('r1');
       await tester.pumpAndSettle();
 
       expect(find.text('Focus'), findsOneWidget);
@@ -80,13 +84,15 @@ void main() {
       // Verify LinearProgressIndicator is present
       final progressFinder = find.byType(LinearProgressIndicator);
       expect(progressFinder, findsOneWidget);
-      final progressIndicator = tester.widget<LinearProgressIndicator>(progressFinder);
+      final progressIndicator =
+          tester.widget<LinearProgressIndicator>(progressFinder);
       expect(progressIndicator.value, 1.0);
 
       // Verify Tabular Figures font feature is set on countdown Text
       final timeFinder = find.text('25:00');
       final timeWidget = tester.widget<Text>(timeFinder);
-      expect(timeWidget.style?.fontFeatures, contains(const FontFeature.tabularFigures()));
+      expect(timeWidget.style?.fontFeatures,
+          contains(const FontFeature.tabularFigures()));
 
       // 3. Pause
       final toggle = find.byKey(const Key('mini_player_toggle_button'));
@@ -96,7 +102,8 @@ void main() {
       await tester.tap(toggle);
       await tester.pumpAndSettle();
 
-      expect(container.read(activeTimerControllerProvider).status, RunStatus.paused);
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.paused);
       expect(find.byIcon(Icons.play_arrow), findsOneWidget);
       // Tapping toggle button must not trigger route push to ActiveTimerScreen
       expect(find.byType(ActiveTimerScreen), findsNothing);
@@ -105,7 +112,8 @@ void main() {
       await tester.tap(toggle);
       await tester.pumpAndSettle();
 
-      expect(container.read(activeTimerControllerProvider).status, RunStatus.running);
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.running);
       expect(find.byIcon(Icons.pause), findsOneWidget);
       expect(find.byType(ActiveTimerScreen), findsNothing);
 
@@ -119,7 +127,8 @@ void main() {
       await db.close();
     });
 
-    testWidgets('renders when awaitingAction and handles empty cycleDescription',
+    testWidgets(
+        'renders when awaitingAction and handles empty cycleDescription',
         (tester) async {
       final container = ProviderContainer(
         overrides: [

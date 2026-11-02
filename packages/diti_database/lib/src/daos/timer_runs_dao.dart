@@ -6,7 +6,8 @@ import '../database/tables/timer_events_table.dart';
 part 'timer_runs_dao.g.dart';
 
 @DriftAccessor(tables: [TimerRuns, TimerEvents])
-class TimerRunsDao extends DatabaseAccessor<DitiDatabase> with _$TimerRunsDaoMixin {
+class TimerRunsDao extends DatabaseAccessor<DitiDatabase>
+    with _$TimerRunsDaoMixin {
   TimerRunsDao(super.db);
 
   Future<void> upsertRun(TimerRunsCompanion run) {

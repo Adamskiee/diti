@@ -8,7 +8,8 @@ class InMemoryPersistencePort implements RunPersistencePort {
   final List<TimerEvent> committedEvents = [];
 
   @override
-  Future<void> persistRunAndEvents(TimerRun run, List<TimerEvent> events) async {
+  Future<void> persistRunAndEvents(
+      TimerRun run, List<TimerEvent> events) async {
     if (shouldFail) {
       throw const PersistenceException('Simulated storage write error');
     }

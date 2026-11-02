@@ -52,14 +52,17 @@ class TimerRun {
     this.phaseLedger = const [],
     DateTime? runStartedAtUtc,
     DateTime? phaseFirstStartedAtUtc,
-  })  : phaseStartedAtUtc =
-            phaseStartedAtUtc.isUtc ? phaseStartedAtUtc : phaseStartedAtUtc.toUtc(),
+  })  : phaseStartedAtUtc = phaseStartedAtUtc.isUtc
+            ? phaseStartedAtUtc
+            : phaseStartedAtUtc.toUtc(),
         pausedAtUtc = pausedAtUtc == null
             ? null
             : (pausedAtUtc.isUtc ? pausedAtUtc : pausedAtUtc.toUtc()),
         runStartedAtUtc = runStartedAtUtc == null
             ? null
-            : (runStartedAtUtc.isUtc ? runStartedAtUtc : runStartedAtUtc.toUtc()),
+            : (runStartedAtUtc.isUtc
+                ? runStartedAtUtc
+                : runStartedAtUtc.toUtc()),
         phaseFirstStartedAtUtc = phaseFirstStartedAtUtc == null
             ? null
             : (phaseFirstStartedAtUtc.isUtc

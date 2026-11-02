@@ -13,7 +13,8 @@ class DriftRunPersistencePort implements RunPersistencePort {
   DriftRunPersistencePort(this.database) : dao = TimerRunsDao(database);
 
   @override
-  Future<void> persistRunAndEvents(TimerRun run, List<TimerEvent> events) async {
+  Future<void> persistRunAndEvents(
+      TimerRun run, List<TimerEvent> events) async {
     try {
       await database.transaction(() async {
         final runCompanion = TimerRunsCompanion(
@@ -27,7 +28,8 @@ class DriftRunPersistencePort implements RunPersistencePort {
           pausedAtUtc: Value(run.pausedAtUtc),
           stateVersion: Value(run.stateVersion),
           lastEventId: Value(run.lastEventId),
-          routineSnapshotJson: Value(SnapshotSerializer.routineToJson(run.routineSnapshot)),
+          routineSnapshotJson:
+              Value(SnapshotSerializer.routineToJson(run.routineSnapshot)),
           phaseLedgerJson: Value(PhaseLedgerSerializer.toJson(run.phaseLedger)),
           runStartedAtUtc: Value(run.runStartedAtUtc),
           phaseFirstStartedAtUtc: Value(run.phaseFirstStartedAtUtc),
@@ -43,7 +45,8 @@ class DriftRunPersistencePort implements RunPersistencePort {
               eventType: Value(e.type.name),
               occurredAtUtc: Value(e.occurredAtUtc),
               durationMs: Value(e.durationMs),
-              metadataJson: Value(SnapshotSerializer.metadataToJson(e.metadata)),
+              metadataJson:
+                  Value(SnapshotSerializer.metadataToJson(e.metadata)),
             );
           }).toList(growable: false);
 
@@ -61,7 +64,8 @@ class DriftRunPersistencePort implements RunPersistencePort {
       final runData = await dao.getLatestActiveRun();
       if (runData == null) return null;
 
-      final routine = SnapshotSerializer.routineFromJson(runData.routineSnapshotJson);
+      final routine =
+          SnapshotSerializer.routineFromJson(runData.routineSnapshotJson);
 
       final status = RunStatus.values.firstWhere(
         (s) => s.name == runData.status,

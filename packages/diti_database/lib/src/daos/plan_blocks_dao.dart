@@ -5,7 +5,8 @@ import '../database/tables/plan_blocks_table.dart';
 part 'plan_blocks_dao.g.dart';
 
 @DriftAccessor(tables: [PlanBlocks])
-class PlanBlocksDao extends DatabaseAccessor<DitiDatabase> with _$PlanBlocksDaoMixin {
+class PlanBlocksDao extends DatabaseAccessor<DitiDatabase>
+    with _$PlanBlocksDaoMixin {
   PlanBlocksDao(super.db);
 
   Future<void> insertPlanBlock(PlanBlocksCompanion block) {
@@ -28,7 +29,8 @@ class PlanBlocksDao extends DatabaseAccessor<DitiDatabase> with _$PlanBlocksDaoM
   }
 
   Future<PlanBlockData?> getPlanBlockById(String id) {
-    return (select(planBlocks)..where((b) => b.id.equals(id))).getSingleOrNull();
+    return (select(planBlocks)..where((b) => b.id.equals(id)))
+        .getSingleOrNull();
   }
 
   Future<int> linkSession({

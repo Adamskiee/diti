@@ -22,7 +22,8 @@ class AnalyticsView extends ConsumerWidget {
         Expanded(
           child: analyticsState.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text('Error calculating analytics: $err')),
+            error: (err, _) =>
+                Center(child: Text('Error calculating analytics: $err')),
             data: (summary) {
               if (summary.totalDurationMs == 0 &&
                   summary.completedCount == 0 &&
@@ -67,7 +68,8 @@ class AnalyticsView extends ConsumerWidget {
 
               return LayoutBuilder(
                 builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= ResponsiveBreakpoints.expanded;
+                  final isWide =
+                      constraints.maxWidth >= ResponsiveBreakpoints.expanded;
 
                   if (!isWide) {
                     return ListView(
@@ -85,7 +87,8 @@ class AnalyticsView extends ConsumerWidget {
                         ],
                         if (summary.activityBreakdowns.isNotEmpty) ...[
                           const SizedBox(height: 16),
-                          ActivityBreakdownCard(breakdowns: summary.activityBreakdowns),
+                          ActivityBreakdownCard(
+                              breakdowns: summary.activityBreakdowns),
                         ],
                         if (summary.planVersusActual != null) ...[
                           const SizedBox(height: 16),
@@ -105,9 +108,11 @@ class AnalyticsView extends ConsumerWidget {
 
                   final rightItems = <Widget>[
                     if (summary.activityBreakdowns.isNotEmpty)
-                      ActivityBreakdownCard(breakdowns: summary.activityBreakdowns),
+                      ActivityBreakdownCard(
+                          breakdowns: summary.activityBreakdowns),
                     if (summary.appUsages.isNotEmpty) ...[
-                      if (summary.activityBreakdowns.isNotEmpty) const SizedBox(height: 16),
+                      if (summary.activityBreakdowns.isNotEmpty)
+                        const SizedBox(height: 16),
                       SessionAppBreakdownCard(
                         usages: summary.appUsages,
                         totalDurationMs: summary.totalDurationMs,
@@ -122,7 +127,8 @@ class AnalyticsView extends ConsumerWidget {
                         maxWidth: ResponsiveBreakpoints.maxContentWidth,
                       ),
                       child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24.0, vertical: 16.0),
                         children: [
                           SummaryMetricCards(summary: summary),
                           const SizedBox(height: 16),
@@ -137,14 +143,16 @@ class AnalyticsView extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: leftItems,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: rightItems,
                                   ),
                                 ),

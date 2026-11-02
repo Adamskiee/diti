@@ -15,7 +15,8 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     config: AlchemistConfig(
       ciGoldensConfig: const CiGoldensConfig(
         enabled: true,
-        diffThreshold: 0.005, // 0.5% threshold for cross-environment anti-aliasing
+        diffThreshold:
+            0.005, // 0.5% threshold for cross-environment anti-aliasing
       ),
       platformGoldensConfig: PlatformGoldensConfig(
         enabled: !isRunningInCi,

@@ -7,6 +7,7 @@ import 'package:timer_engine/timer_engine.dart';
 import 'package:diti/src/features/history/presentation/controllers/session_verification_controller.dart';
 
 class MockSessionRepository extends Mock implements SessionRepository {}
+
 class MockPlanBlockRepository extends Mock implements PlanBlockRepository {}
 
 void main() {
@@ -68,7 +69,8 @@ void main() {
       );
     });
 
-    test('cancelled run < 1s is discarded silently, plan block reverted', () async {
+    test('cancelled run < 1s is discarded silently, plan block reverted',
+        () async {
       when(() => mockPlanRepo.getBlockById('block-123')).thenAnswer(
         (_) async => PlanBlock(
           id: 'block-123',
@@ -91,7 +93,8 @@ void main() {
         repeatIndex: 0,
         activeElapsedMs: 0,
         stateVersion: 1,
-        totalActiveElapsedMs: 500, // 500ms < 1s (SessionValidator.minDurationMs)
+        totalActiveElapsedMs:
+            500, // 500ms < 1s (SessionValidator.minDurationMs)
         completedPhases: _focusLedger(500),
         runStartedAtUtc: _runStart,
       );
@@ -104,12 +107,15 @@ void main() {
 
       expect(controller.state.isVisible, isFalse);
       verify(() => mockPlanRepo.updatePlanBlock(any(
-        that: isA<PlanBlock>().having((b) => b.status, 'status', PlanBlockStatus.scheduled),
-      ))).called(1);
+            that: isA<PlanBlock>()
+                .having((b) => b.status, 'status', PlanBlockStatus.scheduled),
+          ))).called(1);
       verifyNever(() => mockSessionRepo.recordSession(any()));
     });
 
-    test('cancelled run with measurable time >= 1s opens verification sheet with completed outcome', () async {
+    test(
+        'cancelled run with measurable time >= 1s opens verification sheet with completed outcome',
+        () async {
       final runState = TimerRunState(
         runId: 'run-short-cancel',
         status: RunStatus.cancelled,
@@ -132,17 +138,20 @@ void main() {
       expect(controller.state.isVisible, isTrue);
       expect(controller.state.draftDurationMs, equals(45000));
       expect(controller.state.draftRoutineName, equals('Flow Focus'));
-      expect(controller.state.candidateSession?.outcome, equals(SessionOutcome.completed));
+      expect(controller.state.candidateSession?.outcome,
+          equals(SessionOutcome.completed));
     });
 
-    test('cancelled run saved via confirmSave persists as completed and completes linked plan block', () async {
+    test(
+        'cancelled run saved via confirmSave persists as completed and completes linked plan block',
+        () async {
       when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
       when(() => mockPlanRepo.linkSession(
-        blockId: any(named: 'blockId'),
-        sessionId: any(named: 'sessionId'),
-        actualDurationMs: any(named: 'actualDurationMs'),
-        status: any(named: 'status'),
-      )).thenAnswer((_) async {});
+            blockId: any(named: 'blockId'),
+            sessionId: any(named: 'sessionId'),
+            actualDurationMs: any(named: 'actualDurationMs'),
+            status: any(named: 'status'),
+          )).thenAnswer((_) async {});
 
       final runState = TimerRunState(
         runId: 'run-cancel-save',
@@ -168,17 +177,17 @@ void main() {
       expect(result, isTrue);
 
       verify(() => mockSessionRepo.recordSession(any(
-        that: isA<SessionRecord>()
-            .having((s) => s.outcome, 'outcome', SessionOutcome.completed)
-            .having((s) => s.totalDurationMs, 'totalDurationMs', 60000),
-      ))).called(1);
+            that: isA<SessionRecord>()
+                .having((s) => s.outcome, 'outcome', SessionOutcome.completed)
+                .having((s) => s.totalDurationMs, 'totalDurationMs', 60000),
+          ))).called(1);
 
       verify(() => mockPlanRepo.linkSession(
-        blockId: 'block-cancel-save',
-        sessionId: any(named: 'sessionId'),
-        actualDurationMs: 60000,
-        status: PlanBlockStatus.completed,
-      )).called(1);
+            blockId: 'block-cancel-save',
+            sessionId: any(named: 'sessionId'),
+            actualDurationMs: 60000,
+            status: PlanBlockStatus.completed,
+          )).called(1);
     });
 
     test('completed run of any duration opens verification sheet', () async {
@@ -202,10 +211,12 @@ void main() {
       );
 
       expect(controller.state.isVisible, isTrue);
-      expect(controller.state.candidateSession?.outcome, equals(SessionOutcome.completed));
+      expect(controller.state.candidateSession?.outcome,
+          equals(SessionOutcome.completed));
     });
 
-    test('adjustDuration modifies draftDurationMs clamped at >= 1000ms', () async {
+    test('adjustDuration modifies draftDurationMs clamped at >= 1000ms',
+        () async {
       final runState = TimerRunState(
         runId: 'run-adj',
         status: RunStatus.completed,
@@ -231,7 +242,9 @@ void main() {
       expect(controller.state.draftDurationMs, equals(1000)); // Min clamped
     });
 
-    test('setDurationMs updates draftDurationMs clamped between min and max duration', () async {
+    test(
+        'setDurationMs updates draftDurationMs clamped between min and max duration',
+        () async {
       final runState = TimerRunState(
         runId: 'run-set-dur',
         status: RunStatus.completed,
@@ -251,16 +264,19 @@ void main() {
       );
 
       controller.setDurationMs(500); // Below 1,000ms
-      expect(controller.state.draftDurationMs, equals(SessionValidator.minDurationMs));
+      expect(controller.state.draftDurationMs,
+          equals(SessionValidator.minDurationMs));
 
       controller.setDurationMs(500000);
       expect(controller.state.draftDurationMs, equals(500000));
 
       controller.setDurationMs(100000000); // Above 86,400,000ms
-      expect(controller.state.draftDurationMs, equals(SessionValidator.maxDurationMs));
+      expect(controller.state.draftDurationMs,
+          equals(SessionValidator.maxDurationMs));
     });
 
-    test('confirmSave with increased duration anchors endedAtUtc and keeps the run start',
+    test(
+        'confirmSave with increased duration anchors endedAtUtc and keeps the run start',
         () async {
       when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
 
@@ -284,20 +300,23 @@ void main() {
         nowUtc: fixedNow,
       );
 
-      controller.adjustDuration(const Duration(minutes: 5)); // 60s + 300s = 360,000ms
+      controller
+          .adjustDuration(const Duration(minutes: 5)); // 60s + 300s = 360,000ms
       final saved = await controller.confirmSave();
 
       expect(saved, isTrue);
       expect(controller.state.isVisible, isFalse);
       verify(() => mockSessionRepo.recordSession(any(
-        that: isA<SessionRecord>()
-            .having((s) => s.endedAtUtc, 'endedAtUtc', fixedNow)
-            .having((s) => s.totalDurationMs, 'totalDurationMs', 360000)
-            .having((s) => s.startedAtUtc, 'startedAtUtc', _runStart),
-      ))).called(1);
+            that: isA<SessionRecord>()
+                .having((s) => s.endedAtUtc, 'endedAtUtc', fixedNow)
+                .having((s) => s.totalDurationMs, 'totalDurationMs', 360000)
+                .having((s) => s.startedAtUtc, 'startedAtUtc', _runStart),
+          ))).called(1);
     });
 
-    test('confirmSave with empty routine name fails validation and preserves sheet', () async {
+    test(
+        'confirmSave with empty routine name fails validation and preserves sheet',
+        () async {
       final runState = TimerRunState(
         runId: 'run-empty-name',
         status: RunStatus.completed,
@@ -326,8 +345,11 @@ void main() {
       verifyNever(() => mockSessionRepo.recordSession(any()));
     });
 
-    test('confirmSave sets validationError and resets isSaving when repository throws', () async {
-      when(() => mockSessionRepo.recordSession(any())).thenThrow(Exception('database write failed'));
+    test(
+        'confirmSave sets validationError and resets isSaving when repository throws',
+        () async {
+      when(() => mockSessionRepo.recordSession(any()))
+          .thenThrow(Exception('database write failed'));
 
       final runState = TimerRunState(
         runId: 'run-throw',
@@ -352,17 +374,20 @@ void main() {
       expect(result, isFalse);
       expect(controller.state.isVisible, isTrue);
       expect(controller.state.isSaving, isFalse);
-      expect(controller.state.validationError, contains('Failed to save session: Exception: database write failed'));
+      expect(controller.state.validationError,
+          contains('Failed to save session: Exception: database write failed'));
     });
 
-    test('confirmSave validates, persists to repository, links plan block, and closes sheet', () async {
+    test(
+        'confirmSave validates, persists to repository, links plan block, and closes sheet',
+        () async {
       when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
       when(() => mockPlanRepo.linkSession(
-        blockId: any(named: 'blockId'),
-        sessionId: any(named: 'sessionId'),
-        actualDurationMs: any(named: 'actualDurationMs'),
-        status: any(named: 'status'),
-      )).thenAnswer((_) async {});
+            blockId: any(named: 'blockId'),
+            sessionId: any(named: 'sessionId'),
+            actualDurationMs: any(named: 'actualDurationMs'),
+            status: any(named: 'status'),
+          )).thenAnswer((_) async {});
 
       final runState = TimerRunState(
         runId: 'run-save',
@@ -389,19 +414,20 @@ void main() {
       expect(result, isTrue);
       expect(controller.state.isVisible, isFalse);
       verify(() => mockSessionRepo.recordSession(any(
-        that: isA<SessionRecord>()
-            .having((s) => s.routineName, 'routineName', 'Deep Research')
-            .having((s) => s.totalDurationMs, 'totalDurationMs', 1500000),
-      ))).called(1);
+            that: isA<SessionRecord>()
+                .having((s) => s.routineName, 'routineName', 'Deep Research')
+                .having((s) => s.totalDurationMs, 'totalDurationMs', 1500000),
+          ))).called(1);
       verify(() => mockPlanRepo.linkSession(
-        blockId: 'block-save',
-        sessionId: any(named: 'sessionId'),
-        actualDurationMs: 1500000,
-        status: PlanBlockStatus.completed,
-      )).called(1);
+            blockId: 'block-save',
+            sessionId: any(named: 'sessionId'),
+            actualDurationMs: 1500000,
+            status: PlanBlockStatus.completed,
+          )).called(1);
     });
 
-    test('discard reverts plan block and closes sheet without saving', () async {
+    test('discard reverts plan block and closes sheet without saving',
+        () async {
       when(() => mockPlanRepo.getBlockById('block-disc')).thenAnswer(
         (_) async => PlanBlock(
           id: 'block-disc',
@@ -438,14 +464,18 @@ void main() {
 
       expect(controller.state.isVisible, isFalse);
       verify(() => mockPlanRepo.updatePlanBlock(any(
-        that: isA<PlanBlock>().having((b) => b.status, 'status', PlanBlockStatus.scheduled),
-      ))).called(1);
+            that: isA<PlanBlock>()
+                .having((b) => b.status, 'status', PlanBlockStatus.scheduled),
+          ))).called(1);
       verifyNever(() => mockSessionRepo.recordSession(any()));
     });
 
-    test('confirmSave returns false immediately when re-entrant while isSaving is true', () async {
+    test(
+        'confirmSave returns false immediately when re-entrant while isSaving is true',
+        () async {
       final completer = Completer<void>();
-      when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) => completer.future);
+      when(() => mockSessionRepo.recordSession(any()))
+          .thenAnswer((_) => completer.future);
 
       final runState = TimerRunState(
         runId: 'run-reentrant',
@@ -847,14 +877,18 @@ void main() {
 
       expect(saved, isTrue);
       verify(() => mockSessionRepo.recordSession(any(
-        that: isA<SessionRecord>()
-            .having((s) => s.totalDurationMs, 'totalDurationMs', 2100000)
-            .having((s) => s.events.length, 'events.length', 2)
-            .having((s) => s.events[0].durationMs, 'focus event duration', 1800000)
-            .having((s) => s.events[1].durationMs, 'rest event duration', 300000)
-            .having((s) => s.events[0].kind, 'focus event kind', PhaseKind.focus)
-            .having((s) => s.events[1].kind, 'rest event kind', PhaseKind.rest),
-      ))).called(1);
+            that: isA<SessionRecord>()
+                .having((s) => s.totalDurationMs, 'totalDurationMs', 2100000)
+                .having((s) => s.events.length, 'events.length', 2)
+                .having((s) => s.events[0].durationMs, 'focus event duration',
+                    1800000)
+                .having((s) => s.events[1].durationMs, 'rest event duration',
+                    300000)
+                .having((s) => s.events[0].kind, 'focus event kind',
+                    PhaseKind.focus)
+                .having(
+                    (s) => s.events[1].kind, 'rest event kind', PhaseKind.rest),
+          ))).called(1);
     });
     test('confirmSave prevents re-verifying the same runId again', () async {
       when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
@@ -938,7 +972,9 @@ void main() {
       expect(controller.state.appUsages, equals(appUsages));
     });
 
-    test('confirmSave maps state.appUsages to SessionAppUsageRecord and persists to SessionRepository', () async {
+    test(
+        'confirmSave maps state.appUsages to SessionAppUsageRecord and persists to SessionRepository',
+        () async {
       when(() => mockSessionRepo.recordSession(any())).thenAnswer((_) async {});
 
       final runState = TimerRunState(
@@ -973,7 +1009,8 @@ void main() {
       final saved = await controller.confirmSave();
 
       expect(saved, isTrue);
-      final captured = verify(() => mockSessionRepo.recordSession(captureAny())).captured;
+      final captured =
+          verify(() => mockSessionRepo.recordSession(captureAny())).captured;
       final savedRecord = captured.single as SessionRecord;
       expect(savedRecord.appUsages.length, equals(1));
       expect(savedRecord.appUsages[0].appName, equals('VS Code'));

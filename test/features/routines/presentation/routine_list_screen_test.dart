@@ -11,7 +11,8 @@ import '../../../helpers/test_fakes.dart';
 
 void main() {
   group('RoutineListScreen', () {
-    testWidgets('RoutineListScreen displays routine cards and triggers duplicate',
+    testWidgets(
+        'RoutineListScreen displays routine cards and triggers duplicate',
         (tester) async {
       final db = createInMemoryTestDatabase();
       const testRoutine = Routine(
@@ -108,7 +109,8 @@ void main() {
       expect(find.text('Delete Me'), findsOneWidget);
 
       // Open overflow menu
-      await tester.tap(find.byKey(const Key('routine_overflow_test-routine-delete')));
+      await tester
+          .tap(find.byKey(const Key('routine_overflow_test-routine-delete')));
       await tester.pumpAndSettle();
 
       // Tap Delete in menu
@@ -117,7 +119,8 @@ void main() {
 
       // Confirm dialog appears
       expect(find.text('Delete Routine'), findsOneWidget);
-      expect(find.text('Are you sure you want to delete "Delete Me"?'), findsOneWidget);
+      expect(find.text('Are you sure you want to delete "Delete Me"?'),
+          findsOneWidget);
 
       // Tap Cancel first
       await tester.tap(find.text('Cancel'));
@@ -125,7 +128,8 @@ void main() {
       expect(find.text('Delete Me'), findsOneWidget);
 
       // Open overflow menu again and confirm delete
-      await tester.tap(find.byKey(const Key('routine_overflow_test-routine-delete')));
+      await tester
+          .tap(find.byKey(const Key('routine_overflow_test-routine-delete')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
@@ -136,7 +140,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Delete Me'), findsNothing);
-      expect(find.text('No routines found. Tap + to create one!'), findsOneWidget);
+      expect(
+          find.text('No routines found. Tap + to create one!'), findsOneWidget);
 
       container.dispose();
       await db.close();
@@ -226,7 +231,8 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      expect(find.text('No routines found. Tap + to create one!'), findsOneWidget);
+      expect(
+          find.text('No routines found. Tap + to create one!'), findsOneWidget);
 
       container.dispose();
       await db.close();
@@ -351,8 +357,7 @@ void main() {
       expect(initialList[1].name, 'Zebra Routine');
 
       // Duplicate Alpha
-      final controller =
-          container.read(routineListControllerProvider.notifier);
+      final controller = container.read(routineListControllerProvider.notifier);
       await controller.duplicateRoutine(aRoutine);
 
       final afterDup =
@@ -410,12 +415,12 @@ void main() {
 
       await container.read(routineRepositoryProvider).saveRoutine(routine);
 
-      final controller =
-          container.read(routineListControllerProvider.notifier);
+      final controller = container.read(routineListControllerProvider.notifier);
       await controller.duplicateRoutine(routine);
 
-      final duplicated = (await container.read(routineListControllerProvider.future))
-          .firstWhere((r) => r.name == 'Kinds Routine (Copy)');
+      final duplicated =
+          (await container.read(routineListControllerProvider.future))
+              .firstWhere((r) => r.name == 'Kinds Routine (Copy)');
 
       // The copy is a new routine, but its phases keep the kinds they were
       // tagged with: a duplicated break is still a break.
@@ -427,16 +432,17 @@ void main() {
       await db.close();
     });
 
-    test('sets error state when duplicateRoutine or deleteRoutine encounters database failure',
+    test(
+        'sets error state when duplicateRoutine or deleteRoutine encounters database failure',
         () async {
       final container = ProviderContainer(
         overrides: [
-          routineRepositoryProvider.overrideWithValue(FailingRoutineRepository()),
+          routineRepositoryProvider
+              .overrideWithValue(FailingRoutineRepository()),
         ],
       );
 
-      final controller =
-          container.read(routineListControllerProvider.notifier);
+      final controller = container.read(routineListControllerProvider.notifier);
       await container.read(routineListControllerProvider.future);
 
       const routine = Routine(

@@ -60,7 +60,8 @@ class PhaseLedgerSerializer {
     return PhaseLedgerEntry(
       phaseId: _asString(raw['phaseId']),
       phaseName: _asString(raw['phaseName']),
-      kind: raw['kind'] == PhaseKind.rest.name ? PhaseKind.rest : PhaseKind.focus,
+      kind:
+          raw['kind'] == PhaseKind.rest.name ? PhaseKind.rest : PhaseKind.focus,
       phaseIndex: _asInt(raw['phaseIndex']),
       repeatIndex: _asInt(raw['repeatIndex']),
       durationMs: _asInt(raw['durationMs']),

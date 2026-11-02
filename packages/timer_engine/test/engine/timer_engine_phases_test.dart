@@ -33,14 +33,24 @@ void main() {
     );
   });
 
-  test('T-006: Auto phase reaches duration and advances to next phase exactly once', () async {
+  test(
+      'T-006: Auto phase reaches duration and advances to next phase exactly once',
+      () async {
     final routine = Routine(
       id: 'auto-test',
       name: 'Auto Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'Work', durationMs: 60000, transition: TransitionPolicy.auto),
-        RoutinePhase(id: 'p2', name: 'Break', durationMs: 30000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Work',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p2',
+            name: 'Break',
+            durationMs: 30000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -57,7 +67,9 @@ void main() {
     expect(state.phaseStatus, equals(PhaseStatus.active));
   });
 
-  test('Rest phase with manual transition reaches duration and runs negative remainingMs while awaiting user continuation', () async {
+  test(
+      'Rest phase with manual transition reaches duration and runs negative remainingMs while awaiting user continuation',
+      () async {
     final routine = Routine(
       id: 'rest-test',
       name: 'Rest Routine',
@@ -100,14 +112,24 @@ void main() {
     expect(advancedState.completedPhases.first.durationMs, equals(40000));
   });
 
-  test('T-007: Manual phase reaches duration, transitions to awaitingAction without auto-advance', () async {
+  test(
+      'T-007: Manual phase reaches duration, transitions to awaitingAction without auto-advance',
+      () async {
     final routine = Routine(
       id: 'manual-test',
       name: 'Manual Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'Reading', durationMs: 60000, transition: TransitionPolicy.manual),
-        RoutinePhase(id: 'p2', name: 'Notes', durationMs: 30000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Reading',
+            durationMs: 60000,
+            transition: TransitionPolicy.manual),
+        RoutinePhase(
+            id: 'p2',
+            name: 'Notes',
+            durationMs: 30000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -126,13 +148,19 @@ void main() {
     expect(state.activeElapsedMs, equals(70000)); // Elapsed continues counting
   });
 
-  test('T-008: Open-ended phase runs and active elapsed increases without countdown boundary', () async {
+  test(
+      'T-008: Open-ended phase runs and active elapsed increases without countdown boundary',
+      () async {
     final routine = Routine(
       id: 'flow-test',
       name: 'Flow Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'flow', name: 'Deep Flow', durationMs: null, transition: TransitionPolicy.manual),
+        RoutinePhase(
+            id: 'flow',
+            name: 'Deep Flow',
+            durationMs: null,
+            transition: TransitionPolicy.manual),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -149,7 +177,9 @@ void main() {
     expect(state.phaseStatus, equals(PhaseStatus.active));
   });
 
-  test('T-009 & T-010: Skip final phase and repeat count is reached completes routine', () async {
+  test(
+      'T-009 & T-010: Skip final phase and repeat count is reached completes routine',
+      () async {
     final events = <TimerEvent>[];
     final eventSub = engine.eventStream.listen(events.add);
 
@@ -158,7 +188,11 @@ void main() {
       name: 'Count Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 2),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'Work', durationMs: 60000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Work',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -191,13 +225,19 @@ void main() {
     await eventSub.cancel();
   });
 
-  test('T-011: Forever repeat continues loop until explicitly stopped or finished', () async {
+  test(
+      'T-011: Forever repeat continues loop until explicitly stopped or finished',
+      () async {
     final routine = Routine(
       id: 'forever-routine',
       name: 'Infinite Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.forever),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'Work', durationMs: 10000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Work',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -221,14 +261,24 @@ void main() {
     expect(finalState.phaseStatus, equals(PhaseStatus.finished));
   });
 
-  test('T-012: Duplicate transition callback does not produce duplicate phase transitions', () async {
+  test(
+      'T-012: Duplicate transition callback does not produce duplicate phase transitions',
+      () async {
     final routine = Routine(
       id: 'duplicate-test',
       name: 'Dup Test',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'P1', durationMs: 10000, transition: TransitionPolicy.auto),
-        RoutinePhase(id: 'p2', name: 'P2', durationMs: 10000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'P1',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p2',
+            name: 'P2',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -256,8 +306,16 @@ void main() {
       name: 'Finish Phase Test',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'Phase 1', durationMs: 60000, transition: TransitionPolicy.auto),
-        RoutinePhase(id: 'p2', name: 'Phase 2', durationMs: 30000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Phase 1',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p2',
+            name: 'Phase 2',
+            durationMs: 30000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -276,14 +334,24 @@ void main() {
     await eventSub.cancel();
   });
 
-  test('finishPhase on manual awaitingAction phase resumes active on next phase', () async {
+  test(
+      'finishPhase on manual awaitingAction phase resumes active on next phase',
+      () async {
     final routine = Routine(
       id: 'manual-finish-test',
       name: 'Manual Finish Test',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'Reading', durationMs: 10000, transition: TransitionPolicy.manual),
-        RoutinePhase(id: 'p2', name: 'Writing', durationMs: 20000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Reading',
+            durationMs: 10000,
+            transition: TransitionPolicy.manual),
+        RoutinePhase(
+            id: 'p2',
+            name: 'Writing',
+            durationMs: 20000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -293,7 +361,8 @@ void main() {
 
     clock.advance(const Duration(seconds: 10));
     await pumpEventQueue();
-    expect(engine.getState(runId)!.phaseStatus, equals(PhaseStatus.awaitingAction));
+    expect(engine.getState(runId)!.phaseStatus,
+        equals(PhaseStatus.awaitingAction));
 
     final res = await engine.finishPhase(runId);
     expect(res.success, isTrue);
@@ -303,14 +372,23 @@ void main() {
     expect(state.phaseStatus, equals(PhaseStatus.active));
   });
 
-  test('skipPhase while paused transitions to active running next phase', () async {
+  test('skipPhase while paused transitions to active running next phase',
+      () async {
     final routine = Routine(
       id: 'skip-paused-test',
       name: 'Skip Paused Test',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'Work', durationMs: 60000, transition: TransitionPolicy.auto),
-        RoutinePhase(id: 'p2', name: 'Rest', durationMs: 30000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Work',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p2',
+            name: 'Rest',
+            durationMs: 30000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -336,7 +414,11 @@ void main() {
       name: 'Finish Run Test',
       repeatRule: const RepeatRule(mode: RepeatMode.forever),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'P1', durationMs: 60000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'P1',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -363,7 +445,8 @@ void main() {
     expect(res2.success, isTrue);
   });
 
-  test('Commands return invalidTransition or runNotFound when expected', () async {
+  test('Commands return invalidTransition or runNotFound when expected',
+      () async {
     final resSkip = await engine.skipPhase('non-existent');
     expect(resSkip.success, isFalse);
     expect(resSkip.error, equals(TimerError.runNotFound));
@@ -381,7 +464,11 @@ void main() {
       name: 'Err Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'Work', durationMs: 10000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'Work',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -408,8 +495,16 @@ void main() {
       name: 'Multi Phase Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 2),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'P1', durationMs: 10000, transition: TransitionPolicy.auto),
-        RoutinePhase(id: 'p2', name: 'P2', durationMs: 10000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'P1',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p2',
+            name: 'P2',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -449,7 +544,9 @@ void main() {
     expect(state.totalActiveElapsedMs, equals(40000));
   });
 
-  test('Completing final phase emits both phaseFinished and runCompleted events', () async {
+  test(
+      'Completing final phase emits both phaseFinished and runCompleted events',
+      () async {
     final events = <TimerEvent>[];
     final eventSub = engine.eventStream.listen(events.add);
 
@@ -458,7 +555,11 @@ void main() {
       name: 'Events Complete Routine',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'P1', durationMs: 10000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'P1',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -481,7 +582,9 @@ void main() {
     await eventSub.cancel();
   });
 
-  test('Persistence failure on skipPhase, finishPhase, or finishRun surfaces error and rolls back without dirty emission', () async {
+  test(
+      'Persistence failure on skipPhase, finishPhase, or finishRun surfaces error and rolls back without dirty emission',
+      () async {
     final emittedStates = <TimerRunState>[];
     final stateSub = engine.stateStream.listen(emittedStates.add);
 
@@ -490,8 +593,16 @@ void main() {
       name: 'Persist Fail',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 2),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'P1', durationMs: 60000, transition: TransitionPolicy.auto),
-        RoutinePhase(id: 'p2', name: 'P2', durationMs: 30000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'P1',
+            durationMs: 60000,
+            transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p2',
+            name: 'P2',
+            durationMs: 30000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);
@@ -524,7 +635,9 @@ void main() {
     await stateSub.cancel();
   });
 
-  test('Persistence failure during auto boundary callback preserves active run without dirty mutation', () async {
+  test(
+      'Persistence failure during auto boundary callback preserves active run without dirty mutation',
+      () async {
     final emittedStates = <TimerRunState>[];
     final stateSub = engine.stateStream.listen(emittedStates.add);
 
@@ -533,8 +646,16 @@ void main() {
       name: 'Persist Fail Boundary',
       repeatRule: const RepeatRule(mode: RepeatMode.count, count: 1),
       phases: const [
-        RoutinePhase(id: 'p1', name: 'P1', durationMs: 10000, transition: TransitionPolicy.auto),
-        RoutinePhase(id: 'p2', name: 'P2', durationMs: 10000, transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p1',
+            name: 'P1',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
+        RoutinePhase(
+            id: 'p2',
+            name: 'P2',
+            durationMs: 10000,
+            transition: TransitionPolicy.auto),
       ],
     );
     await routineRepo.saveRoutine(routine);

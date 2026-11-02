@@ -37,7 +37,9 @@ void main() {
       when(() => mockClient.cancel(any())).thenAnswer((_) async {});
     });
 
-    test('scheduleBoundaryNotification calls client.zonedSchedule with exact mode', () async {
+    test(
+        'scheduleBoundaryNotification calls client.zonedSchedule with exact mode',
+        () async {
       final expectedUtc = DateTime.utc(2026, 10, 14, 11, 0, 0);
 
       await port.scheduleBoundaryNotification(
@@ -54,14 +56,16 @@ void main() {
             scheduledDate: any(named: 'scheduledDate'),
             notificationDetails: any(named: 'notificationDetails'),
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            matchDateTimeComponents: UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents:
+                UILocalNotificationDateInterpretation.absoluteTime,
             payload: any(named: 'payload'),
           )).called(1);
 
       expect(port.getScheduledIds('run-1'), isNotEmpty);
     });
 
-    test('cancelBoundaries cancels all tracked notification IDs for run', () async {
+    test('cancelBoundaries cancels all tracked notification IDs for run',
+        () async {
       await port.scheduleBoundaryNotification(
         runId: 'run-1',
         phaseId: 'p1',
@@ -87,7 +91,8 @@ void main() {
         expectedUtc: DateTime.utc(2026, 10, 14, 11, 0, 0),
       );
 
-      when(() => mockClient.cancel(any())).thenThrow(Exception('Platform cancel failed'));
+      when(() => mockClient.cancel(any()))
+          .thenThrow(Exception('Platform cancel failed'));
 
       await expectLater(
         port.cancelBoundaries('run-1'),
@@ -96,14 +101,24 @@ void main() {
       expect(port.getScheduledIds('run-1'), isEmpty);
     });
 
-    test('scheduleRollingBoundaries calculates upcoming window and schedules sequentially', () async {
+    test(
+        'scheduleRollingBoundaries calculates upcoming window and schedules sequentially',
+        () async {
       const routine = Routine(
         id: 'r1',
         name: 'Pomodoro',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Work', durationMs: 1500000, transition: TransitionPolicy.auto),
-          RoutinePhase(id: 'p2', name: 'Break', durationMs: 300000, transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Work',
+              durationMs: 1500000,
+              transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p2',
+              name: 'Break',
+              durationMs: 300000,
+              transition: TransitionPolicy.auto),
         ],
       );
       final run = TimerRun(
@@ -141,13 +156,19 @@ void main() {
       expect(port.getScheduledIds('run-pomodoro').length, equals(2));
     });
 
-    test('scheduleRollingBoundaries uses inexact alarms when allowExactAlarms is false', () async {
+    test(
+        'scheduleRollingBoundaries uses inexact alarms when allowExactAlarms is false',
+        () async {
       const routine = Routine(
         id: 'r1',
         name: 'Single',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Work', durationMs: 1500000, transition: TransitionPolicy.manual),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Work',
+              durationMs: 1500000,
+              transition: TransitionPolicy.manual),
         ],
       );
       final run = TimerRun(

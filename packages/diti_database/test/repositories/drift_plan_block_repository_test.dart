@@ -119,7 +119,8 @@ void main() {
       expect(await repository.getBlockById('b-to-del'), isNull);
     });
 
-    test('ensures timestamps are stored and retrieved normalized to UTC', () async {
+    test('ensures timestamps are stored and retrieved normalized to UTC',
+        () async {
       final localTime = DateTime(2026, 10, 13, 14, 30); // local time
       final block = PlanBlock(
         id: 'b-tz',

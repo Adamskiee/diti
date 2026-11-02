@@ -60,7 +60,8 @@ class ActivityBreakdownCard extends StatelessWidget {
                 child: ExpansionTile(
                   key: Key('activity_breakdown_${b.routineName}'),
                   tilePadding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  childrenPadding: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
+                  childrenPadding:
+                      const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
                   shape: const Border(),
                   collapsedShape: const Border(),
                   leading: Container(
@@ -96,7 +97,8 @@ class ActivityBreakdownCard extends StatelessWidget {
                         ),
                       )
                     else
-                      ...b.sessions.map((s) => _BreakdownSessionTile(session: s)),
+                      ...b.sessions
+                          .map((s) => _BreakdownSessionTile(session: s)),
                   ],
                 ),
               );

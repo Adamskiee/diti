@@ -83,7 +83,8 @@ void main() {
       expect(reconciled.run, equals(run));
     });
 
-    test('end-to-end integration: full lifecycle via public barrel API', () async {
+    test('end-to-end integration: full lifecycle via public barrel API',
+        () async {
       final clock = FakeClock();
       final routineRepo = InMemoryRoutineRepository();
       final persistence = InMemoryPersistencePort();

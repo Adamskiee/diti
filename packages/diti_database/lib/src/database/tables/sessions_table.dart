@@ -8,7 +8,8 @@ class Sessions extends Table {
   DateTimeColumn get startedAtUtc => dateTime()();
   DateTimeColumn get endedAtUtc => dateTime()();
   IntColumn get totalDurationMs => integer()();
-  TextColumn get outcome => text()(); // 'completed' | 'cancelled' | 'interrupted'
+  TextColumn get outcome =>
+      text()(); // 'completed' | 'cancelled' | 'interrupted'
   TextColumn get routineSnapshotJson => text()();
 
   @override

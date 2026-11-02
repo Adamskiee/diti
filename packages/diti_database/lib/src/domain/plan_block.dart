@@ -26,8 +26,9 @@ class PlanBlock {
     this.actualDurationMs,
     this.sessionId,
     this.status = PlanBlockStatus.scheduled,
-  }) : scheduledStartUtc =
-            scheduledStartUtc.isUtc ? scheduledStartUtc : scheduledStartUtc.toUtc();
+  }) : scheduledStartUtc = scheduledStartUtc.isUtc
+            ? scheduledStartUtc
+            : scheduledStartUtc.toUtc();
 
   PlanBlock copyWith({
     String? id,

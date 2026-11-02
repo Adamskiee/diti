@@ -55,7 +55,8 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
   ) {
     final now = DateTime.now();
     final sDate = date ?? DateTime(now.year, now.month, now.day);
-    final sStart = start ?? TimeOfDay(hour: (now.hour - 1 + 24) % 24, minute: 0);
+    final sStart =
+        start ?? TimeOfDay(hour: (now.hour - 1 + 24) % 24, minute: 0);
     final dur = duration ?? 30;
     final totalStartMin = sStart.hour * 60 + sStart.minute;
     final totalEndMin = (totalStartMin + dur) % (24 * 60);
@@ -100,7 +101,8 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     var endMin = state.endTime.hour * 60 + state.endTime.minute;
     if (endMin < startMin) endMin += 24 * 60;
     final diff = endMin - startMin;
-    state = state.copyWith(startTime: time, durationMinutes: diff > 0 ? diff : 30);
+    state =
+        state.copyWith(startTime: time, durationMinutes: diff > 0 ? diff : 30);
     refreshUsage(immediate: false);
   }
 
@@ -110,7 +112,8 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     var endMin = time.hour * 60 + time.minute;
     if (endMin < startMin) endMin += 24 * 60;
     final diff = endMin - startMin;
-    state = state.copyWith(endTime: time, durationMinutes: diff > 0 ? diff : 30);
+    state =
+        state.copyWith(endTime: time, durationMinutes: diff > 0 ? diff : 30);
     refreshUsage(immediate: false);
   }
 
@@ -170,10 +173,12 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     if (!mounted) return;
     state = state.copyWith(isLoadingUsage: true);
     try {
-      final usages = await _journalRepository.aggregateUsageBetween(_startUtc, _endUtc);
+      final usages =
+          await _journalRepository.aggregateUsageBetween(_startUtc, _endUtc);
       if (!mounted) return;
       if (seq == _usageSeq) {
-        state = state.copyWith(detectedAppUsages: usages, isLoadingUsage: false);
+        state =
+            state.copyWith(detectedAppUsages: usages, isLoadingUsage: false);
       }
     } catch (_) {
       if (!mounted) return;
@@ -200,13 +205,15 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
     final durationMs = state.durationMinutes * 60 * 1000;
     if (durationMs < 1000) {
       if (!mounted) return false;
-      state = state.copyWith(errorMessage: 'Session duration must be at least 1 minute.');
+      state = state.copyWith(
+          errorMessage: 'Session duration must be at least 1 minute.');
       return false;
     }
 
     if (_endUtc.isAfter(DateTime.now().toUtc())) {
       if (!mounted) return false;
-      state = state.copyWith(errorMessage: 'Session end time cannot be in the future.');
+      state = state.copyWith(
+          errorMessage: 'Session end time cannot be in the future.');
       return false;
     }
 
@@ -277,7 +284,8 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
       await _sessionRepository.saveSession(session);
 
       if (state.planBlockId != null) {
-        final existingBlock = await _planBlockRepository.getBlockById(state.planBlockId!);
+        final existingBlock =
+            await _planBlockRepository.getBlockById(state.planBlockId!);
         if (existingBlock != null) {
           await _planBlockRepository.updatePlanBlock(
             existingBlock.copyWith(
@@ -301,7 +309,8 @@ class ManualSessionController extends StateNotifier<ManualSessionState> {
       return true;
     } catch (e) {
       if (!mounted) return false;
-      state = state.copyWith(isSaving: false, errorMessage: 'Failed to save session: $e');
+      state = state.copyWith(
+          isSaving: false, errorMessage: 'Failed to save session: $e');
       return false;
     }
   }

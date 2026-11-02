@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
-@TableIndex(name: 'idx_activity_samples_sampled_at_utc', columns: {#sampledAtUtc})
+@TableIndex(
+    name: 'idx_activity_samples_sampled_at_utc', columns: {#sampledAtUtc})
 class ActivitySamples extends Table {
   TextColumn get id => text()();
   DateTimeColumn get sampledAtUtc => dateTime()();

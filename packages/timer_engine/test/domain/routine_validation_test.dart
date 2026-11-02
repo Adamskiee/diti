@@ -162,7 +162,8 @@ void main() {
           ),
         ],
       );
-      expect(negativeDuration.validate(), equals(TimerError.invalidConfiguration));
+      expect(
+          negativeDuration.validate(), equals(TimerError.invalidConfiguration));
     });
 
     test('phase with blank id or name fails validation', () {
@@ -194,7 +195,8 @@ void main() {
           ),
         ],
       );
-      expect(blankPhaseName.validate(), equals(TimerError.invalidConfiguration));
+      expect(
+          blankPhaseName.validate(), equals(TimerError.invalidConfiguration));
     });
 
     test('repeat count must be at least 1 when mode is count', () {
@@ -248,7 +250,9 @@ void main() {
     });
   });
 
-  group('Domain Entities: RepeatRule, RoutinePhase, Routine properties & methods', () {
+  group(
+      'Domain Entities: RepeatRule, RoutinePhase, Routine properties & methods',
+      () {
     test('RepeatRule equality and hashCode', () {
       const r1 = RepeatRule(mode: RepeatMode.count, count: 3);
       const r2 = RepeatRule(mode: RepeatMode.count, count: 3);

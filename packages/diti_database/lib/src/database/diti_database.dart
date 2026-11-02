@@ -83,7 +83,8 @@ class DitiDatabase extends _$DitiDatabase {
           await m.createAll();
         },
         onUpgrade: (m, from, to) async {
-          final runner = _customMigrationRunner ?? MigrationRunner(defaultMigrationRegistry);
+          final runner = _customMigrationRunner ??
+              MigrationRunner(defaultMigrationRegistry);
           await runner.upgrade(this, m, from, to);
         },
         beforeOpen: (details) async {

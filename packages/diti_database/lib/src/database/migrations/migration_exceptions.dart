@@ -13,7 +13,8 @@ class MigrationMissingException extends MigrationException {
   final int targetVersion;
 
   MigrationMissingException(this.fromVersion, this.targetVersion)
-      : super('Missing migration step from version $fromVersion to $targetVersion.');
+      : super(
+            'Missing migration step from version $fromVersion to $targetVersion.');
 }
 
 /// Thrown when SQLite foreign key check fails after executing migration steps.

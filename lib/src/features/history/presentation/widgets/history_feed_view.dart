@@ -101,7 +101,8 @@ class HistoryFeedView extends ConsumerWidget {
 
               final sortedKeys = grouped.keys.toList();
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 itemCount: sortedKeys.length,
                 itemBuilder: (context, sectionIdx) {
                   final key = sortedKeys[sectionIdx];
@@ -113,7 +114,8 @@ class HistoryFeedView extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 4.0),
                         child: Text(
                           headerText,
                           style: theme.textTheme.titleSmall?.copyWith(
@@ -128,7 +130,8 @@ class HistoryFeedView extends ConsumerWidget {
                               showModalBottomSheet<void>(
                                 context: context,
                                 isScrollControlled: true,
-                                builder: (ctx) => SessionDetailSheet(session: session),
+                                builder: (ctx) =>
+                                    SessionDetailSheet(session: session),
                               );
                             },
                           )),

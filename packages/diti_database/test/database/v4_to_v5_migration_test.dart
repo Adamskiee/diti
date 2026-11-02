@@ -66,7 +66,8 @@ void main() {
       expect(steps.single.toVersion, equals(5));
     });
 
-    test('creates activity_samples table and upgrades version to 5 on fresh DB', () async {
+    test('creates activity_samples table and upgrades version to 5 on fresh DB',
+        () async {
       final db = DitiDatabase(
         NativeDatabase.memory(),
         migrationRunner: MigrationRunner(defaultMigrationRegistry),
@@ -79,14 +80,16 @@ void main() {
         "VALUES ('sample-1', '2026-11-01T12:00:00Z', 3000, 'VS Code', 'Development', 'main.dart');",
       );
 
-      final result = await db.customSelect('SELECT * FROM activity_samples').get();
+      final result =
+          await db.customSelect('SELECT * FROM activity_samples').get();
       expect(result.length, equals(1));
       expect(result.first.data['app_name'], equals('VS Code'));
 
       await db.close();
     });
 
-    test('migrates raw v4 database to v5 and creates activity_samples table', () async {
+    test('migrates raw v4 database to v5 and creates activity_samples table',
+        () async {
       final raw = _openV4Database();
       final db = DitiDatabase(
         NativeDatabase.opened(raw, closeUnderlyingOnClose: false),
@@ -102,13 +105,15 @@ void main() {
         "VALUES ('sample-migrated', '2026-11-01T12:00:00Z', 5000, 'Chrome', 'Browsing', 'Google');",
       );
 
-      final result = await db.customSelect('SELECT * FROM activity_samples').get();
+      final result =
+          await db.customSelect('SELECT * FROM activity_samples').get();
       expect(result.length, equals(1));
       expect(result.first.data['app_name'], equals('Chrome'));
       expect(raw.userVersion, equals(5));
     });
 
-    test('creates idx_activity_samples_sampled_at_utc index on migration', () async {
+    test('creates idx_activity_samples_sampled_at_utc index on migration',
+        () async {
       final raw = _openV4Database();
       final db = DitiDatabase(
         NativeDatabase.opened(raw, closeUnderlyingOnClose: false),
@@ -120,9 +125,11 @@ void main() {
 
       await db.customSelect('SELECT 1 FROM activity_samples').get();
 
-      final indexResult = await db.customSelect(
-        "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_activity_samples_sampled_at_utc';",
-      ).get();
+      final indexResult = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_activity_samples_sampled_at_utc';",
+          )
+          .get();
       expect(indexResult, isNotEmpty);
     });
   });

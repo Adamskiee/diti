@@ -97,7 +97,8 @@ class SessionValidator {
           message: 'Event duration cannot be negative: ${event.eventId}',
         ));
       }
-      if (event.occurredAtUtc.isBefore(session.startedAtUtc.subtract(maxFutureSkew)) ||
+      if (event.occurredAtUtc
+              .isBefore(session.startedAtUtc.subtract(maxFutureSkew)) ||
           event.occurredAtUtc.isAfter(session.endedAtUtc.add(maxFutureSkew))) {
         errors.add(SessionValidationError(
           field: 'events',

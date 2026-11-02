@@ -113,7 +113,8 @@ void main() {
       expect(loaded.appUsages.last.category, equals('Terminal'));
     });
 
-    test('migrates raw v2 database to v3 preserving existing session rows', () async {
+    test('migrates raw v2 database to v3 preserving existing session rows',
+        () async {
       final raw = _openV2Database();
       final db = DitiDatabase(
         NativeDatabase.opened(raw, closeUnderlyingOnClose: false),
@@ -124,18 +125,22 @@ void main() {
       });
 
       // Query to trigger migration
-      final existing = await db.customSelect('SELECT * FROM sessions WHERE session_id = ?', variables: [
-        Variable.withString('sess-v2-existing'),
-      ]).getSingle();
+      final existing = await db.customSelect(
+          'SELECT * FROM sessions WHERE session_id = ?',
+          variables: [
+            Variable.withString('sess-v2-existing'),
+          ]).getSingle();
       expect(existing.data['routine_name'], equals('Existing Routine'));
 
       // Check user_version upgraded to 5
       expect(raw.userVersion, equals(5));
 
       // Verify table session_app_usages was created
-      final tables = await db.customSelect(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='session_app_usages'",
-      ).get();
+      final tables = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='session_app_usages'",
+          )
+          .get();
       expect(tables.length, equals(1));
 
       // Insert app usage for existing session
@@ -150,7 +155,8 @@ void main() {
         ),
       ]);
 
-      final usages = await db.sessionAppUsagesDao.getUsagesForSession('sess-v2-existing');
+      final usages =
+          await db.sessionAppUsagesDao.getUsagesForSession('sess-v2-existing');
       expect(usages.length, equals(1));
       expect(usages.first.appName, equals('Xcode'));
     });
@@ -194,11 +200,13 @@ void main() {
       );
 
       await repo.saveSession(sessionRecord);
-      var usages = await db.sessionAppUsagesDao.getUsagesForSession('sess-cascade-test');
+      var usages =
+          await db.sessionAppUsagesDao.getUsagesForSession('sess-cascade-test');
       expect(usages.length, equals(1));
 
       await repo.deleteSession('sess-cascade-test');
-      usages = await db.sessionAppUsagesDao.getUsagesForSession('sess-cascade-test');
+      usages =
+          await db.sessionAppUsagesDao.getUsagesForSession('sess-cascade-test');
       expect(usages, isEmpty);
     });
   });

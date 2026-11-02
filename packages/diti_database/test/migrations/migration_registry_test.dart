@@ -50,14 +50,16 @@ void main() {
       expect(steps, isEmpty);
     });
 
-    test('throws UnsupportedError when fromVersion > toVersion (downgrade)', () {
+    test('throws UnsupportedError when fromVersion > toVersion (downgrade)',
+        () {
       expect(
         () => registry.resolveSteps(2, 1),
         throwsA(isA<UnsupportedError>()),
       );
     });
 
-    test('throws MigrationMissingException when an intermediate step is absent', () {
+    test('throws MigrationMissingException when an intermediate step is absent',
+        () {
       registry.register(const _MockStep(1, 2));
       registry.register(const _MockStep(3, 4));
 

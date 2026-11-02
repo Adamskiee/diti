@@ -20,7 +20,8 @@ void main() {
   group('ActiveTimerController', () {
     test('starts routine, updates display state, and pauses', () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -49,7 +50,8 @@ void main() {
       await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
 
       final controller = container.read(activeTimerControllerProvider.notifier);
-      expect(container.read(activeTimerControllerProvider).status, RunStatus.idle);
+      expect(
+          container.read(activeTimerControllerProvider).status, RunStatus.idle);
 
       await controller.startRoutine('r1');
       expect(
@@ -91,7 +93,8 @@ void main() {
 
     test('handles resume, skipPhase, finishPhase, and finishRun', () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -168,7 +171,8 @@ void main() {
 
     test('handles open-ended phases with elapsed count-up', () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -224,7 +228,8 @@ void main() {
 
     test('no-op commands when idle return failed command result', () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       final container = ProviderContainer(
@@ -287,9 +292,12 @@ void main() {
       expect(cancelledState.isActive, false);
     });
 
-    test('rest timer in awaitingAction with overtime maps to negative displayRemainingMs and formatted time with minus sign', () async {
+    test(
+        'rest timer in awaitingAction with overtime maps to negative displayRemainingMs and formatted time with minus sign',
+        () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -345,10 +353,12 @@ void main() {
       await db.close();
     });
 
-    test('periodic ticker updates display state automatically without manual tick',
+    test(
+        'periodic ticker updates display state automatically without manual tick',
         () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -400,10 +410,12 @@ void main() {
       await db.close();
     });
 
-    test('initializes with active run state if engine already has an active run',
+    test(
+        'initializes with active run state if engine already has an active run',
         () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -484,18 +496,23 @@ void main() {
         plannedDurationMs: 1500000,
         routineId: 'r_pomodoro',
       );
-      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+      await container
+          .read(planBlockRepositoryProvider)
+          .createPlanBlock(planBlock);
 
       final controller = container.read(activeTimerControllerProvider.notifier);
 
       // Start routine linked to block
-      final res = await controller.startRoutine('r_pomodoro', planBlockId: 'block_001');
+      final res =
+          await controller.startRoutine('r_pomodoro', planBlockId: 'block_001');
       expect(res.success, isTrue);
-      expect(container.read(activeTimerControllerProvider).planBlockId, 'block_001');
+      expect(container.read(activeTimerControllerProvider).planBlockId,
+          'block_001');
 
       // Block is inProgress
-      var updatedBlock =
-          await container.read(planBlockRepositoryProvider).getBlockById('block_001');
+      var updatedBlock = await container
+          .read(planBlockRepositoryProvider)
+          .getBlockById('block_001');
       expect(updatedBlock?.status, PlanBlockStatus.inProgress);
 
       // Advance clock 25 mins and finish phase
@@ -507,8 +524,9 @@ void main() {
           .confirmSave();
 
       // Block is completed with actual duration recorded
-      updatedBlock =
-          await container.read(planBlockRepositoryProvider).getBlockById('block_001');
+      updatedBlock = await container
+          .read(planBlockRepositoryProvider)
+          .getBlockById('block_001');
       expect(updatedBlock?.status, PlanBlockStatus.completed);
       expect(updatedBlock?.actualDurationMs, 1500000);
       expect(updatedBlock?.sessionId, isNotNull);
@@ -557,7 +575,9 @@ void main() {
         plannedDurationMs: 1500000,
         routineId: 'r_cancel',
       );
-      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+      await container
+          .read(planBlockRepositoryProvider)
+          .createPlanBlock(planBlock);
 
       final controller = container.read(activeTimerControllerProvider.notifier);
       await controller.startRoutine('r_cancel', planBlockId: 'block_002');
@@ -570,8 +590,9 @@ void main() {
           .read(sessionVerificationControllerProvider.notifier)
           .confirmSave();
 
-      final updatedBlock =
-          await container.read(planBlockRepositoryProvider).getBlockById('block_002');
+      final updatedBlock = await container
+          .read(planBlockRepositoryProvider)
+          .getBlockById('block_002');
       expect(updatedBlock?.status, PlanBlockStatus.completed);
       expect(updatedBlock?.actualDurationMs, 600000);
       expect(updatedBlock?.sessionId, isNotNull);
@@ -581,8 +602,7 @@ void main() {
       await db.close();
     });
 
-    test(
-        'startRoutine resolves routine by name when id does not exist',
+    test('startRoutine resolves routine by name when id does not exist',
         () async {
       final db = createInMemoryTestDatabase();
       final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
@@ -648,10 +668,13 @@ void main() {
         plannedDurationMs: 1800000, // 30 min
         routineId: 'Team Standup',
       );
-      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+      await container
+          .read(planBlockRepositoryProvider)
+          .createPlanBlock(planBlock);
 
       final controller = container.read(activeTimerControllerProvider.notifier);
-      final res = await controller.startRoutine('Team Standup', planBlockId: 'block_custom');
+      final res = await controller.startRoutine('Team Standup',
+          planBlockId: 'block_custom');
       expect(res.success, isTrue);
 
       final state = container.read(activeTimerControllerProvider);
@@ -666,8 +689,9 @@ void main() {
           .read(sessionVerificationControllerProvider.notifier)
           .confirmSave();
 
-      final updatedBlock =
-          await container.read(planBlockRepositoryProvider).getBlockById('block_custom');
+      final updatedBlock = await container
+          .read(planBlockRepositoryProvider)
+          .getBlockById('block_custom');
       expect(updatedBlock?.status, PlanBlockStatus.completed);
       // The phase really ran 35 minutes, so that is the session's time: the
       // configured 30 minutes are not what the user spent.
@@ -717,10 +741,13 @@ void main() {
         plannedDurationMs: 900000, // 15 min planned
         routineId: 'r_open_ended',
       );
-      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+      await container
+          .read(planBlockRepositoryProvider)
+          .createPlanBlock(planBlock);
 
       final controller = container.read(activeTimerControllerProvider.notifier);
-      await controller.startRoutine('r_open_ended', planBlockId: 'block_overrun');
+      await controller.startRoutine('r_open_ended',
+          planBlockId: 'block_overrun');
 
       // Advance clock 25 mins (1500000 ms - overrun of +10 min)
       fakeClock.advance(const Duration(minutes: 25));
@@ -730,19 +757,20 @@ void main() {
           .read(sessionVerificationControllerProvider.notifier)
           .confirmSave();
 
-      final updatedBlock =
-          await container.read(planBlockRepositoryProvider).getBlockById('block_overrun');
+      final updatedBlock = await container
+          .read(planBlockRepositoryProvider)
+          .getBlockById('block_overrun');
       expect(updatedBlock?.status, PlanBlockStatus.completed);
       expect(updatedBlock?.actualDurationMs, 1500000);
-      expect(updatedBlock!.actualDurationMs! > updatedBlock.plannedDurationMs, isTrue);
+      expect(updatedBlock!.actualDurationMs! > updatedBlock.plannedDurationMs,
+          isTrue);
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
       container.dispose();
       await db.close();
     });
 
-    test(
-        'rolls back plan block status to scheduled if engine start fails',
+    test('rolls back plan block status to scheduled if engine start fails',
         () async {
       final db = createInMemoryTestDatabase();
       final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
@@ -780,7 +808,9 @@ void main() {
         plannedDurationMs: 600000,
         routineId: 'r_first',
       );
-      await container.read(planBlockRepositoryProvider).createPlanBlock(planBlock);
+      await container
+          .read(planBlockRepositoryProvider)
+          .createPlanBlock(planBlock);
 
       final controller = container.read(activeTimerControllerProvider.notifier);
 
@@ -807,7 +837,8 @@ void main() {
         'transitions to completed triggers SessionVerificationController.prepareVerification',
         () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -838,23 +869,28 @@ void main() {
       await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
 
       // Start routine and advance to completion
-      await container.read(activeTimerControllerProvider.notifier).startRoutine('r1');
+      await container
+          .read(activeTimerControllerProvider.notifier)
+          .startRoutine('r1');
       // The run has to have run for a while: a run without measurable time
       // produces no session at all.
       fakeClock.advance(const Duration(minutes: 5));
       final engine = container.read(timerEngineProvider);
       await engine.finishRun(engine.activeRunId!);
 
-      final verificationState = container.read(sessionVerificationControllerProvider);
+      final verificationState =
+          container.read(sessionVerificationControllerProvider);
       expect(verificationState.isVisible, isTrue);
-      expect(verificationState.candidateSession?.outcome, equals(SessionOutcome.completed));
+      expect(verificationState.candidateSession?.outcome,
+          equals(SessionOutcome.completed));
     });
 
     test(
         'stopping or finishing does not re-delegate verification for an already handled runId',
         () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
 
       const testRoutine = Routine(
@@ -889,22 +925,24 @@ void main() {
       fakeClock.advance(const Duration(seconds: 15));
       await controller.stop();
 
-      expect(container.read(sessionVerificationControllerProvider).isVisible, isTrue);
+      expect(container.read(sessionVerificationControllerProvider).isVisible,
+          isTrue);
 
       // Save the draft session
       final saved = await container
           .read(sessionVerificationControllerProvider.notifier)
           .confirmSave();
       expect(saved, isTrue);
-      expect(container.read(sessionVerificationControllerProvider).isVisible, isFalse);
+      expect(container.read(sessionVerificationControllerProvider).isVisible,
+          isFalse);
 
       // Calling stop again for the same run does not re-delegate or re-open verification
       await controller.stop();
-      expect(container.read(sessionVerificationControllerProvider).isVisible, isFalse);
+      expect(container.read(sessionVerificationControllerProvider).isVisible,
+          isFalse);
     });
 
-    test(
-        'a custom activity routine seeds its kind from the activity name',
+    test('a custom activity routine seeds its kind from the activity name',
         () async {
       final db = createInMemoryTestDatabase();
       final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 9, 0));
@@ -930,8 +968,8 @@ void main() {
       expect(res.success, isTrue);
 
       final repo = container.read(routineRepositoryProvider);
-      final custom =
-          (await repo.getAllRoutines()).firstWhere((r) => r.name == 'Coffee Break');
+      final custom = (await repo.getAllRoutines())
+          .firstWhere((r) => r.name == 'Coffee Break');
       expect(custom.phases.single.kind, PhaseKind.rest);
     });
 
@@ -1018,7 +1056,8 @@ void main() {
       final controller = container.read(activeTimerControllerProvider.notifier);
       await controller.stop();
 
-      final verification = container.read(sessionVerificationControllerProvider);
+      final verification =
+          container.read(sessionVerificationControllerProvider);
       final session = verification.candidateSession!;
 
       // The phase the run ended on is a break, so the time it took is rest
@@ -1087,7 +1126,8 @@ void main() {
 
       // The hand-built state carries the phase's time, so the session it
       // produces has a total that is the sum of its phases.
-      final verification = container.read(sessionVerificationControllerProvider);
+      final verification =
+          container.read(sessionVerificationControllerProvider);
       expect(verification.isVisible, isTrue);
       final session = verification.candidateSession!;
       expect(session.totalDurationMs, 600000);
@@ -1107,9 +1147,11 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
     });
 
-    test('wires SessionAppTracker lifecycle on start, pause, resume, and stop', () async {
+    test('wires SessionAppTracker lifecycle on start, pause, resume, and stop',
+        () async {
       final db = createInMemoryTestDatabase();
-      final fakeClock = FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
       final fakeClient = FakeNotificationClient();
       final mockTracker = MockSessionAppTracker();
 
@@ -1160,7 +1202,8 @@ void main() {
 
       // 1. Start routine
       await controller.startRoutine('r1');
-      verify(() => mockTracker.startSession(any(), now: any(named: 'now'))).called(1);
+      verify(() => mockTracker.startSession(any(), now: any(named: 'now')))
+          .called(1);
 
       // 2. Pause routine
       await controller.pause();
@@ -1178,7 +1221,8 @@ void main() {
       verify(() => mockTracker.stopSession(now: any(named: 'now'))).called(1);
 
       // Verify that SessionVerificationController received the app usages
-      final verificationState = container.read(sessionVerificationControllerProvider);
+      final verificationState =
+          container.read(sessionVerificationControllerProvider);
       expect(verificationState.isVisible, isTrue);
       expect(verificationState.appUsages, equals(sampleUsages));
     });
@@ -1249,4 +1293,3 @@ class _ForgetfulEngine implements TimerEngine {
   Future<TimerCommandResult> finishRun(String runId) async =>
       const TimerCommandResult(success: false, stateVersion: 0);
 }
-

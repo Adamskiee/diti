@@ -64,7 +64,10 @@ void main() {
       phaseStartedMonotonicMs: 0,
       stateVersion: 1,
       lastEventId: 'e1',
-      phaseLedger: [entry(durationMs: 60000), entry(id: 'brk', durationMs: 30000)],
+      phaseLedger: [
+        entry(durationMs: 60000),
+        entry(id: 'brk', durationMs: 30000)
+      ],
     );
     expect(run.ledgerTotalMs, 90000);
   });
@@ -136,7 +139,8 @@ void main() {
     expect(run.calculateState(currentMonotonicMs: 0).runStartedAtUtc, start);
   });
 
-  test('copyWith keeps the ledger and the timestamps when they are omitted', () {
+  test('copyWith keeps the ledger and the timestamps when they are omitted',
+      () {
     final run = TimerRun(
       runId: 'r1',
       routineSnapshot: _routine(),
@@ -199,8 +203,15 @@ void main() {
 
     expect(one, equals(same));
     expect(one.hashCode, equals(same.hashCode));
-    expect(one, isNot(equals(state(completedPhases: const [], totalActiveElapsedMs: 60000))));
-    expect(one, isNot(equals(state(completedPhases: [entry(durationMs: 60000)], totalActiveElapsedMs: 70000))));
+    expect(
+        one,
+        isNot(equals(
+            state(completedPhases: const [], totalActiveElapsedMs: 60000))));
+    expect(
+        one,
+        isNot(equals(state(
+            completedPhases: [entry(durationMs: 60000)],
+            totalActiveElapsedMs: 70000))));
   });
 
   group('The engine appends one ledger entry per phase that ends', () {

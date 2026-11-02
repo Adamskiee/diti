@@ -35,7 +35,8 @@ void main() {
     ],
   );
 
-  testWidgets('HistoryFeedView shows empty state when no sessions found', (tester) async {
+  testWidgets('HistoryFeedView shows empty state when no sessions found',
+      (tester) async {
     when(() => mockSessionRepo.getSessionsInRange(any(), any()))
         .thenAnswer((_) async => []);
 
@@ -62,7 +63,8 @@ void main() {
     expect(find.text('Cancelled'), findsOneWidget);
   });
 
-  testWidgets('HistoryFeedView displays sessions and allows filtering', (tester) async {
+  testWidgets('HistoryFeedView displays sessions and allows filtering',
+      (tester) async {
     final s1 = SessionRecord(
       sessionId: 's1',
       routineName: 'Deep Focus',

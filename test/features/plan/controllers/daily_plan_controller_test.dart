@@ -27,8 +27,7 @@ void main() {
       await db.close();
     });
 
-    test(
-        'loads blocks, calculates conflicts, and performs CRUD operations',
+    test('loads blocks, calculates conflicts, and performs CRUD operations',
         () async {
       final DailyPlanController controller =
           container.read(dailyPlanControllerProvider.notifier);

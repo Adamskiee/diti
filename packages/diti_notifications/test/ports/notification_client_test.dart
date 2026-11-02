@@ -13,7 +13,8 @@ void main() {
   });
 
   group('NotificationClient contract', () {
-    test('MockNotificationClient implements NotificationClient interface', () async {
+    test('MockNotificationClient implements NotificationClient interface',
+        () async {
       final NotificationClient mock = MockNotificationClient();
       when(() => mock.cancel(any())).thenAnswer((_) async {});
 

@@ -4,7 +4,9 @@ import 'package:diti/src/features/history/domain/analytics_models.dart';
 import 'package:diti/src/features/history/presentation/widgets/focus_bar_chart_widget.dart';
 
 void main() {
-  testWidgets('FocusBarChartWidget renders day labels and handles empty buckets', (tester) async {
+  testWidgets(
+      'FocusBarChartWidget renders day labels and handles empty buckets',
+      (tester) async {
     final buckets = [
       DailyBucket(
         date: DateTime(2026, 10, 12),
@@ -37,7 +39,8 @@ void main() {
     expect(find.byType(CustomPaint), findsWidgets);
   });
 
-  testWidgets('FocusBarChartWidget selects bucket on tap and triggers callback', (tester) async {
+  testWidgets('FocusBarChartWidget selects bucket on tap and triggers callback',
+      (tester) async {
     DailyBucket? selected;
     final buckets = [
       DailyBucket(
@@ -83,7 +86,8 @@ void main() {
     expect(find.textContaining('Mon: 01:00:00'), findsNothing);
   });
 
-  testWidgets('renders a stacked bar with a focus and rest legend', (tester) async {
+  testWidgets('renders a stacked bar with a focus and rest legend',
+      (tester) async {
     final buckets = [
       DailyBucket(
         date: DateTime(2026, 10, 12),
@@ -119,7 +123,8 @@ void main() {
     expect(focusRect.height, greaterThan(restRect.height));
   });
 
-  testWidgets('a bucket with no rest time renders a single segment', (tester) async {
+  testWidgets('a bucket with no rest time renders a single segment',
+      (tester) async {
     final buckets = [
       DailyBucket(
         date: DateTime(2026, 10, 12),
@@ -179,7 +184,8 @@ void main() {
     expect(readoutStyle?.color, titleStyle?.color);
   });
 
-  testWidgets('the readout names every number and always shows the total', (tester) async {
+  testWidgets('the readout names every number and always shows the total',
+      (tester) async {
     final buckets = [
       DailyBucket(
         date: DateTime(2026, 10, 12),
@@ -236,7 +242,8 @@ void main() {
     expect(find.text('Mon: 30:00 total'), findsOneWidget);
   });
 
-  testWidgets('bar heights are normalised against the day total, not its focus', (tester) async {
+  testWidgets('bar heights are normalised against the day total, not its focus',
+      (tester) async {
     final buckets = [
       DailyBucket(
         date: DateTime(2026, 10, 12),
@@ -315,7 +322,8 @@ void main() {
     );
   });
 
-  testWidgets('the legend omits the rest entry when no day has rest', (tester) async {
+  testWidgets('the legend omits the rest entry when no day has rest',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

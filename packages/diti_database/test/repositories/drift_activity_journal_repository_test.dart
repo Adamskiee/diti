@@ -15,7 +15,8 @@ void main() {
     await db.close();
   });
 
-  test('records samples, aggregates usage by range, and prunes old samples', () async {
+  test('records samples, aggregates usage by range, and prunes old samples',
+      () async {
     final t1 = DateTime.utc(2026, 11, 1, 10, 0);
     final t2 = DateTime.utc(2026, 11, 1, 10, 2);
     final tOld = DateTime.utc(2026, 10, 31, 8, 0);

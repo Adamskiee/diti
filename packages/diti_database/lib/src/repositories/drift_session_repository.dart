@@ -38,7 +38,8 @@ class DriftSessionRepository implements SessionRepository {
       endedAtUtc: Value(session.endedAtUtc),
       totalDurationMs: Value(session.totalDurationMs),
       outcome: Value(session.outcome.name),
-      routineSnapshotJson: Value(SnapshotSerializer.routineToJson(session.routineSnapshot)),
+      routineSnapshotJson:
+          Value(SnapshotSerializer.routineToJson(session.routineSnapshot)),
     );
 
     final eventCompanions = session.events.map((e) {
@@ -85,7 +86,8 @@ class DriftSessionRepository implements SessionRepository {
   }
 
   @override
-  Future<SessionRecord?> getSessionById(String sessionId) => getSession(sessionId);
+  Future<SessionRecord?> getSessionById(String sessionId) =>
+      getSession(sessionId);
 
   Future<SessionRecord> _mapSession(SessionData row) async {
     final eventRows = await dao.getEventsForSession(row.sessionId);
@@ -120,7 +122,8 @@ class DriftSessionRepository implements SessionRepository {
       orElse: () => SessionOutcome.completed,
     );
 
-    final routineSnapshot = SnapshotSerializer.routineFromJson(row.routineSnapshotJson);
+    final routineSnapshot =
+        SnapshotSerializer.routineFromJson(row.routineSnapshotJson);
 
     return SessionRecord(
       sessionId: row.sessionId,
@@ -138,7 +141,8 @@ class DriftSessionRepository implements SessionRepository {
   }
 
   @override
-  Future<List<SessionRecord>> getSessionsInRange(DateTime startUtc, DateTime endUtc) async {
+  Future<List<SessionRecord>> getSessionsInRange(
+      DateTime startUtc, DateTime endUtc) async {
     final start = startUtc.isUtc ? startUtc : startUtc.toUtc();
     final end = endUtc.isUtc ? endUtc : endUtc.toUtc();
     final rows = await dao.getSessionsInRange(startUtc: start, endUtc: end);
@@ -150,7 +154,8 @@ class DriftSessionRepository implements SessionRepository {
   }
 
   @override
-  Future<List<SessionRecord>> getSessionsForPlanBlock(String planBlockId) async {
+  Future<List<SessionRecord>> getSessionsForPlanBlock(
+      String planBlockId) async {
     final rows = await dao.getSessionsForPlanBlock(planBlockId);
     final results = <SessionRecord>[];
     for (final r in rows) {

@@ -19,6 +19,7 @@ jobs:
   verify:
     name: Pre-Release Quality Gate
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -27,16 +28,10 @@ jobs:
         uses: ./.github/actions/setup-flutter
 
       - name: Analyze
-        run: flutter analyze --fatal-infos
+        run: dart run melos run analyze
 
       - name: Test
-        run: |
-          for pkg in packages/*; do
-            if [ -d "$pkg/test" ]; then
-              (cd "$pkg" && flutter test)
-            fi
-          done
-          flutter test test/
+        run: dart run melos run test:fast
 
   verify-e2e-android:
     name: Pre-Release E2E Tests (Android)

@@ -6,11 +6,12 @@ import '../ports/process_runner.dart';
 class LinuxX11AppTracker implements AppTrackerPort {
   final ProcessRunner _runner;
 
-  LinuxX11AppTracker({ProcessRunner processRunner = const SystemProcessRunner()})
+  LinuxX11AppTracker(
+      {ProcessRunner processRunner = const SystemProcessRunner()})
       : _runner = processRunner;
 
-  static final RegExp _windowIdRegex =
-      RegExp(r'_NET_ACTIVE_WINDOW\([^)]*\)\s*[:=]\s*(?:window id #\s*)?(0x[0-9a-fA-F]+|\d+)');
+  static final RegExp _windowIdRegex = RegExp(
+      r'_NET_ACTIVE_WINDOW\([^)]*\)\s*[:=]\s*(?:window id #\s*)?(0x[0-9a-fA-F]+|\d+)');
   static final RegExp _wmClassLineRegex =
       RegExp(r'WM_CLASS\([^)]*\)\s*=\s*(.*)');
   static final RegExp _quotedStringRegex = RegExp(r'"([^"]*)"');
@@ -162,7 +163,8 @@ class LinuxX11AppTracker implements AppTrackerPort {
       }
 
       final detailsOut = detailsResult.stdout.toString();
-      final classLine = _wmClassLineRegex.firstMatch(detailsOut)?.group(1) ?? '';
+      final classLine =
+          _wmClassLineRegex.firstMatch(detailsOut)?.group(1) ?? '';
       final classMatches = _quotedStringRegex
           .allMatches(classLine)
           .map((m) => m.group(1))

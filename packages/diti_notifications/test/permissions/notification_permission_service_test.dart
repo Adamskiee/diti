@@ -22,7 +22,9 @@ class FakePermissionService implements NotificationPermissionService {
 
 void main() {
   group('NotificationPermissionStatus', () {
-    test('canDeliverReliably is true only when both notifications and exact alarms allowed', () {
+    test(
+        'canDeliverReliably is true only when both notifications and exact alarms allowed',
+        () {
       const full = NotificationPermissionStatus(
         notificationsEnabled: true,
         exactAlarmsAllowed: true,
@@ -93,7 +95,9 @@ void main() {
   });
 
   group('FlutterNotificationPermissionService', () {
-    test('falls back gracefully when running outside mobile platform implementations', () async {
+    test(
+        'falls back gracefully when running outside mobile platform implementations',
+        () async {
       final service = FlutterNotificationPermissionService();
 
       final status = await service.checkStatus();

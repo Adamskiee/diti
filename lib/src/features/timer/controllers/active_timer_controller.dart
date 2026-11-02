@@ -214,7 +214,8 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final nowUtc = ref.read(wallClockProvider).utcNow;
       final appUsages = await tracker.stopSession(now: nowUtc);
       verificationController.setAppUsages(appUsages);
-    }().catchError((_) {});
+    }()
+        .catchError((_) {});
 
     _verificationFuture = future;
     return future;
@@ -345,7 +346,8 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        if (s.status == RunStatus.completed || s.status == RunStatus.cancelled) {
+        if (s.status == RunStatus.completed ||
+            s.status == RunStatus.cancelled) {
           await _delegateVerification(s);
         }
       }
@@ -363,7 +365,8 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       final s = ref.read(timerEngineProvider).getState(runId);
       if (s != null) {
         _syncState(s);
-        if (s.status == RunStatus.completed || s.status == RunStatus.cancelled) {
+        if (s.status == RunStatus.completed ||
+            s.status == RunStatus.cancelled) {
           await _delegateVerification(s);
         }
       }

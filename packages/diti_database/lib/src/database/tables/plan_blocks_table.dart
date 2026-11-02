@@ -9,7 +9,8 @@ class PlanBlocks extends Table {
   TextColumn get routineId => text().nullable()();
   IntColumn get actualDurationMs => integer().nullable()();
   TextColumn get sessionId => text().nullable()();
-  TextColumn get status => text()(); // 'scheduled' | 'inProgress' | 'completed' | 'cancelled'
+  TextColumn get status =>
+      text()(); // 'scheduled' | 'inProgress' | 'completed' | 'cancelled'
 
   @override
   Set<Column> get primaryKey => {id};

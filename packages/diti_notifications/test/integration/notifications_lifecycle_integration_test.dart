@@ -17,7 +17,9 @@ void main() {
     registerFallbackValue(UILocalNotificationDateInterpretation.absoluteTime);
   });
 
-  group('Phase 3 Integration: TimerEngine + Drift SQLite + Notifications + Lifecycle', () {
+  group(
+      'Phase 3 Integration: TimerEngine + Drift SQLite + Notifications + Lifecycle',
+      () {
     late DitiDatabase database;
     late DriftRoutineRepository routineRepo;
     late DriftRunPersistencePort persistencePort;
@@ -70,16 +72,29 @@ void main() {
       await database.close();
     });
 
-    test('reconciles elapsed auto-phases after backgrounding and resume', () async {
+    test('reconciles elapsed auto-phases after backgrounding and resume',
+        () async {
       // 1. Save multi-phase routine: 15m Focus (auto) -> 5m Break (auto) -> 10m Review (manual)
       const routine = Routine(
         id: 'pomodoro-e2e',
         name: 'Pomodoro Workflow',
         repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
         phases: [
-          RoutinePhase(id: 'p1', name: 'Focus', durationMs: 900000, transition: TransitionPolicy.auto),
-          RoutinePhase(id: 'p2', name: 'Break', durationMs: 300000, transition: TransitionPolicy.auto),
-          RoutinePhase(id: 'p3', name: 'Review', durationMs: 600000, transition: TransitionPolicy.manual),
+          RoutinePhase(
+              id: 'p1',
+              name: 'Focus',
+              durationMs: 900000,
+              transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p2',
+              name: 'Break',
+              durationMs: 300000,
+              transition: TransitionPolicy.auto),
+          RoutinePhase(
+              id: 'p3',
+              name: 'Review',
+              durationMs: 600000,
+              transition: TransitionPolicy.manual),
         ],
       );
       await routineRepo.saveRoutine(routine);
