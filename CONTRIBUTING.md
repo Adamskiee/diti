@@ -14,7 +14,7 @@ Everyone is welcome to contribute—whether you are an experienced Flutter devel
 - [How Can I Contribute?](#how-can-i-contribute)
   - [Reporting Bugs](#reporting-bugs)
   - [Suggesting Enhancements](#suggesting-enhancements)
-  - [Visuals & Screenshots](#visuals--screenshots)
+  - [Visuals & Media](#visuals--media)
   - [Improving Documentation](#improving-documentation)
   - [Code Contributions](#code-contributions)
 - [Project Architecture](#project-architecture)
@@ -52,11 +52,11 @@ Have an idea for a new routine type, timer transition, or UI enhancement?
 - Explain the motivation: what problem does this solve, and how will it benefit users?
 - Keep in mind Diti's core principles: **local-first privacy**, **resilient state**, and **simplicity**.
 
-### Visuals & Screenshots
+### Visuals & Media
 
-Visual appeal helps persuade users to download and try Diti! If you can capture high-resolution screenshots or create UI demo GIFs on Android or Linux:
-- Add them to [`assets/screenshots/`](assets/screenshots/).
-- Submit a PR linking them to the main [README.md](README.md).
+Visual appeal helps persuade users to download and try Diti! If you create UI mockups, graphic assets, or new icons for the application:
+- Add them to [`assets/`](assets/).
+- Submit a PR linking them to the appropriate views or documentation.
 
 ### Improving Documentation
 
@@ -79,7 +79,7 @@ Diti is organized as a modular Flutter monorepo with distinct packages under [`p
 
 ```
 diti/
-├── assets/                    # Icons, logos, and app screenshots
+├── assets/                    # Icons, logos, and app media
 ├── lib/                       # Root Flutter application (UI, views, router, Riverpod state)
 ├── packages/
 │   ├── timer_engine/          # Pure Dart timer state machine, ticks, & phase transitions
