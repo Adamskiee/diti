@@ -1,19 +1,40 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/duration_formatter.dart';
 
-/// A compact summary card displaying session metrics (Total, Focus, and Rest)
+/// A collapsible summary card displaying session metrics (Total, Focus, and Rest)
 /// during an active routine timer run.
-class SessionSummaryCard extends StatelessWidget {
+class SessionSummaryCard extends StatefulWidget {
   final int totalSessionElapsedMs;
   final int totalFocusElapsedMs;
   final int totalRestElapsedMs;
+  final bool initiallyExpanded;
 
   const SessionSummaryCard({
     super.key,
     required this.totalSessionElapsedMs,
     required this.totalFocusElapsedMs,
     required this.totalRestElapsedMs,
+    this.initiallyExpanded = false,
   });
+
+  @override
+  State<SessionSummaryCard> createState() => _SessionSummaryCardState();
+}
+
+class _SessionSummaryCardState extends State<SessionSummaryCard> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.initiallyExpanded;
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,61 +48,95 @@ class SessionSummaryCard extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.query_stats,
-                    size: 16,
-                    color: theme.colorScheme.onSurfaceVariant,
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: _toggleExpanded,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.query_stats,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Session Summary',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        key: const Key('session_summary_toggle_button'),
+                        icon: Icon(
+                          _isExpanded ? Icons.expand_less : Icons.expand_more,
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        tooltip: _isExpanded
+                            ? 'Collapse session summary'
+                            : 'Expand session summary',
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: _toggleExpanded,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Session Summary',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricItem(
-                      context,
-                      icon: Icons.timer_outlined,
-                      label: 'Total',
-                      value: DurationFormatter.formatMs(totalSessionElapsedMs),
-                      color: theme.colorScheme.secondary,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildMetricItem(
-                      context,
-                      icon: Icons.bolt_outlined,
-                      label: 'Focus',
-                      value: DurationFormatter.formatMs(totalFocusElapsedMs),
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildMetricItem(
-                      context,
-                      icon: Icons.self_improvement_outlined,
-                      label: 'Rest',
-                      value: DurationFormatter.formatMs(totalRestElapsedMs),
-                      color: theme.colorScheme.tertiary,
-                    ),
-                  ),
-                ],
+              AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: _isExpanded
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildMetricItem(
+                                context,
+                                icon: Icons.timer_outlined,
+                                label: 'Total',
+                                value: DurationFormatter.formatMs(
+                                    widget.totalSessionElapsedMs),
+                                color: theme.colorScheme.secondary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildMetricItem(
+                                context,
+                                icon: Icons.bolt_outlined,
+                                label: 'Focus',
+                                value: DurationFormatter.formatMs(
+                                    widget.totalFocusElapsedMs),
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildMetricItem(
+                                context,
+                                icon: Icons.self_improvement_outlined,
+                                label: 'Rest',
+                                value: DurationFormatter.formatMs(
+                                    widget.totalRestElapsedMs),
+                                color: theme.colorScheme.tertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
             ],
           ),

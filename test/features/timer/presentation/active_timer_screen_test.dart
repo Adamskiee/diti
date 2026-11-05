@@ -568,6 +568,17 @@ void main() {
       final summaryCard = find.byKey(const Key('session_summary_card'));
       expect(summaryCard, findsOneWidget);
       expect(find.text('Session Summary'), findsOneWidget);
+      expect(find.byIcon(Icons.expand_more), findsOneWidget);
+      expect(find.text('Total'), findsNothing);
+
+      // Scroll to toggle button and tap to expand session summary
+      final toggleButton =
+          find.byKey(const Key('session_summary_toggle_button'));
+      await tester.ensureVisible(toggleButton);
+      await tester.tap(toggleButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.expand_less), findsOneWidget);
       expect(find.text('Total'), findsOneWidget);
       expect(find.text('Focus'),
           findsWidgets); // header chip/phase + summary label
