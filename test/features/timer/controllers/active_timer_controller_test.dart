@@ -91,6 +91,91 @@ void main() {
       await db.close();
     });
 
+    test(
+        'updates session duration splits (total, focus, rest) on TimerDisplayState throughout routine lifecycle',
+        () async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_split',
+        name: 'Pomodoro Split',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            kind: PhaseKind.focus,
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+          RoutinePhase(
+            id: 'p2',
+            name: 'Rest',
+            kind: PhaseKind.rest,
+            durationMs: 300000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      final controller = container.read(activeTimerControllerProvider.notifier);
+
+      // Start routine (at 0ms)
+      await controller.startRoutine('r_split');
+      var state = container.read(activeTimerControllerProvider);
+      expect(state.totalSessionElapsedMs, equals(0));
+      expect(state.totalFocusElapsedMs, equals(0));
+      expect(state.totalRestElapsedMs, equals(0));
+
+      // Advance 60s in Focus
+      fakeClock.advance(const Duration(seconds: 60));
+      controller.tick();
+      state = container.read(activeTimerControllerProvider);
+      expect(state.totalSessionElapsedMs, equals(60000));
+      expect(state.totalFocusElapsedMs, equals(60000));
+      expect(state.totalRestElapsedMs, equals(0));
+
+      // Transition to Rest phase
+      await controller.finishPhase();
+      state = container.read(activeTimerControllerProvider);
+      expect(state.phaseName, equals('Rest'));
+      expect(state.totalSessionElapsedMs, equals(60000));
+      expect(state.totalFocusElapsedMs, equals(60000));
+      expect(state.totalRestElapsedMs, equals(0));
+
+      // Advance 30s in Rest
+      fakeClock.advance(const Duration(seconds: 30));
+      controller.tick();
+      state = container.read(activeTimerControllerProvider);
+      expect(state.totalSessionElapsedMs, equals(90000));
+      expect(state.totalFocusElapsedMs, equals(60000));
+      expect(state.totalRestElapsedMs, equals(30000));
+
+      // Finish run
+      await controller.finishRun();
+      state = container.read(activeTimerControllerProvider);
+      expect(state.status, equals(RunStatus.completed));
+      expect(state.totalSessionElapsedMs, equals(90000));
+      expect(state.totalFocusElapsedMs, equals(60000));
+      expect(state.totalRestElapsedMs, equals(30000));
+
+      container.dispose();
+      await db.close();
+    });
+
     test('handles resume, skipPhase, finishPhase, and finishRun', () async {
       final db = createInMemoryTestDatabase();
       final fakeClock =
@@ -290,6 +375,39 @@ void main() {
 
       const cancelledState = TimerDisplayState(status: RunStatus.cancelled);
       expect(cancelledState.isActive, false);
+
+      expect(idleState.totalSessionElapsedMs, equals(0));
+      expect(idleState.totalFocusElapsedMs, equals(0));
+      expect(idleState.totalRestElapsedMs, equals(0));
+
+      final updatedState = idleState.copyWith(
+        totalSessionElapsedMs: 120000,
+        totalFocusElapsedMs: 100000,
+        totalRestElapsedMs: 20000,
+      );
+      expect(updatedState.totalSessionElapsedMs, equals(120000));
+      expect(updatedState.totalFocusElapsedMs, equals(100000));
+      expect(updatedState.totalRestElapsedMs, equals(20000));
+      expect(
+        updatedState,
+        equals(
+          const TimerDisplayState(
+            totalSessionElapsedMs: 120000,
+            totalFocusElapsedMs: 100000,
+            totalRestElapsedMs: 20000,
+          ),
+        ),
+      );
+      expect(
+        updatedState.hashCode,
+        equals(
+          const TimerDisplayState(
+            totalSessionElapsedMs: 120000,
+            totalFocusElapsedMs: 100000,
+            totalRestElapsedMs: 20000,
+          ).hashCode,
+        ),
+      );
     });
 
     test(

@@ -123,6 +123,25 @@ void main() {
 
       expect(find.byType(ActiveTimerScreen), findsOneWidget);
 
+      // 6. Minimize / close ActiveTimerScreen
+      final minimizeButton = find.byTooltip('Minimize');
+      expect(minimizeButton, findsOneWidget);
+      await tester.tap(minimizeButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ActiveTimerScreen), findsNothing);
+      expect(find.byType(ActiveTimerMiniPlayer), findsOneWidget);
+
+      // 7. Toggle on mini-player does not push ActiveTimerScreen
+      final toggleAfterMinimize =
+          find.byKey(const Key('mini_player_toggle_button'));
+      await tester.tap(toggleAfterMinimize);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ActiveTimerScreen), findsNothing);
+      expect(container.read(activeTimerControllerProvider).status,
+          RunStatus.paused);
+
       container.dispose();
       await db.close();
     });

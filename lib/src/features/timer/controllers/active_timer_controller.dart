@@ -148,6 +148,9 @@ class ActiveTimerController extends Notifier<TimerDisplayState> {
       cycleDescription:
           'Repetition ${s.currentRepetition} · Phase ${s.currentPhaseIndex + 1}',
       nextPhasePreview: nextPhase,
+      totalSessionElapsedMs: s.totalActiveElapsedMs,
+      totalFocusElapsedMs: s.totalFocusElapsedMs,
+      totalRestElapsedMs: s.totalRestElapsedMs,
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:timer_engine/timer_engine.dart';
 import '../../../core/theme/app_colors.dart';
 import '../controllers/active_timer_controller.dart';
 import 'widgets/circular_timer_dial.dart';
+import 'widgets/session_summary_card.dart';
 
 class ActiveTimerScreen extends ConsumerWidget {
   const ActiveTimerScreen({super.key});
@@ -29,9 +30,15 @@ class ActiveTimerScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          key: const Key('timer_minimize_button'),
           icon: const Icon(Icons.keyboard_arrow_down),
           tooltip: 'Minimize',
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            final nav = Navigator.of(context);
+            if (nav.canPop()) {
+              nav.pop();
+            }
+          },
         ),
         title: Text(state.phaseName.isEmpty ? 'Timer' : state.phaseName),
         actions: [
@@ -128,7 +135,12 @@ class ActiveTimerScreen extends ConsumerWidget {
               if (isCompleted) ...[
                 FilledButton.icon(
                   key: const Key('timer_done_button'),
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  onPressed: () {
+                    final nav = Navigator.of(context);
+                    if (nav.canPop()) {
+                      nav.pop();
+                    }
+                  },
                   icon: const Icon(Icons.check),
                   label: const Text('Done'),
                   style: FilledButton.styleFrom(
@@ -178,6 +190,15 @@ class ActiveTimerScreen extends ConsumerWidget {
                   ],
                 ),
               ],
+              const SizedBox(height: 32),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SessionSummaryCard(
+                  totalSessionElapsedMs: state.totalSessionElapsedMs,
+                  totalFocusElapsedMs: state.totalFocusElapsedMs,
+                  totalRestElapsedMs: state.totalRestElapsedMs,
+                ),
+              ),
             ],
           ),
         ),

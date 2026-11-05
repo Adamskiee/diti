@@ -95,7 +95,13 @@ void main() {
 
       // 3. Verify ActiveTimerScreen opened at 25:00
       expect(find.text('25:00'), findsOneWidget);
-      expect(find.text('Focus'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Focus'),
+        ),
+        findsOneWidget,
+      );
 
       // 4. Advance fake clock by 5 minutes and tick
       fakeClock.advance(const Duration(minutes: 5));
