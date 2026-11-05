@@ -30,9 +30,15 @@ class ActiveTimerScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          key: const Key('timer_minimize_button'),
           icon: const Icon(Icons.keyboard_arrow_down),
           tooltip: 'Minimize',
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            final nav = Navigator.of(context);
+            if (nav.canPop()) {
+              nav.pop();
+            }
+          },
         ),
         title: Text(state.phaseName.isEmpty ? 'Timer' : state.phaseName),
         actions: [
@@ -129,7 +135,12 @@ class ActiveTimerScreen extends ConsumerWidget {
               if (isCompleted) ...[
                 FilledButton.icon(
                   key: const Key('timer_done_button'),
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  onPressed: () {
+                    final nav = Navigator.of(context);
+                    if (nav.canPop()) {
+                      nav.pop();
+                    }
+                  },
                   icon: const Icon(Icons.check),
                   label: const Text('Done'),
                   style: FilledButton.styleFrom(

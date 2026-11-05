@@ -590,5 +590,79 @@ void main() {
       container.dispose();
       await db.close();
     });
+
+    testWidgets('Minimize button closes ActiveTimerScreen when pushed',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_close',
+        name: 'Close Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      await container
+          .read(activeTimerControllerProvider.notifier)
+          .startRoutine('r_close');
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ActiveTimerScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ActiveTimerScreen), findsOneWidget);
+
+      // Tap Minimize button
+      final minimizeButton = find.byKey(const Key('timer_minimize_button'));
+      expect(minimizeButton, findsOneWidget);
+      await tester.tap(minimizeButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ActiveTimerScreen), findsNothing);
+
+      container.dispose();
+      await db.close();
+    });
   });
 }
