@@ -13,6 +13,9 @@ class TimerDisplayState {
   final String formattedTime;
   final String cycleDescription;
   final String? nextPhasePreview;
+  final int totalSessionElapsedMs;
+  final int totalFocusElapsedMs;
+  final int totalRestElapsedMs;
 
   const TimerDisplayState({
     this.runId,
@@ -27,6 +30,9 @@ class TimerDisplayState {
     this.formattedTime = '00:00',
     this.cycleDescription = '',
     this.nextPhasePreview,
+    this.totalSessionElapsedMs = 0,
+    this.totalFocusElapsedMs = 0,
+    this.totalRestElapsedMs = 0,
   });
 
   bool get isActive =>
@@ -49,6 +55,9 @@ class TimerDisplayState {
     String? formattedTime,
     String? cycleDescription,
     String? Function()? nextPhasePreview,
+    int? totalSessionElapsedMs,
+    int? totalFocusElapsedMs,
+    int? totalRestElapsedMs,
   }) {
     return TimerDisplayState(
       runId: runId ?? this.runId,
@@ -64,6 +73,10 @@ class TimerDisplayState {
       cycleDescription: cycleDescription ?? this.cycleDescription,
       nextPhasePreview:
           nextPhasePreview != null ? nextPhasePreview() : this.nextPhasePreview,
+      totalSessionElapsedMs:
+          totalSessionElapsedMs ?? this.totalSessionElapsedMs,
+      totalFocusElapsedMs: totalFocusElapsedMs ?? this.totalFocusElapsedMs,
+      totalRestElapsedMs: totalRestElapsedMs ?? this.totalRestElapsedMs,
     );
   }
 
@@ -83,7 +96,10 @@ class TimerDisplayState {
           progress == other.progress &&
           formattedTime == other.formattedTime &&
           cycleDescription == other.cycleDescription &&
-          nextPhasePreview == other.nextPhasePreview;
+          nextPhasePreview == other.nextPhasePreview &&
+          totalSessionElapsedMs == other.totalSessionElapsedMs &&
+          totalFocusElapsedMs == other.totalFocusElapsedMs &&
+          totalRestElapsedMs == other.totalRestElapsedMs;
 
   @override
   int get hashCode => Object.hash(
@@ -99,6 +115,9 @@ class TimerDisplayState {
         formattedTime,
         cycleDescription,
         nextPhasePreview,
+        totalSessionElapsedMs,
+        totalFocusElapsedMs,
+        totalRestElapsedMs,
       );
 
   @override

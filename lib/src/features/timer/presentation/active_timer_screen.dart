@@ -4,6 +4,7 @@ import 'package:timer_engine/timer_engine.dart';
 import '../../../core/theme/app_colors.dart';
 import '../controllers/active_timer_controller.dart';
 import 'widgets/circular_timer_dial.dart';
+import 'widgets/session_summary_card.dart';
 
 class ActiveTimerScreen extends ConsumerWidget {
   const ActiveTimerScreen({super.key});
@@ -178,6 +179,15 @@ class ActiveTimerScreen extends ConsumerWidget {
                   ],
                 ),
               ],
+              const SizedBox(height: 32),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SessionSummaryCard(
+                  totalSessionElapsedMs: state.totalSessionElapsedMs,
+                  totalFocusElapsedMs: state.totalFocusElapsedMs,
+                  totalRestElapsedMs: state.totalRestElapsedMs,
+                ),
+              ),
             ],
           ),
         ),

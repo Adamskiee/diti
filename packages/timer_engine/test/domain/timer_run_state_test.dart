@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:timer_engine/src/domain/enums.dart';
+import 'package:timer_engine/src/domain/phase_ledger_entry.dart';
 import 'package:timer_engine/src/domain/repeat_rule.dart';
 import 'package:timer_engine/src/domain/routine.dart';
 import 'package:timer_engine/src/domain/routine_phase.dart';
@@ -340,6 +341,113 @@ void main() {
       expect(state1, equals(state2));
       expect(state1.hashCode, equals(state2.hashCode));
       expect(state1, isNot(equals(stateDiff)));
+    });
+
+    test(
+        'calculates totalFocusElapsedMs and totalRestElapsedMs for in-progress and completed runs',
+        () {
+      const focusPhase = RoutinePhase(
+        id: 'p1',
+        name: 'Focus',
+        kind: PhaseKind.focus,
+        durationMs: 1500000,
+        transition: TransitionPolicy.auto,
+      );
+      const restPhase = RoutinePhase(
+        id: 'p2',
+        name: 'Short Break',
+        kind: PhaseKind.rest,
+        durationMs: 300000,
+        transition: TransitionPolicy.auto,
+      );
+
+      // 1. In-progress focus phase with no completed phases
+      final initialFocusState = TimerRunState(
+        runId: 'r1',
+        status: RunStatus.running,
+        phaseStatus: PhaseStatus.active,
+        currentPhase: focusPhase,
+        currentPhaseIndex: 0,
+        repeatIndex: 0,
+        activeElapsedMs: 25000,
+        totalActiveElapsedMs: 25000,
+        stateVersion: 1,
+      );
+
+      expect(initialFocusState.totalFocusElapsedMs, equals(25000));
+      expect(initialFocusState.totalRestElapsedMs, equals(0));
+      expect(
+        initialFocusState.totalFocusElapsedMs +
+            initialFocusState.totalRestElapsedMs,
+        equals(initialFocusState.totalActiveElapsedMs),
+      );
+
+      // 2. In-progress rest phase with a completed focus phase in ledger
+      final completedFocusEntry = PhaseLedgerEntry(
+        phaseId: 'p1',
+        phaseName: 'Focus',
+        kind: PhaseKind.focus,
+        phaseIndex: 0,
+        repeatIndex: 0,
+        durationMs: 1500000,
+        outcome: PhaseStatus.finished,
+        startedAtUtc: DateTime.utc(2026, 10, 13, 10, 0, 0),
+        endedAtUtc: DateTime.utc(2026, 10, 13, 10, 25, 0),
+      );
+
+      final inProgressRestState = TimerRunState(
+        runId: 'r1',
+        status: RunStatus.running,
+        phaseStatus: PhaseStatus.active,
+        currentPhase: restPhase,
+        currentPhaseIndex: 1,
+        repeatIndex: 0,
+        activeElapsedMs: 60000,
+        totalActiveElapsedMs: 1560000,
+        completedPhases: [completedFocusEntry],
+        stateVersion: 2,
+      );
+
+      expect(inProgressRestState.totalFocusElapsedMs, equals(1500000));
+      expect(inProgressRestState.totalRestElapsedMs, equals(60000));
+      expect(
+        inProgressRestState.totalFocusElapsedMs +
+            inProgressRestState.totalRestElapsedMs,
+        equals(inProgressRestState.totalActiveElapsedMs),
+      );
+
+      // 3. Completed run with both focus and rest in ledger
+      final completedRestEntry = PhaseLedgerEntry(
+        phaseId: 'p2',
+        phaseName: 'Short Break',
+        kind: PhaseKind.rest,
+        phaseIndex: 1,
+        repeatIndex: 0,
+        durationMs: 300000,
+        outcome: PhaseStatus.finished,
+        startedAtUtc: DateTime.utc(2026, 10, 13, 10, 25, 0),
+        endedAtUtc: DateTime.utc(2026, 10, 13, 10, 30, 0),
+      );
+
+      final completedState = TimerRunState(
+        runId: 'r1',
+        status: RunStatus.completed,
+        phaseStatus: PhaseStatus.finished,
+        currentPhase: restPhase,
+        currentPhaseIndex: 1,
+        repeatIndex: 0,
+        activeElapsedMs: 0,
+        totalActiveElapsedMs: 1800000,
+        completedPhases: [completedFocusEntry, completedRestEntry],
+        stateVersion: 3,
+      );
+
+      expect(completedState.totalFocusElapsedMs, equals(1500000));
+      expect(completedState.totalRestElapsedMs, equals(300000));
+      expect(
+        completedState.totalFocusElapsedMs + completedState.totalRestElapsedMs,
+        equals(completedState.totalActiveElapsedMs),
+      );
     });
   });
 }

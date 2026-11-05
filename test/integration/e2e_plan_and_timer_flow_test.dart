@@ -102,7 +102,13 @@ void main() {
     expect(inProgressPomodoro.status, PlanBlockStatus.inProgress);
 
     // 6. ActiveTimerScreen is open
-    expect(find.text('Focus'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Focus'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('25:00'), findsOneWidget);
     // 7. Advance fake clock into focus phase and finish run
     fakeClock.advance(const Duration(minutes: 24));

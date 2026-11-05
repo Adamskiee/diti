@@ -7,6 +7,7 @@ import 'package:diti/src/core/di/repositories_provider.dart';
 import 'package:diti/src/core/di/timer_engine_provider.dart';
 import 'package:diti/src/features/timer/controllers/active_timer_controller.dart';
 import 'package:diti/src/features/timer/presentation/active_timer_screen.dart';
+import 'package:diti/src/features/timer/presentation/widgets/circular_timer_dial.dart';
 import 'package:timer_engine/timer_engine.dart';
 import 'package:diti_database/diti_database.dart';
 import 'package:diti/src/features/history/providers/history_providers.dart';
@@ -495,7 +496,96 @@ void main() {
 
       expect(find.text('Free Flow'), findsWidgets);
       expect(find.text('Open Flow'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(CircularTimerDial),
+          matching: find.text('00:00'),
+        ),
+        findsOneWidget,
+      );
+
+      container.dispose();
+      await db.close();
+    });
+
+    testWidgets(
+        'renders session summary card with total, focus, and rest durations',
+        (tester) async {
+      final db = createInMemoryTestDatabase();
+      final fakeClock =
+          FakeClock(initialUtc: DateTime.utc(2026, 10, 16, 12, 0));
+      final fakeClient = FakeNotificationClient();
+
+      const testRoutine = Routine(
+        id: 'r_summary',
+        name: 'Summary Routine',
+        repeatRule: RepeatRule(mode: RepeatMode.count, count: 1),
+        phases: [
+          RoutinePhase(
+            id: 'p1',
+            name: 'Focus',
+            kind: PhaseKind.focus,
+            durationMs: 1500000,
+            transition: TransitionPolicy.manual,
+          ),
+          RoutinePhase(
+            id: 'p2',
+            name: 'Rest',
+            kind: PhaseKind.rest,
+            durationMs: 300000,
+            transition: TransitionPolicy.manual,
+          ),
+        ],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          monotonicClockProvider.overrideWithValue(fakeClock),
+          wallClockProvider.overrideWithValue(fakeClock),
+          notificationClientProvider.overrideWithValue(fakeClient),
+        ],
+      );
+
+      await container.read(routineRepositoryProvider).saveRoutine(testRoutine);
+      final controller = container.read(activeTimerControllerProvider.notifier);
+      await controller.startRoutine('r_summary');
+
+      // Advance 120s in Focus phase
+      fakeClock.advance(const Duration(seconds: 120));
+      controller.tick();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ActiveTimerScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final summaryCard = find.byKey(const Key('session_summary_card'));
+      expect(summaryCard, findsOneWidget);
+      expect(find.text('Session Summary'), findsOneWidget);
+      expect(find.text('Total'), findsOneWidget);
+      expect(find.text('Focus'),
+          findsWidgets); // header chip/phase + summary label
+      expect(find.text('Rest'), findsOneWidget);
+
+      // Total: 02:00, Focus: 02:00, Rest: 00:00
+      expect(find.text('02:00'), findsWidgets);
       expect(find.text('00:00'), findsOneWidget);
+
+      // Now switch to Rest phase and advance 60s
+      await controller.finishPhase();
+      fakeClock.advance(const Duration(seconds: 60));
+      controller.tick();
+      await tester.pumpAndSettle();
+
+      // Total: 03:00, Focus: 02:00, Rest: 01:00
+      expect(find.text('03:00'), findsOneWidget);
+      expect(find.text('01:00'), findsOneWidget);
 
       container.dispose();
       await db.close();

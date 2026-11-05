@@ -41,6 +41,32 @@ class TimerRunState {
   int get currentRepetition => repeatIndex + 1;
   String get phaseName => currentPhase.name;
 
+  /// The active time spent in focus phases across the entire run so far.
+  int get totalFocusElapsedMs {
+    var total = completedPhases
+        .where((p) => p.kind == PhaseKind.focus)
+        .fold<int>(0, (sum, p) => sum + p.durationMs);
+    if (status != RunStatus.completed &&
+        status != RunStatus.cancelled &&
+        currentPhase.kind == PhaseKind.focus) {
+      total += activeElapsedMs;
+    }
+    return total;
+  }
+
+  /// The active time spent in rest phases across the entire run so far.
+  int get totalRestElapsedMs {
+    var total = completedPhases
+        .where((p) => p.kind == PhaseKind.rest)
+        .fold<int>(0, (sum, p) => sum + p.durationMs);
+    if (status != RunStatus.completed &&
+        status != RunStatus.cancelled &&
+        currentPhase.kind == PhaseKind.rest) {
+      total += activeElapsedMs;
+    }
+    return total;
+  }
+
   TimerRunState copyWith({
     String? runId,
     RunStatus? status,
