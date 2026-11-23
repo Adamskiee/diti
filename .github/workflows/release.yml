@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
@@ -43,7 +43,7 @@ jobs:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx2560m -XX:MaxMetaspaceSize=768m -XX:ReservedCodeCacheSize=256m' -Dorg.gradle.workers.max=2"
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Enable KVM
         run: |
@@ -70,7 +70,7 @@ jobs:
         uses: ./.github/actions/setup-flutter
 
       - name: Setup Gradle Cache
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Install Patrol CLI
         run: dart pub global activate patrol_cli "$PATROL_CLI_VERSION"
@@ -95,7 +95,7 @@ jobs:
 
       - name: Upload Android Test Results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-android-test-results
           path: |
@@ -112,13 +112,13 @@ jobs:
       has_supply_key: ${{ steps.check_supply.outputs.has_supply_key }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter
 
       - name: Setup Gradle Cache
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Check Play Store Supply Secret
         id: check_supply
@@ -207,7 +207,7 @@ jobs:
 
       - name: Upload Debug Symbols
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-debug-symbols
           path: build/symbols
@@ -241,7 +241,7 @@ jobs:
           ls -la staging/android/
 
       - name: Upload Android Assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-release-assets
           path: staging/android/*
@@ -264,7 +264,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Linux Build Dependencies
         run: |
@@ -347,7 +347,7 @@ jobs:
           ls -la staging/linux/
 
       - name: Upload Linux Assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-release-assets
           path: staging/linux/*
@@ -359,7 +359,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Linux Build Dependencies and Flatpak
         run: |
@@ -403,7 +403,7 @@ jobs:
           ls -la staging/flatpak/
 
       - name: Upload Flatpak Assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: flatpak-release-assets
           path: staging/flatpak/*
@@ -416,10 +416,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download Android Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: android-release-assets
           path: staging/android
@@ -460,7 +460,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Determine Release Tag
         id: tag_info
@@ -487,19 +487,19 @@ jobs:
           fi
 
       - name: Download Android Assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: android-release-assets
           path: dist
 
       - name: Download Linux Assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: linux-release-assets
           path: dist
 
       - name: Download Flatpak Assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: flatpak-release-assets
           path: dist
@@ -513,7 +513,7 @@ jobs:
           cat checksums.txt
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag_info.outputs.tag }}
           name: Diti ${{ steps.tag_info.outputs.tag }}
